@@ -1,5 +1,11 @@
 #include <Render3D.cuh>
 
+Render3D::Render3D() {
+    CAMERA = Camera3D();
+    MESH = Mesh3D();
+    BUFFER = Buffer3D(CAMERA.width, CAMERA.height);
+}
+
 void Render3D::toCameraProjection() {
     uint32_t numVertices = MESH.vtxs.numVtxs;
     uint32_t blockSize = 256;
@@ -7,11 +13,7 @@ void Render3D::toCameraProjection() {
 
     projectVertices<<<numBlocks, blockSize>>>(
         MESH.prjs.x, MESH.prjs.y, MESH.prjs.z,
-        MESH.prjs.nx, MESH.prjs.ny, MESH.prjs.nz,
-        MESH.prjs.u, MESH.prjs.v,
         MESH.vtxs.x, MESH.vtxs.y, MESH.vtxs.z,
-        MESH.vtxs.nx, MESH.vtxs.ny, MESH.vtxs.nz,
-        MESH.vtxs.u, MESH.vtxs.v,
         CAMERA, numVertices
     );
     cudaDeviceSynchronize();
@@ -19,11 +21,7 @@ void Render3D::toCameraProjection() {
 
 __global__ void projectVertices(
     float *px, float *py, float *pz,
-    float *pnx, float *pny, float *pnz,
-    float *pu, float *pv,
     const float *vx, const float *vy, const float *vz,
-    const float *vnx, const float *vny, const float *vnz,
-    const float *vu, const float *vv,
     Camera3D camera, uint32_t numVertices
 ) {
     uint32_t i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -56,7 +54,7 @@ __global__ void projectVertices(
     proj_x += camera.centerX;
     proj_y += camera.centerY;
 
-    px[i] = proj_x; py[i] = proj_y; pz[i] = final_z;
-    pnx[i] = vnx[i]; pny[i] = vny[i]; pnz[i] = vnz[i];
-    pu[i] = vu[i]; pv[i] = vv[i];
+    px[i] = proj_x;
+    py[i] = proj_y;
+    pz[i] = final_z;
 }

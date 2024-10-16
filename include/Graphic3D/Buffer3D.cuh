@@ -23,9 +23,11 @@ struct Vec3 {
 class Buffer3D {
 public:
     float *depth;
-    Vec3 *normal;
-    Vec3 *color;
-    Vec3 *world;
+    float *normal;
+    float *color;
+    float *world;
+
+    Buffer3D(int width=0, int height=0);
 };
 
 #endif

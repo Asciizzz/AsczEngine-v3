@@ -95,56 +95,34 @@ void Indices::free() {
 
 // PROJECTIONS
 
-Projections::Projections() : x(nullptr), y(nullptr), z(nullptr), u(nullptr), v(nullptr) {}
+Projections::Projections() : x(nullptr), y(nullptr), z(nullptr) {}
 
 void Projections::allocate(uint32_t numVertices) {
     numVtxs = numVertices;
     cudaMalloc(&x, numVertices * sizeof(float));
     cudaMalloc(&y, numVertices * sizeof(float));
     cudaMalloc(&z, numVertices * sizeof(float));
-    cudaMalloc(&nx, numVertices * sizeof(float));
-    cudaMalloc(&ny, numVertices * sizeof(float));
-    cudaMalloc(&nz, numVertices * sizeof(float));
-    cudaMalloc(&u, numVertices * sizeof(float));
-    cudaMalloc(&v, numVertices * sizeof(float));
 }
 
 void Projections::resize(uint32_t numVertices) {
-    float *newX, *newY, *newZ, *newNX, *newNY, *newNZ, *newU, *newV;
+    float *newX, *newY, *newZ;
     cudaMalloc(&newX, numVertices * sizeof(float));
     cudaMalloc(&newY, numVertices * sizeof(float));
     cudaMalloc(&newZ, numVertices * sizeof(float));
-    cudaMalloc(&newNX, numVertices * sizeof(float));
-    cudaMalloc(&newNY, numVertices * sizeof(float));
-    cudaMalloc(&newNZ, numVertices * sizeof(float));
-    cudaMalloc(&newU, numVertices * sizeof(float));
-    cudaMalloc(&newV, numVertices * sizeof(float));
 
     cudaMemcpy(newX, x, numVtxs * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newY, y, numVtxs * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newZ, z, numVtxs * sizeof(float), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newNX, nx, numVtxs * sizeof(float), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newNY, ny, numVtxs * sizeof(float), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newNZ, nz, numVtxs * sizeof(float), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newU, u, numVtxs * sizeof(float), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newV, v, numVtxs * sizeof(float), cudaMemcpyDeviceToDevice);
 
     free();
     numVtxs = numVertices;
     x = newX; y = newY; z = newZ;
-    nx = newNX; ny = newNY; nz = newNZ;
-    u = newU; v = newV;
 }
 
 void Projections::free() {
     if (x) cudaFree(x);
     if (y) cudaFree(y);
     if (z) cudaFree(z);
-    if (nx) cudaFree(nx);
-    if (ny) cudaFree(ny);
-    if (nz) cudaFree(nz);
-    if (u) cudaFree(u);
-    if (v) cudaFree(v);
 }
 
 // MESH3D
@@ -349,20 +327,16 @@ void Mesh3D::printPrjs() {
     float *x = new float[numVtxs];
     float *y = new float[numVtxs];
     float *z = new float[numVtxs];
-    float *u = new float[numVtxs];
-    float *v = new float[numVtxs];
 
     cudaMemcpy(x, prjs.x, numVtxs * sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(y, prjs.y, numVtxs * sizeof(float), cudaMemcpyDeviceToHost);
     cudaMemcpy(z, prjs.z, numVtxs * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(u, prjs.u, numVtxs * sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(v, prjs.v, numVtxs * sizeof(float), cudaMemcpyDeviceToHost);
 
     for (uint32_t i = 0; i < numVtxs; i++) {
         std::cout << "Projected " << i << ": (" << x[i] << ", " << y[i] << ", " << z[i] << ")" << std::endl;
     }
 
-    delete[] x, y, z, u, v;
+    delete[] x, y, z;
 }
 
 // KERNELS

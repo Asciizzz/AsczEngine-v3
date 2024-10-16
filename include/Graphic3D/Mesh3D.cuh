@@ -35,9 +35,7 @@ struct Indices {
 
 struct Projections {
     uint32_t numVtxs;
-    float *x, *y, *z; // Position
-    float *nx, *ny, *nz; // Normal
-    float *u, *v; // Texture coordinates
+    float *x, *y, *z;
 
     Projections();
     void allocate(uint32_t numVertices);
