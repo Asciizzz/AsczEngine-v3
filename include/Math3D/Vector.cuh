@@ -5,11 +5,15 @@
 #include <vector>
 
 struct Vec3 {
-    float x = 0, y = 0, z = 0;
+    float x, y, z;
+    __host__ __device__ Vec3();
+    __host__ __device__ Vec3(float x, float y, float z);
 };
 
 struct Vec4 {
-    float x = 0, y = 0, z = 0, w = 0;
+    float x, y, z, w;
+    __host__ __device__ Vec4();
+    __host__ __device__ Vec4(float x, float y, float z, float w);
 };
 
 #endif
