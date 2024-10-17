@@ -1,104 +1,90 @@
-#ifndef MESH3D_H
-#define MESH3D_H
+#ifndef MESH3D_CUH
+#define MESH3D_CUH
 
-#include <iostream>
+#include <Matrix.cuh>
 #include <cuda_runtime.h>
-#include <stdexcept>
-#include <cstdint> // For fixed-width integer types
 
-#include <MathUtil.cuh>
-#include <Camera3D.cuh>
+#define UInt unsigned int
+#define ULInt unsigned long int
+#define ULLInt unsigned long long int
 
-struct Vertices {
-    uint32_t numVtxs;
-    float *x, *y, *z; // Position
-    float *nx, *ny, *nz; // Normal
-    float *u, *v; // Texture coordinates
-    uint32_t *meshId; // Mesh ID
+/* We will use a hybrid AoS/SoA approach
 
-    Vertices();
-    void allocate(uint32_t numVertices);
-    void resize(uint32_t numVertices);
-    void free();
-};
+Vertex data: x y z nx ny nz u v
 
-struct Indices {
-    uint32_t numIdxs;
-    uint32_t *vertexId;
-    uint32_t *meshId;
+Instead of creating an array for all 8 attributes
+We will group related attributes together
 
-    Indices();
-    void allocate(uint32_t numIndices);
-    void resize(uint32_t numIndices);
-    void free();
-};
+We will have 4 arrays for vertex data:
+- Position (x y z)
+- Normal (nx ny nz)
+- Texture (u v)
+- Mesh ID (id)
 
-struct Projections {
-    uint32_t numVtxs;
-    float *x, *y, *z;
+*/
 
-    Projections();
-    void allocate(uint32_t numVertices);
-    void resize(uint32_t numVertices);
-    void free();
+struct Mesh {
+    std::vector<Vec3f> pos;
+    std::vector<Vec3f> normal;
+    std::vector<Vec2f> tex;
+    std::vector<UInt> mID;
+    std::vector<Vec3uli> faces;
 };
 
 class Mesh3D {
 public:
-    uint32_t numVtxs;
-    uint32_t numIdxs;
-    uint32_t meshId;
+    // Number of vertices and faces
+    ULLInt numVs, numFs;
 
-    Vertices vtxs;
-    Indices idxs;
-    Projections prjs;
+    // Vertices
+    Vec3f *pos;
+    Vec3f *normal;
+    Vec2f *tex;
+    UInt *mID;
 
-    Mesh3D(uint32_t vertexCount=0, uint32_t indexCount=0, uint32_t meshId=0);
-    ~Mesh3D();
+    // Faces (triangles)
+    Vec3uli *faces;
 
-    void allocate(uint32_t vertexCount, uint32_t indexCount);
-    void free();
+    Mesh3D(ULLInt numVs=0, ULLInt numFs=0);
+    Mesh3D(
+        UInt mID,
+        std::vector<Vec3f> &pos,
+        std::vector<Vec3f> &normal,
+        std::vector<Vec2f> &tex,
+        std::vector<Vec3uli> &faces
+    );
 
-    void uploadVertices(const std::vector<float>& h_x,
-                        const std::vector<float>& h_y,
-                        const std::vector<float>& h_z,
-                        const std::vector<float>& h_nx,
-                        const std::vector<float>& h_ny,
-                        const std::vector<float>& h_nz,
-                        const std::vector<float>& h_u,
-                        const std::vector<float>& h_v);
-    void uploadIndices(const std::vector<uint32_t>& h_indices);
-    void upload(const std::vector<float>& h_x,
-                const std::vector<float>& h_y,
-                const std::vector<float>& h_z,
-                const std::vector<float>& h_nx,
-                const std::vector<float>& h_ny,
-                const std::vector<float>& h_nz,
-                const std::vector<float>& h_u,
-                const std::vector<float>& h_v,
-                const std::vector<uint32_t>& h_indices);
+    // Memory management
+    void mallocVertices();
+    void resizeVertices(ULLInt numVs);
+    void freeVertices();
 
-    // Append more data AND increment the indices
-    void operator+=(const Mesh3D& mesh);
-    void operator=(const Mesh3D& mesh);
+    void mallocFaces();
+    void resizeFaces(ULLInt numFs);
+    void freeFaces();
 
-    // Static methods for mesh transformations
-    static void translate(Mesh3D &MESH, uint32_t meshId, float dx, float dy, float dz);
-    static void rotate(Mesh3D &MESH, uint32_t meshId, float ox, float oy, float oz, float wx, float wy, float wz);
-    static void scale(Mesh3D &MESH, uint32_t meshId, float ox, float oy, float oz, float sx, float sy, float sz);
+    // Upload host data to device
+    void uploadData(
+        UInt mID,
+        std::vector<Vec3f> &pos,
+        std::vector<Vec3f> &normal,
+        std::vector<Vec2f> &tex,
+        std::vector<Vec3uli> &faces
+    );
 
-    // Transformations
-    void translate(float dx, float dy, float dz);
-    void rotate(float ox, float oy, float oz, float wx, float wy, float wz);
-    void scale(float ox, float oy, float oz, float sx, float sy, float sz);
+    // Mesh operators
+    void operator+=(Mesh3D &mesh);
 
-    // Debugging
-    void printVtxs();
-    void printIdxs();
-    void printPrjs();
+    // DEBUG
+    void printVertices(bool pos=true, bool normal=true, bool tex=true, bool mID=true);
 };
 
-// Kernel for mapping the indices
-__global__ void incrementVertexId(uint32_t* indices, uint32_t numIndices, uint32_t offset);
-__global__ void setMeshId(uint32_t* ids, uint32_t numIds, uint32_t meshId);
+// Kernel for preparing vertices
+__global__ void incrementFaceIdxKernel(
+    Vec3uli *faces, ULLInt numFs, ULLInt offset
+);
+__global__ void setMeshIDKernel(
+    UInt *mID, ULLInt numVs, UInt id
+);
+
 #endif

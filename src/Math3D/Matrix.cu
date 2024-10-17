@@ -1,6 +1,6 @@
 #include <Matrix.cuh>
 
-__host__ __device__ Mat4::Mat4() {
+__host__ __device__ Mat4f::Mat4f() {
     // Identity matrix
     data[0][0] = 1;
     data[1][1] = 1;
@@ -8,7 +8,7 @@ __host__ __device__ Mat4::Mat4() {
     data[3][3] = 1;
 }
 
-__host__ __device__ Mat4::Mat4(float data[4][4]) {
+__host__ __device__ Mat4f::Mat4f(float data[4][4]) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             this->data[i][j] = data[i][j];
@@ -16,8 +16,41 @@ __host__ __device__ Mat4::Mat4(float data[4][4]) {
     }
 }
 
-__host__ __device__ Vec4 Mat4::operator*(const Vec4& vec) {
-    Vec4 result;
+__host__ __device__ Mat4f Mat4f::operator+(const Mat4f &mat) {
+    Mat4f result;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            result.data[i][j] = data[i][j] + mat.data[i][j];
+        }
+    }
+
+    return result;
+}
+
+__host__ __device__ Mat4f Mat4f::operator-(const Mat4f &mat) {
+    Mat4f result;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            result.data[i][j] = data[i][j] - mat.data[i][j];
+        }
+    }
+
+    return result;
+}
+
+__host__ __device__ Mat4f Mat4f::operator*(const float scl) {
+    Mat4f result;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            result.data[i][j] = data[i][j] * scl;
+        }
+    }
+
+    return result;
+}
+
+__host__ __device__ Vec4f Mat4f::operator*(const Vec4f &vec) {
+    Vec4f result;
     result.x = data[0][0] * vec.x + data[0][1] * vec.y + data[0][2] * vec.z + data[0][3] * vec.w;
     result.y = data[1][0] * vec.x + data[1][1] * vec.y + data[1][2] * vec.z + data[1][3] * vec.w;
     result.z = data[2][0] * vec.x + data[2][1] * vec.y + data[2][2] * vec.z + data[2][3] * vec.w;
@@ -26,13 +59,13 @@ __host__ __device__ Vec4 Mat4::operator*(const Vec4& vec) {
     return result;
 }
 
-__host__ __device__ Mat4 Mat4::operator*(const Mat4& other) {
-    Mat4 result;
+__host__ __device__ Mat4f Mat4f::operator*(const Mat4f &mat) {
+    Mat4f result;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
             result.data[i][j] = 0;
             for (int k = 0; k < 4; k++) {
-                result.data[i][j] += data[i][k] * other.data[k][j];
+                result.data[i][j] += data[i][k] * mat.data[k][j];
             }
         }
     }
@@ -40,35 +73,25 @@ __host__ __device__ Mat4 Mat4::operator*(const Mat4& other) {
     return result;
 }
 
-__host__ __device__ Mat4 Mat4::operator*(const float scalar) {
-    Mat4 result;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            result.data[i][j] = data[i][j] * scalar;
-        }
-    }
+__host__ __device__ float Mat4f::det() {
+    float detA11 = data[1][1] * (data[2][2] * data[3][3] - data[2][3] * data[3][2]) - 
+                   data[1][2] * (data[2][1] * data[3][3] - data[2][3] * data[3][1]) + 
+                   data[1][3] * (data[2][1] * data[3][2] - data[2][2] * data[3][1]);
 
-    return result;
-}
+    float detA12 = data[1][0] * (data[2][2] * data[3][3] - data[2][3] * data[3][2]) - 
+                   data[1][2] * (data[2][0] * data[3][3] - data[2][3] * data[3][0]) + 
+                   data[1][3] * (data[2][0] * data[3][2] - data[2][2] * data[3][0]);
 
-__host__ __device__ Mat4 Mat4::operator+(const Mat4& other) {
-    Mat4 result;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            result.data[i][j] = data[i][j] + other.data[i][j];
-        }
-    }
+    float detA13 = data[1][0] * (data[2][1] * data[3][3] - data[2][3] * data[3][1]) - 
+                   data[1][1] * (data[2][0] * data[3][3] - data[2][3] * data[3][0]) + 
+                   data[1][3] * (data[2][0] * data[3][1] - data[2][1] * data[3][0]);
 
-    return result;
-}
+    float detA14 = data[1][0] * (data[2][1] * data[3][2] - data[2][2] * data[3][1]) - 
+                   data[1][1] * (data[2][0] * data[3][2] - data[2][2] * data[3][0]) + 
+                   data[1][2] * (data[2][0] * data[3][1] - data[2][1] * data[3][0]);
 
-__host__ __device__ Mat4 Mat4::operator-(const Mat4& other) {
-    Mat4 result;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 4; j++) {
-            result.data[i][j] = data[i][j] - other.data[i][j];
-        }
-    }
+    // Cofactor expansion along the first row
+    float a = data[0][0], b = data[0][1], c = data[0][2], d = data[0][3];
 
-    return result;
+    return a * detA11 - b * detA12 + c * detA13 - d * detA14;
 }

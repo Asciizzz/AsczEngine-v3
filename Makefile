@@ -18,11 +18,7 @@ AsczEngine:
 		src/Default/FpsHandler.cu \
 		src/Math3D/Vector.cu \
 		src/Math3D/Matrix.cu \
-		src/Math3D/MathUtil.cu \
 		src/Graphic3D/Mesh3D.cu \
-		src/Graphic3D/Camera3D.cu \
-		src/Graphic3D/Buffer3D.cu \
-		src/Graphic3D/Render3D.cu \
 		\
 		AsczEngine.cu \
 		\

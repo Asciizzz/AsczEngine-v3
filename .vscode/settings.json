@@ -66,6 +66,11 @@
         "xtr1common": "cpp",
         "xtree": "cpp",
         "stop_token": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "*.rh": "cpp",
+        "cerrno": "cpp",
+        "cfloat": "cpp",
+        "climits": "cpp",
+        "random": "cpp"
     }
 }
