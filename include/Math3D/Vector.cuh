@@ -6,6 +6,11 @@
 #include <cstdio>
 #include <cmath>
 
+#define UInt unsigned int
+#define ULInt unsigned long int
+#define ULLInt unsigned long long int
+#define UInts std::vector<UInt>
+
 #define Vecs2f std::vector<Vec2f>
 #define Vecs3f std::vector<Vec3f>
 #define Vecs4f std::vector<Vec4f>

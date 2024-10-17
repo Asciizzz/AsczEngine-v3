@@ -4,12 +4,6 @@
 #include <Matrix.cuh>
 #include <cuda_runtime.h>
 
-#define UInt unsigned int
-#define ULInt unsigned long int
-#define ULLInt unsigned long long int
-
-#define UInts std::vector<UInt>
-
 /* HYBRID AOS-SOA MEMORY LAYOUT
 
 Vertex data: x y z nx ny nz u v
@@ -23,14 +17,6 @@ We will have 4 arrays for vertex data:
 - Texture (u v)
 - Mesh ID (id)
 */
-
-struct Mesh {
-    UInt id;
-    Vecs3f pos;
-    Vecs3f normal;
-    Vecs2f tex;
-    Vecs3uli faces;
-};
 
 class Mesh3D {
 public:
