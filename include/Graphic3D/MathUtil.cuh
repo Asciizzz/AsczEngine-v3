@@ -1,8 +1,7 @@
 #ifndef MATHUTIL_CUH
 #define MATHUTIL_CUH
 
-#include <cmath>
-#include <vector>
+#include <Matrix.cuh>
 
 class MathUtil {
 public:
