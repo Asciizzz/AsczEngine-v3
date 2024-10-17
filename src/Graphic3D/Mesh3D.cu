@@ -10,17 +10,17 @@ Mesh3D::Mesh3D(ULLInt numVs, ULLInt numFs) :
 }
 
 Mesh3D::Mesh3D(
-    UInt mID,
-    std::vector<Vec3f> &pos,
-    std::vector<Vec3f> &normal,
-    std::vector<Vec2f> &tex,
-    std::vector<Vec3uli> &faces
+    UInt id,
+    Vecs3f &pos,
+    Vecs3f &normal,
+    Vecs2f &tex,
+    Vecs3uli &faces
 ) :
     numVs(pos.size()), numFs(faces.size())
 {
     mallocVertices();
     mallocFaces();
-    uploadData(mID, pos, normal, tex, faces);
+    uploadData(id, pos, normal, tex, faces);
 }
 
 // Memory management
@@ -62,11 +62,11 @@ void Mesh3D::freeFaces() {
 // Upload host data to device
 
 void Mesh3D::uploadData(
-    UInt mID,
-    std::vector<Vec3f> &pos,
-    std::vector<Vec3f> &normal,
-    std::vector<Vec2f> &tex,
-    std::vector<Vec3uli> &faces
+    UInt id,
+    Vecs3f &pos,
+    Vecs3f &normal,
+    Vecs2f &tex,
+    Vecs3uli &faces
 ) {
     if (pos.size() != numVs ||
         normal.size() != numVs ||
@@ -77,7 +77,7 @@ void Mesh3D::uploadData(
         return;
     }
 
-    setMeshIDKernel<<<(numVs + 255) / 256, 256>>>(this->mID, numVs, mID);
+    setMeshIDKernel<<<(numVs + 255) / 256, 256>>>(this->mID, numVs, id);
     cudaMemcpy(this->pos, pos.data(), pos.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
     cudaMemcpy(this->normal, normal.data(), normal.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
     cudaMemcpy(this->tex, tex.data(), tex.size() * sizeof(Vec2f), cudaMemcpyHostToDevice);
@@ -105,25 +105,24 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     cudaMemcpy(newNormal + numVs, mesh.normal, mesh.numVs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTex + numVs, mesh.tex, mesh.numVs * sizeof(Vec2f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newMID + numVs, mesh.mID, mesh.numVs * sizeof(UInt), cudaMemcpyDeviceToDevice);
-    cudaFree(pos);
-    cudaFree(normal);
-    cudaFree(tex);
-    cudaFree(mID);
+    freeVertices();
     pos = newPos;
     normal = newNormal;
     tex = newTex;
     mID = newMID;
-    numVs = newNumVs;
 
     // Resize faces (with offset for the added vertices)
     ULLInt newNumFs = numFs + mesh.numFs;
     Vec3uli *newFaces;
     cudaMalloc(&newFaces, newNumFs * sizeof(Vec3uli));
     cudaMemcpy(newFaces, faces, numFs * sizeof(Vec3uli), cudaMemcpyDeviceToDevice);
-    incrementFaceIdxKernel<<<(mesh.numFs + 255) / 256, 256>>>(mesh.faces, mesh.numFs, numVs);
     cudaMemcpy(newFaces + numFs, mesh.faces, mesh.numFs * sizeof(Vec3uli), cudaMemcpyDeviceToDevice);
+    incrementFaceIdxKernel<<<(mesh.numFs + 255) / 256, 256>>>(newFaces, mesh.numFs, numVs);
     cudaFree(faces);
     faces = newFaces;
+
+    // Update number of vertices and faces
+    numVs = newNumVs;
     numFs = newNumFs;
 }
 
@@ -154,19 +153,24 @@ void Mesh3D::printVertices(bool p_pos, bool p_normal, bool p_tex, bool p_mID) {
     delete[] hMID;
 }
 
-// Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(
-    Vec3uli *faces, ULLInt numFs, ULLInt offset
-) {
-    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numFs) return;
+void Mesh3D::printFaces() {
+    Vec3uli *hFaces = new Vec3uli[numFs];
+    cudaMemcpy(hFaces, faces, numFs * sizeof(Vec3uli), cudaMemcpyDeviceToHost);
 
-    faces[idx] += offset;
+    for (ULLInt i = 0; i < numFs; i++) {
+        printf("Face %lu: (%lu, %lu, %lu)\n", i, hFaces[i].x, hFaces[i].y, hFaces[i].z);
+    }
+
+    delete[] hFaces;
 }
 
-__global__ void setMeshIDKernel(
-    UInt *mID, ULLInt numVs, UInt id
-) {
+// Kernel for preparing vertices
+__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt numFs, ULLInt offset) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numFs) faces[idx] += offset;
+}
+
+__global__ void setMeshIDKernel(UInt *mID, ULLInt numVs, UInt id) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= numVs) return;
 

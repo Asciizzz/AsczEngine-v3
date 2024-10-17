@@ -8,7 +8,9 @@
 #define ULInt unsigned long int
 #define ULLInt unsigned long long int
 
-/* We will use a hybrid AoS/SoA approach
+#define UInts std::vector<UInt>
+
+/* HYBRID AOS-SOA MEMORY LAYOUT
 
 Vertex data: x y z nx ny nz u v
 
@@ -20,15 +22,14 @@ We will have 4 arrays for vertex data:
 - Normal (nx ny nz)
 - Texture (u v)
 - Mesh ID (id)
-
 */
 
 struct Mesh {
-    std::vector<Vec3f> pos;
-    std::vector<Vec3f> normal;
-    std::vector<Vec2f> tex;
-    std::vector<UInt> mID;
-    std::vector<Vec3uli> faces;
+    UInt id;
+    Vecs3f pos;
+    Vecs3f normal;
+    Vecs2f tex;
+    Vecs3uli faces;
 };
 
 class Mesh3D {
@@ -47,11 +48,11 @@ public:
 
     Mesh3D(ULLInt numVs=0, ULLInt numFs=0);
     Mesh3D(
-        UInt mID,
-        std::vector<Vec3f> &pos,
-        std::vector<Vec3f> &normal,
-        std::vector<Vec2f> &tex,
-        std::vector<Vec3uli> &faces
+        UInt id,
+        Vecs3f &pos,
+        Vecs3f &normal,
+        Vecs2f &tex,
+        Vecs3uli &faces
     );
 
     // Memory management
@@ -64,27 +65,18 @@ public:
     void freeFaces();
 
     // Upload host data to device
-    void uploadData(
-        UInt mID,
-        std::vector<Vec3f> &pos,
-        std::vector<Vec3f> &normal,
-        std::vector<Vec2f> &tex,
-        std::vector<Vec3uli> &faces
-    );
+    void uploadData(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3uli &faces);
 
     // Mesh operators
     void operator+=(Mesh3D &mesh);
 
     // DEBUG
     void printVertices(bool pos=true, bool normal=true, bool tex=true, bool mID=true);
+    void printFaces();
 };
 
 // Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(
-    Vec3uli *faces, ULLInt numFs, ULLInt offset
-);
-__global__ void setMeshIDKernel(
-    UInt *mID, ULLInt numVs, UInt id
-);
+__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt numFs, ULLInt offset);
+__global__ void setMeshIDKernel(UInt *mID, ULLInt numVs, UInt id);
 
 #endif

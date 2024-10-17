@@ -6,9 +6,10 @@
 #include <cstdio>
 #include <cmath>
 
-// Note: * is element-wise multiplication, & is cross product
-
-struct Vec4f;
+#define Vecs2f std::vector<Vec2f>
+#define Vecs3f std::vector<Vec3f>
+#define Vecs4f std::vector<Vec4f>
+#define Vecs3uli std::vector<Vec3uli>
 
 struct Vec2f {
     float x, y;
@@ -24,6 +25,7 @@ struct Vec3uli { // For faces indices
     __host__ __device__ void operator+=(unsigned long int d);
 };
 
+struct Vec4f; // Forward declaration
 struct Vec3f {
     float x, y, z;
     __host__ __device__ Vec3f();
