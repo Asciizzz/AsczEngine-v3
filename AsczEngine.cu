@@ -38,9 +38,8 @@ int main() {
 
             // Cool color
             float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
-            float ratioY = (y - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-            color.push_back(Vec3f(255 * ratioX, 255 * ratioY, 255 * ratioZ));
+            color.push_back(Vec3f(255 * ratioX, 255, 255 * ratioZ));
         }
     }
 
@@ -70,6 +69,8 @@ int main() {
 
     camera.aspect = float(width) / float(height);
 
+    float moveX = 0;
+    float moveZ = 0;
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
@@ -121,6 +122,15 @@ int main() {
             else if (k_shift && !k_ctrl) vel *= 4;
             // Update camera position
             camera.pos += camera.forward * vel * FPS.dTimeSec;
+        }
+
+        // Dynamic graph function
+        moveX += FPS.dTimeSec;
+        moveZ += FPS.dTimeSec;
+        for (ULLInt i = 0; i < MESH.numVs; i++) {
+            Vec3f v = test.pos[i];
+            v.y = sin(v.x / 10 + moveX) * cos(v.z / 10 + moveZ) * 10;
+            test.pos[i] = v;
         }
 
         // Perform transformation
