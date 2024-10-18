@@ -10,10 +10,10 @@ public:
 
     // Device pointers
     float *depth;
-    Vec3f *color;
-    Vec3f *normal;
+    Vec4f *color;
     Vec3f *world;
-    Vec2f *tex;
+    Vec3f *normal;
+    Vec2f *texture;
 
     Buffer3D();
     void resize(int width, int height, int pixelSize=1);
