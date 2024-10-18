@@ -14,6 +14,7 @@ public:
     Vec3f *world;
     Vec3f *normal;
     Vec2f *texture;
+    UInt *meshID;
 
     Buffer3D();
     void resize(int width, int height, int pixelSize=1);
