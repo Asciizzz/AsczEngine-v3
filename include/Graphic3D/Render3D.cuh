@@ -15,7 +15,7 @@ public:
 
     Vec2f res = {800, 600};
     Vec2f res_half = {400, 300};
-    int pixel_size = 4;
+    int pixelSize = 4;
     void setResolution(float w, float h);
 
     Mesh3D mesh;
@@ -34,6 +34,6 @@ private:
     Render3D() {}
 };
 
-__global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, ULLInt numVs);
+__global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs);
 
 #endif
