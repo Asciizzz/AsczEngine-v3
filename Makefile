@@ -19,6 +19,7 @@ AsczEngine:
 		src/Math3D/Vector.cu \
 		src/Math3D/Matrix.cu \
 		src/Graphic3D/Mesh3D.cu \
+		src/Graphic3D/Camera3D.cu \
 		\
 		AsczEngine.cu \
 		\

@@ -18,6 +18,19 @@ We will have 4 arrays for vertex data:
 - Mesh ID (id)
 */
 
+struct Mesh {
+    Vecs3f pos;
+    Vecs3f normal;
+    Vecs2f tex;
+    UInts mID;
+
+    Vecs3uli faces;
+
+    Mesh(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3uli &faces);
+
+    Mesh operator+=(Mesh &mesh);
+};
+
 class Mesh3D {
 public:
     // Number of vertices and faces
@@ -40,6 +53,7 @@ public:
         Vecs2f &tex,
         Vecs3uli &faces
     );
+    Mesh3D(Mesh &mesh);
 
     // Memory management
     void mallocVertices();

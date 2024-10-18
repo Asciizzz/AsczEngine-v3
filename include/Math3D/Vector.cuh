@@ -16,6 +16,10 @@
 #define Vecs4f std::vector<Vec4f>
 #define Vecs3uli std::vector<Vec3uli>
 
+#define M_PI 3.14159265358979323846 // 180 degrees
+#define M_PI_2 1.57079632679489661923 // 90 degrees
+#define M_2_PI 6.28318530717958647692 // 360 degrees
+
 struct Vec2f {
     float x, y;
     __host__ __device__ Vec2f();
@@ -44,6 +48,8 @@ struct Vec3f {
     // Advanced operations
     __host__ __device__ float operator*(const Vec3f &vec); // Dot product
     __host__ __device__ Vec3f operator&(const Vec3f &vec); // Cross product
+    __host__ __device__ float mag(); // Magnitude
+    __host__ __device__ void norm(); // Normalize
 
     void print() { // Will remove this later
         printf("Vec3(%f, %f, %f)\n", x, y, z);
@@ -54,6 +60,7 @@ struct Vec4f {
     float x, y, z, w;
     __host__ __device__ Vec4f();
     __host__ __device__ Vec4f(float x, float y, float z, float w);
+    __host__ __device__ Vec3f toVec3f();
 
     void print() { // Will remove this later
         printf("Vec4(%f, %f, %f, %f)\n", x, y, z, w);

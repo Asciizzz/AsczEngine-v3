@@ -1,5 +1,20 @@
 #include <Mesh3D.cuh>
 
+// Mesh struct
+
+Mesh::Mesh(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3uli &faces) :
+    pos(pos), normal(normal), tex(tex), mID(pos.size(), id), faces(faces)
+{}
+
+Mesh Mesh::operator+=(Mesh &mesh) {
+    pos.insert(pos.end(), mesh.pos.begin(), mesh.pos.end());
+    normal.insert(normal.end(), mesh.normal.begin(), mesh.normal.end());
+    tex.insert(tex.end(), mesh.tex.begin(), mesh.tex.end());
+    mID.insert(mID.end(), mesh.mID.begin(), mesh.mID.end());
+    faces.insert(faces.end(), mesh.faces.begin(), mesh.faces.end());
+    return *this;
+}
+
 // Constructor
 
 Mesh3D::Mesh3D(ULLInt numVs, ULLInt numFs) :
@@ -21,6 +36,14 @@ Mesh3D::Mesh3D(
     mallocVertices();
     mallocFaces();
     uploadData(id, pos, normal, tex, faces);
+}
+
+Mesh3D::Mesh3D(Mesh &mesh) :
+    numVs(mesh.pos.size()), numFs(mesh.faces.size())
+{
+    mallocVertices();
+    mallocFaces();
+    uploadData(mesh.mID[0], mesh.pos, mesh.normal, mesh.tex, mesh.faces);
 }
 
 // Memory management

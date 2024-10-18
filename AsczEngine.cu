@@ -2,7 +2,7 @@
 #include <Mesh3D.cuh>
 
 int main() {
-    Mesh3D mesh1(
+    Mesh mesh(
         0, // ID
         Vecs3f({ // Position
             Vec3f(-1, -1, 0), Vec3f(1, -1, 0), Vec3f(1, 1, 0), Vec3f(-1, 1, 0)
@@ -18,8 +18,7 @@ int main() {
         })
     );
 
-    Mesh3D MESH;
-    MESH += mesh1;
+    Mesh3D MESH(mesh);
 
     MESH.printVertices();
     MESH.printFaces();
