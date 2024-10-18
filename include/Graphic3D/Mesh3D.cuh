@@ -25,7 +25,7 @@ struct Mesh {
     Vecs3f normal;
     Vecs2f texture;
     Vecs4f color;
-    UInts mID;
+    UInts meshID;
 
     Vecs3uli faces;
 
@@ -49,7 +49,7 @@ public:
     Vec3f *normal;
     Vec2f *texture;
     Vec4f *color;
-    UInt *mID;
+    UInt *meshID;
 
     // Faces (triangles)
     Vec3uli *faces;
@@ -75,22 +75,22 @@ public:
     void operator+=(Mesh3D &mesh);
 
     // Transformations
-    void translate(UInt meshID, Vec3f t);
-    void rotate(UInt meshID, Vec3f origin, Vec3f rot);
-    void scale(UInt meshID, Vec3f origin, Vec3f scl);
+    void translate(UInt mID, Vec3f t);
+    void rotate(UInt mID, Vec3f origin, Vec3f rot);
+    void scale(UInt mID, Vec3f origin, Vec3f scl);
 
     // DEBUG
-    void printVertices(bool world=true, bool normal=true, bool texture=true, bool color=true, bool mID=true);
+    void printVertices(bool world=true, bool normal=true, bool texture=true, bool color=true, bool meshID=true);
     void printFaces();
 };
 
 // Kernel for preparing vertices
 __global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt numFs, ULLInt offset);
-__global__ void setMeshIDKernel(UInt *mID, ULLInt numVs, UInt id);
+__global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id);
 
 // Kernel for transforming vertices
-__global__ void translateVertexKernel(Vec3f *world, UInt *mID, ULLInt numVs, UInt meshID, Vec3f t);
-__global__ void rotateVertexKernel(Vec3f *world, UInt *mID, ULLInt numVs, UInt meshID, Vec3f origin, Vec3f rot);
-__global__ void scaleVertexKernel(Vec3f *world, UInt *mID, ULLInt numVs, UInt meshID, Vec3f origin, Vec3f scl);
+__global__ void translateVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f t);
+__global__ void rotateVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot);
+__global__ void scaleVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl);
 
 #endif
