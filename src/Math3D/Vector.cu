@@ -57,14 +57,18 @@ __host__ __device__ Vec3f Vec3f::translate(Vec3f& vec, const Vec3f& t) {
 }
 __host__ __device__ Vec3f Vec3f::rotate(Vec3f& vec, const Vec3f& origin, const Vec3f& rot) {
     Vec3f v = vec - origin;
-    float wx = rot.x;
-    float wy = rot.y;
-    float wz = rot.z;
+    double wx = rot.x;
+    double wy = rot.y;
+    double wz = rot.z;
+    double vx = v.x;
+    double vy = v.y;
+    double vz = v.z;
 
-    v.x = v.x * (cos(wy) * cos(wz)) + v.y * (cos(wz) * sin(wx) * sin(wy) - cos(wx) * sin(wz)) + v.z * (cos(wx) * cos(wz) * sin(wy) + sin(wx) * sin(wz));
-    v.y = v.x * (cos(wy) * sin(wz)) + v.y * (cos(wx) * cos(wz) + sin(wx) * sin(wy) * sin(wz)) + v.z * (-cos(wz) * sin(wx) + cos(wx) * sin(wy) * sin(wz));
-    v.z = v.x * (-sin(wy)) + v.y * cos(wy) * sin(wx) + v.z * cos(wx) * cos(wy);
+    vx = vx * (cos(wy) * cos(wz)) + vy * (cos(wz) * sin(wx) * sin(wy) - cos(wx) * sin(wz)) + vz * (cos(wx) * cos(wz) * sin(wy) + sin(wx) * sin(wz));
+    vy = vx * (cos(wy) * sin(wz)) + vy * (cos(wx) * cos(wz) + sin(wx) * sin(wy) * sin(wz)) + vz * (-cos(wz) * sin(wx) + cos(wx) * sin(wy) * sin(wz));
+    vz = vx * (-sin(wy)) + v.y * cos(wy) * sin(wx) + vz * cos(wx) * cos(wy);
 
+    v = Vec3f(vx, vy, vz);
     v += origin;
     return v;
 }

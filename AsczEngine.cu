@@ -91,7 +91,7 @@ int main() {
         int dMy = mousePos.y - height/2;
 
         // Camera look around
-        camera.rot.x += dMy * camera.mSens * FPS.dTimeSec;
+        camera.rot.x -= dMy * camera.mSens * FPS.dTimeSec;
         camera.rot.y -= dMx * camera.mSens * FPS.dTimeSec;
         camera.restrictRot();
         camera.updateMVP();
@@ -100,19 +100,27 @@ int main() {
         float vel = 0;
         bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
         bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
+        bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
+        bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
+        // Move forward/backward
         if (m_left && !m_right)      vel = 20;
         else if (m_right && !m_left) vel = -20;
         else                         vel = 0;
+        // Move slower/faster
+        if (k_ctrl && !k_shift)      vel *= 0.2;
+        else if (k_shift && !k_ctrl) vel *= 4;
+        // Update camera position
         camera.pos += camera.forward * vel * FPS.dTimeSec;
 
         // Perform transformation
         for (ULLInt i = 0; i < cube.pos.size(); i++) {
-            // Fun function to rotate the cube
-            cube.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI / 6 * FPS.dTimeSec, 0));
+            // Fun functions
+            cube.pos[i].translate(Vec3f(0, FPS.dTimeSec, 0));
 
             // Project vertices to NDC
             Vec4f v = cube.pos[i].toVec4f();
             v = camera.mvp * v;
+            v.y *= -1; // Invert Y axis
             transformedVs[i] = v.toVec3f();
         }
 
