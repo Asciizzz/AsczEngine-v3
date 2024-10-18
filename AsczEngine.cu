@@ -75,6 +75,7 @@ int main() {
 
     Render3D &RENDER = Render3D::instance();
     RENDER.setResolution(1600, 900);
+    RENDER.BUFFER.resize(int(RENDER.RES.x), int(RENDER.RES.y), RENDER.PIXEL_SIZE);
 
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
@@ -107,7 +108,7 @@ int main() {
             // Cool color
             float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-            color.push_back(Vec3f(255 * ratioX, 255, 255 * ratioZ));
+            color.push_back(Vec3f(255 * ratioX, 125, 125 * ratioZ));
         }
     }
 

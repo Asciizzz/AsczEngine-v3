@@ -6,7 +6,18 @@
 
 class Buffer3D {
 public:
+    int buffWidth, buffHeight, buffSize;
 
+    // Device pointers
+    float *depth;
+    Vec3f *color;
+    Vec3f *normal;
+    Vec3f *world;
+    Vec2f *tex;
+
+    Buffer3D();
+    void resize(int width, int height, int pixelSize=1);
+    void free();
 };
 
 #endif

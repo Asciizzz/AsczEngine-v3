@@ -168,15 +168,12 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
 
 void Mesh3D::translate(UInt meshID, Vec3f t) {
     translateVertexKernel<<<blockNumVs, blockSize>>>(pos, mID, numVs, meshID, t);
-    cudaDeviceSynchronize();
 }
 void Mesh3D::rotate(UInt meshID, Vec3f origin, Vec3f rot) {
     rotateVertexKernel<<<blockNumVs, blockSize>>>(pos, mID, numVs, meshID, origin, rot);
-    cudaDeviceSynchronize();
 }
 void Mesh3D::scale(UInt meshID, Vec3f origin, Vec3f scl) {
     scaleVertexKernel<<<blockNumVs, blockSize>>>(pos, mID, numVs, meshID, origin, scl);
-    cudaDeviceSynchronize();
 }
 
 // DEBUG
