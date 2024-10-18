@@ -24,7 +24,7 @@ sf::Color vec3fToColor(Vec3f v) {
     return sf::Color(v.x, v.y, v.z);
 }
 
-__global__ void toTransformVertices(
+__global__ void toPoint2D(
     Point2D *point2D, Camera3D camera,
     Vec3f *pos, Vec3f *color, ULLInt numVs
 ) {
@@ -122,7 +122,7 @@ int main() {
     }
 
     Mesh test(0, pos, normal, tex, color, faces);
-    Mesh3D MESH(test); 
+    Mesh3D MESH(test);
 
     // Device memory for transformed vertices
     Point2D *d_point2D = new Point2D[MESH.numVs];
@@ -192,13 +192,17 @@ int main() {
             camera.pos += camera.forward * vel * FPS.dTimeSec;
         }
 
-        // Perform transformation
-        toTransformVertices<<<(MESH.numVs + 255) / 256, 256>>>(
+        // Rotate the mesh
+        float rotY = M_PI_2 / 6 * FPS.dTimeSec;
+        MESH.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
+
+        // Perform 2D projection
+        toPoint2D<<<MESH.blockNumVs, MESH.blockSize>>>(
             d_point2D, camera, MESH.pos, MESH.color, MESH.numVs
         );
 
         // Turn faces into lines for wireframe
-        toLines<<<(MESH.numFs + 255) / 256, 256>>>(
+        toLines<<<MESH.blockNumFs, MESH.blockSize>>>(
             d_point2D, MESH.faces, d_lines, MESH.numFs
         );
 

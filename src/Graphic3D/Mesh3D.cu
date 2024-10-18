@@ -56,6 +56,7 @@ Mesh3D::Mesh3D(Mesh &mesh) :
 // Memory management
 
 void Mesh3D::mallocVertices() {
+    blockNumVs = (numVs + blockSize - 1) / blockSize;
     cudaMalloc(&pos, numVs * sizeof(Vec3f));
     cudaMalloc(&normal, numVs * sizeof(Vec3f));
     cudaMalloc(&tex, numVs * sizeof(Vec2f));
@@ -78,6 +79,7 @@ void Mesh3D::freeVertices() {
 }
 
 void Mesh3D::mallocFaces() {
+    blockNumFs = (numFs + blockSize - 1) / blockSize;
     cudaMalloc(&faces, numFs * sizeof(Vec3uli));
 }
 
@@ -95,7 +97,7 @@ void Mesh3D::freeFaces() {
 
 void Mesh3D::uploadData(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces) {
     // Vertices
-    setMeshIDKernel<<<(numVs + 255) / 256, 256>>>(this->mID, numVs, id);
+    setMeshIDKernel<<<blockNumVs, blockSize>>>(this->mID, numVs, id);
     cudaMemcpy(this->pos, pos.data(), pos.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
     cudaMemcpy(this->normal, normal.data(), normal.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
     cudaMemcpy(this->tex, tex.data(), tex.size() * sizeof(Vec2f), cudaMemcpyHostToDevice);
@@ -153,6 +155,23 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     // Update number of vertices and faces
     numVs = newNumVs;
     numFs = newNumFs;
+    blockNumVs = (numVs + blockSize - 1) / blockSize;
+    blockNumFs = (numFs + blockSize - 1) / blockSize;
+}
+
+// Transformations
+
+void Mesh3D::translate(UInt meshID, Vec3f t) {
+    translateVertexKernel<<<blockNumVs, blockSize>>>(pos, mID, numVs, meshID, t);
+    cudaDeviceSynchronize();
+}
+void Mesh3D::rotate(UInt meshID, Vec3f origin, Vec3f rot) {
+    rotateVertexKernel<<<blockNumVs, blockSize>>>(pos, mID, numVs, meshID, origin, rot);
+    cudaDeviceSynchronize();
+}
+void Mesh3D::scale(UInt meshID, Vec3f origin, Vec3f scl) {
+    scaleVertexKernel<<<blockNumVs, blockSize>>>(pos, mID, numVs, meshID, origin, scl);
+    cudaDeviceSynchronize();
 }
 
 // DEBUG
@@ -204,4 +223,24 @@ __global__ void setMeshIDKernel(UInt *mID, ULLInt numVs, UInt id) {
     if (idx >= numVs) return;
 
     mID[idx] = id;
+}
+
+// Kernel for transforming vertices
+__global__ void translateVertexKernel(Vec3f *pos, UInt *mID, ULLInt numVs, UInt meshID, Vec3f t) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numVs || mID[idx] != meshID) return;
+
+    pos[idx].translate(t);
+}
+__global__ void rotateVertexKernel(Vec3f *pos, UInt *mID, ULLInt numVs, UInt meshID, Vec3f origin, Vec3f rot) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numVs || mID[idx] != meshID) return;
+
+    pos[idx].rotate(origin, rot);
+}
+__global__ void scaleVertexKernel(Vec3f *pos, UInt *mID, ULLInt numVs, UInt meshID, Vec3f origin, Vec3f scl) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numVs || mID[idx] != meshID) return;
+
+    pos[idx].scale(origin, scl);
 }

@@ -40,6 +40,10 @@ public:
     // Number of vertices and faces
     ULLInt numVs, numFs;
 
+    // Block properties
+    ULLInt blockSize = 256;
+    ULLInt blockNumVs, blockNumFs;
+
     // Vertices
     Vec3f *pos;
     Vec3f *normal;
@@ -69,6 +73,11 @@ public:
     // Mesh operators
     void operator+=(Mesh3D &mesh);
 
+    // Transformations
+    void translate(UInt meshID, Vec3f t);
+    void rotate(UInt meshID, Vec3f origin, Vec3f rot);
+    void scale(UInt meshID, Vec3f origin, Vec3f scl);
+
     // DEBUG
     void printVertices(bool pos=true, bool normal=true, bool tex=true, bool color=true, bool mID=true);
     void printFaces();
@@ -77,5 +86,10 @@ public:
 // Kernel for preparing vertices
 __global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt numFs, ULLInt offset);
 __global__ void setMeshIDKernel(UInt *mID, ULLInt numVs, UInt id);
+
+// Kernel for transforming vertices
+__global__ void translateVertexKernel(Vec3f *pos, UInt *mID, ULLInt numVs, UInt meshID, Vec3f t);
+__global__ void rotateVertexKernel(Vec3f *pos, UInt *mID, ULLInt numVs, UInt meshID, Vec3f origin, Vec3f rot);
+__global__ void scaleVertexKernel(Vec3f *pos, UInt *mID, ULLInt numVs, UInt meshID, Vec3f origin, Vec3f scl);
 
 #endif
