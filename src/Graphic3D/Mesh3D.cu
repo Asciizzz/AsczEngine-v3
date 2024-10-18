@@ -153,7 +153,7 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     cudaMalloc(&newFaces, newNumFs * sizeof(Vec3uli));
     cudaMemcpy(newFaces, faces, numFs * sizeof(Vec3uli), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newFaces + numFs, mesh.faces, mesh.numFs * sizeof(Vec3uli), cudaMemcpyDeviceToDevice);
-    incrementFaceIdxKernel<<<(mesh.numFs + 255) / 256, 256>>>(newFaces, mesh.numFs, numVs);
+    incrementFaceIdxKernel<<<blockNumFs, blockSize>>>(newFaces, mesh.numFs, numVs);
     cudaFree(faces);
     faces = newFaces;
 

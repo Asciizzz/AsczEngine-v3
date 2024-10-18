@@ -132,6 +132,7 @@ int main() {
 
     Mesh test(0, world, normal, texture, color, faces);
     RENDER.MESH += Mesh3D(test);
+    RENDER.MESH.printVertices();
 
     // Device memory for transformed vertices
     Point2D *d_point2D = new Point2D[RENDER.MESH.numVs];
