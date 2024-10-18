@@ -6,23 +6,23 @@
 
 struct Line {
     Vec3f p0, p1, p2;
-    Vec3f color0, color1, color2;
+    Vec4f color0, color1, color2;
     bool in0, in1, in2;
 };
 
 struct Point2D {
     Vec3f screen;
-    Vec3f color;
+    Vec4f color;
     bool isInsideFrustum;
 };
 
-sf::Color vec3fToColor(Vec3f v) {
-    return sf::Color(v.x, v.y, v.z);
+sf::Color vec4fToColor(Vec4f v) {
+    return sf::Color(v.x, v.y, v.z, v.w);
 }
 
 __global__ void toPoint2D(
     Point2D *point2D, Camera3D camera,
-    Vec3f *world, Vec3f *color, ULLInt numVs
+    Vec3f *world, Vec4f *color, ULLInt numVs
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numVs) return;
@@ -53,9 +53,9 @@ __global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, ULLInt nu
     Vec3f v1 = point2D[f.y].screen;
     Vec3f v2 = point2D[f.z].screen;
     // Color
-    Vec3f c0 = point2D[f.x].color;
-    Vec3f c1 = point2D[f.y].color;
-    Vec3f c2 = point2D[f.z].color;
+    Vec4f c0 = point2D[f.x].color;
+    Vec4f c1 = point2D[f.y].color;
+    Vec4f c2 = point2D[f.z].color;
     // Inside frustum
     bool in0 = point2D[f.x].isInsideFrustum;
     bool in1 = point2D[f.y].isInsideFrustum;
@@ -81,8 +81,8 @@ int main() {
     // Graphing calculator for y = f(x, z)
     Vecs3f world;
     Vecs3f normal;
-    Vecs2f tex;
-    Vecs3f color;
+    Vecs2f texture;
+    Vecs4f color;
 
     Vecs3uli faces;
 
@@ -101,12 +101,12 @@ int main() {
             world.push_back(Vec3f(x, y, z));
             // Not important for now
             normal.push_back(Vec3f(0, 1, 0));
-            tex.push_back(Vec2f(0, 0));
+            texture.push_back(Vec2f(0, 0));
 
             // Cool color
             float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-            color.push_back(Vec3f(255 * ratioX, 125, 125 * ratioZ));
+            color.push_back(Vec4f(255 * ratioX, 125, 125 * ratioZ, 255));
         }
     }
 
@@ -119,7 +119,7 @@ int main() {
         }
     }
 
-    Mesh test(0, world, normal, tex, color, faces);
+    Mesh test(0, world, normal, texture, color, faces);
     RENDER.MESH += Mesh3D(test);
 
     // Device memory for transformed vertices
@@ -212,14 +212,14 @@ int main() {
             Line l = lines[i];
             if (!l.in0 || !l.in1 || !l.in2) continue;
 
-            sf::Color c0 = vec3fToColor(l.color0);
-            sf::Color c1 = vec3fToColor(l.color1);
-            sf::Color c2 = vec3fToColor(l.color2);
+            sf::Color c0 = vec4fToColor(l.color0);
+            sf::Color c1 = vec4fToColor(l.color1);
+            sf::Color c2 = vec4fToColor(l.color2);
 
             sf::Vertex v1(sf::Vector2f(l.p0.x, l.p0.y), c0);
             sf::Vertex v2(sf::Vector2f(l.p1.x, l.p1.y), c1);
             sf::Vertex v3(sf::Vector2f(l.p2.x, l.p2.y), c2);
-            
+
             sf::Vertex line[] = {v1, v2, v3, v1};
             window.draw(line, 4, sf::LineStrip);
         }

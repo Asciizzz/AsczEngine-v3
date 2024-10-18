@@ -14,7 +14,7 @@ We will group related attributes together
 We will have 4 arrays for vertex data:
 - worldition (x y z)
 - Normal (nx ny nz)
-- Texture (u v)
+- Textureture (u v)
 - Mesh ID (id)
 */
 
@@ -23,13 +23,13 @@ We will have 4 arrays for vertex data:
 struct Mesh {
     Vecs3f world;
     Vecs3f normal;
-    Vecs2f tex;
-    Vecs3f color;
+    Vecs2f texture;
+    Vecs4f color;
     UInts mID;
 
     Vecs3uli faces;
 
-    Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces);
+    Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
     Mesh(Mesh &mesh);
 
     Mesh operator+=(Mesh &mesh);
@@ -47,15 +47,15 @@ public:
     // Vertices
     Vec3f *world;
     Vec3f *normal;
-    Vec2f *tex;
-    Vec3f *color;
+    Vec2f *texture;
+    Vec4f *color;
     UInt *mID;
 
     // Faces (triangles)
     Vec3uli *faces;
 
     Mesh3D(ULLInt numVs=0, ULLInt numFs=0);
-    Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces);
+    Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
     Mesh3D(Mesh &mesh);
     ~Mesh3D();
 
@@ -69,7 +69,7 @@ public:
     void freeFaces();
 
     // Upload host data to device
-    void uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces);
+    void uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
 
     // Mesh operators
     void operator+=(Mesh3D &mesh);
@@ -80,7 +80,7 @@ public:
     void scale(UInt meshID, Vec3f origin, Vec3f scl);
 
     // DEBUG
-    void printVertices(bool world=true, bool normal=true, bool tex=true, bool color=true, bool mID=true);
+    void printVertices(bool world=true, bool normal=true, bool texture=true, bool color=true, bool mID=true);
     void printFaces();
 };
 
