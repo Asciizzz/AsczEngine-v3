@@ -115,7 +115,7 @@ int main() {
         // Perform transformation
         for (ULLInt i = 0; i < cube.pos.size(); i++) {
             // Fun functions
-            cube.pos[i].translate(Vec3f(0, FPS.dTimeSec, 0));
+            cube.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI * FPS.dTimeSec, 0));
 
             // Project vertices to NDC
             Vec4f v = cube.pos[i].toVec4f();

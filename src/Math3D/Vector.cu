@@ -1,4 +1,5 @@
 #include <Vector.cuh>
+#include <Matrix.cuh>
 
 // VEC2f
 __host__ __device__ Vec2f::Vec2f() : x(0), y(0) {}
@@ -56,21 +57,39 @@ __host__ __device__ Vec3f Vec3f::translate(Vec3f& vec, const Vec3f& t) {
     return vec + t;
 }
 __host__ __device__ Vec3f Vec3f::rotate(Vec3f& vec, const Vec3f& origin, const Vec3f& rot) {
-    Vec3f v = vec - origin;
-    double wx = rot.x;
-    double wy = rot.y;
-    double wz = rot.z;
-    double vx = v.x;
-    double vy = v.y;
-    double vz = v.z;
+    // Translate to origin
+    Vec3f diff = vec - origin;
 
-    vx = vx * (cos(wy) * cos(wz)) + vy * (cos(wz) * sin(wx) * sin(wy) - cos(wx) * sin(wz)) + vz * (cos(wx) * cos(wz) * sin(wy) + sin(wx) * sin(wz));
-    vy = vx * (cos(wy) * sin(wz)) + vy * (cos(wx) * cos(wz) + sin(wx) * sin(wy) * sin(wz)) + vz * (-cos(wz) * sin(wx) + cos(wx) * sin(wy) * sin(wz));
-    vz = vx * (-sin(wy)) + v.y * cos(wy) * sin(wx) + vz * cos(wx) * cos(wy);
+    float cosX = cos(rot.x), sinX = sin(rot.x);
+    float cosY = cos(rot.y), sinY = sin(rot.y);
+    float cosZ = cos(rot.z), sinZ = sin(rot.z);
 
-    v = Vec3f(vx, vy, vz);
-    v += origin;
-    return v;
+    // Rotation matrices
+    float rX[4][4] = {
+        {1, 0, 0, 0},
+        {0, cosX, -sinX, 0},
+        {0, sinX, cosX, 0},
+        {0, 0, 0, 1}
+    };
+    float rY[4][4] = {
+        {cosY, 0, sinY, 0},
+        {0, 1, 0, 0},
+        {-sinY, 0, cosY, 0},
+        {0, 0, 0, 1}
+    };
+    float rZ[4][4] = {
+        {cosZ, -sinZ, 0, 0},
+        {sinZ, cosZ, 0, 0},
+        {0, 0, 1, 0},
+        {0, 0, 0, 1}
+    };
+    Mat4f rMat = Mat4f(rX) * Mat4f(rY) * Mat4f(rZ);
+
+    Vec4f rVec4 = rMat * diff.toVec4f();
+    Vec3f rVec3 = rVec4.toVec3f();
+    rVec3 += origin;
+
+    return rVec3;
 }
 __host__ __device__ Vec3f Vec3f::scale(Vec3f& vec, const Vec3f& origin, const Vec3f& scl) {
     Vec3f diff = vec - origin;
@@ -92,6 +111,9 @@ __host__ __device__ void Vec3f::rotate(const Vec3f& origin, const Vec3f& rot) {
     *this = rotate(*this, origin, rot);
 }
 __host__ __device__ void Vec3f::scale(const Vec3f& origin, const Vec3f& scl) {
+    *this = scale(*this, origin, scl);
+}
+__host__ __device__ void Vec3f::scale(const Vec3f& origin, const float scl) {
     *this = scale(*this, origin, scl);
 }
 
