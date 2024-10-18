@@ -122,7 +122,7 @@ int main() {
     for (ULLInt i = 0; i < world.size(); i++) {
         // Set opacity based on the height
         float ratioY = (world[i].y - minY) / (maxY - minY);
-        color[i].w = 10 + 200 * ratioY;
+        color[i].w = 100 + 150 * ratioY;
     }
 
     // Append faces to the grid
