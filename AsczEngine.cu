@@ -6,9 +6,9 @@
 #include <SFML/Graphics.hpp>
 
 struct Line {
-    Vec3f p0, p1;
-    Vec3f color0, color1;
-    bool canDraw;
+    Vec3f p0, p1, p2;
+    Vec3f color0, color1, color2;
+    bool in0, in1, in2;
 };
 
 struct Point2D {
@@ -21,7 +21,7 @@ int width = 1600;
 int height = 900;
 
 __global__ void toTransformVertices(
-    Point2D *transformedVs, Camera3D camera,
+    Point2D *point2D, Camera3D camera,
     Vec3f *pos, Vec3f *color, ULLInt numVs
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -32,21 +32,21 @@ __global__ void toTransformVertices(
     Vec3f t3 = t4.toVec3f();
 
     // Check if the point is inside the frustum
-    transformedVs[i].pos = t3;
-    transformedVs[i].color = color[i];
-    transformedVs[i].isInsideFrustum = camera.isInsideFrustum(pos[i]);
+    point2D[i].pos = t3;
+    point2D[i].color = color[i];
+    point2D[i].isInsideFrustum = camera.isInsideFrustum(pos[i]);
 }
 
-__global__ void toLines(Point2D *transformedVs, Vec3uli *faces, Line *lines, ULLInt numFs) {
+__global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, ULLInt numFs) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
 
     Vec3uli f = faces[i];
 
     // NDC
-    Vec3f v0 = transformedVs[f.x].pos;
-    Vec3f v1 = transformedVs[f.y].pos;
-    Vec3f v2 = transformedVs[f.z].pos;
+    Vec3f v0 = point2D[f.x].pos;
+    Vec3f v1 = point2D[f.y].pos;
+    Vec3f v2 = point2D[f.z].pos;
     // Screen space
     v0.x = (v0.x + 1) * 800;
     v0.y = (1 - v0.y) * 450;
@@ -55,18 +55,17 @@ __global__ void toLines(Point2D *transformedVs, Vec3uli *faces, Line *lines, ULL
     v2.x = (v2.x + 1) * 800;
     v2.y = (1 - v2.y) * 450;
     // Color
-    Vec3f c0 = transformedVs[f.x].color;
-    Vec3f c1 = transformedVs[f.y].color;
-    Vec3f c2 = transformedVs[f.z].color;
+    Vec3f c0 = point2D[f.x].color;
+    Vec3f c1 = point2D[f.y].color;
+    Vec3f c2 = point2D[f.z].color;
     // Inside frustum
-    bool in0 = transformedVs[f.x].isInsideFrustum;
-    bool in1 = transformedVs[f.y].isInsideFrustum;
-    bool in2 = transformedVs[f.z].isInsideFrustum;
+    bool in0 = point2D[f.x].isInsideFrustum;
+    bool in1 = point2D[f.y].isInsideFrustum;
+    bool in2 = point2D[f.z].isInsideFrustum;
 
-
-    lines[i * 3] = Line{v0, v1, c0, c1, in0 && in1};
-    lines[i * 3 + 1] = Line{v1, v2, c1, c2, in1 && in2};
-    lines[i * 3 + 2] = Line{v2, v0, c2, c0, in2 && in0};
+    lines[i].p0 = v0; lines[i].p1 = v1; lines[i].p2 = v2;
+    lines[i].color0 = c0; lines[i].color1 = c1; lines[i].color2 = c2;
+    lines[i].in0 = in0; lines[i].in1 = in1; lines[i].in2 = in2;
 }
 
 int main() {
@@ -74,8 +73,10 @@ int main() {
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
-    // Graphing calculator for y = f(x, z)
+    sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
+    window.setMouseCursorVisible(false);
 
+    // Graphing calculator for y = f(x, z)
     Vecs3f pos;
     Vecs3f normal;
     Vecs2f tex;
@@ -116,28 +117,21 @@ int main() {
         }
     }
 
-    // Create a cube mesh with 8 vertices and 12 faces
     Mesh test(0, pos, normal, tex, color, faces);
-
-    // For the time being we gonna just use for loop to transform vertices
     Mesh3D MESH(test); 
 
     // Device memory for transformed vertices
-    Point2D *d_transformedVs = new Point2D[MESH.numVs];
-    cudaMalloc(&d_transformedVs, MESH.numVs * sizeof(Point2D));
+    Point2D *d_point2D = new Point2D[MESH.numVs];
+    cudaMalloc(&d_point2D, MESH.numVs * sizeof(Point2D));
 
     // Device memory for lines
-    Line *d_lines = new Line[MESH.numFs * 3];
-    cudaMalloc(&d_lines, MESH.numFs * 3 * sizeof(Line));
+    Line *d_lines = new Line[MESH.numFs];
+    cudaMalloc(&d_lines, MESH.numFs * sizeof(Line));
     // Host memory for lines
-    Line *lines = new Line[MESH.numFs * 3];
+    Line *lines = new Line[MESH.numFs];
 
     Camera3D camera;
-
-    sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
-    window.setMouseCursorVisible(false);
-
-    camera.aspect = float(width) / float(height);
+    camera.aspect = float(width) / height;
 
     float moveX = 0;
     float moveZ = 0;
@@ -196,30 +190,33 @@ int main() {
 
         // Perform transformation
         toTransformVertices<<<(MESH.numVs + 255) / 256, 256>>>(
-            d_transformedVs, camera, MESH.pos, MESH.color, MESH.numVs
+            d_point2D, camera, MESH.pos, MESH.color, MESH.numVs
         );
 
         // Turn faces into lines for wireframe
         toLines<<<(MESH.numFs + 255) / 256, 256>>>(
-            d_transformedVs, MESH.faces, d_lines, MESH.numFs
+            d_point2D, MESH.faces, d_lines, MESH.numFs
         );
 
         // Copy lines from device to host
-        cudaMemcpy(lines, d_lines, MESH.numFs * 3 * sizeof(Line), cudaMemcpyDeviceToHost);
+        cudaMemcpy(lines, d_lines, MESH.numFs * sizeof(Line), cudaMemcpyDeviceToHost);
 
         window.clear(sf::Color::Black);
         // Draw mesh based on transformed vertices
-        for (ULLInt i = 0; i < MESH.numFs * 3; i++) {
+        for (ULLInt i = 0; i < MESH.numFs; i++) {
             Line l = lines[i];
-            if (!l.canDraw) continue;
+            if (!l.in0 || !l.in1 || !l.in2) continue;
+
             sf::Color c0(l.color0.x, l.color0.y, l.color0.z);
             sf::Color c1(l.color1.x, l.color1.y, l.color1.z);
+            sf::Color c2(l.color2.x, l.color2.y, l.color2.z);
 
-            sf::Vertex line[] = {
-                sf::Vertex(sf::Vector2f(l.p0.x, l.p0.y), c0),
-                sf::Vertex(sf::Vector2f(l.p1.x, l.p1.y), c1)
-            };
-            window.draw(line, 2, sf::Lines);
+            sf::Vertex v1(sf::Vector2f(l.p0.x, l.p0.y), c0);
+            sf::Vertex v2(sf::Vector2f(l.p1.x, l.p1.y), c1);
+            sf::Vertex v3(sf::Vector2f(l.p2.x, l.p2.y), c2);
+            
+            sf::Vertex line[] = {v1, v2, v3, v1};
+            window.draw(line, 4, sf::LineStrip);
         }
 
         // Log handling
