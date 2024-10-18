@@ -16,6 +16,9 @@ int main() {
         Vecs2f({ // Texture
             Vec2f(0, 0), Vec2f(1, 0), Vec2f(1, 1), Vec2f(0, 1)
         }),
+        Vecs3f({ // Color
+            Vec3f(255, 0, 0), Vec3f(0, 255, 0), Vec3f(0, 0, 255), Vec3f(255, 255, 0)
+        }),
         Vecs3uli({ // Faces
             Vec3uli(0, 1, 2), Vec3uli(0, 2, 3)
         })
@@ -31,10 +34,12 @@ int main() {
 
     Camera3D camera;
 
-    sf::RenderWindow window(sf::VideoMode(800, 600), "AsczEngine");
+    int width = 1600;
+    int height = 900;
+    sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
     window.setMouseCursorVisible(false);
 
-    camera.aspect = window.getSize().x / window.getSize().y;
+    camera.aspect = float(width) / float(height);
 
     FpsHandler &FPS = FpsHandler::instance();
     while (window.isOpen()) {
@@ -51,11 +56,11 @@ int main() {
 
         // Mouse movement handling
         sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-        sf::Mouse::setPosition(sf::Vector2i(400, 300), window);
+        sf::Mouse::setPosition(sf::Vector2i(width/2, height/2), window);
 
         // Move from center
-        int dMx = mousePos.x - 400;
-        int dMy = mousePos.y - 300;
+        int dMx = mousePos.x - width/2;
+        int dMy = mousePos.y - height/2;
 
         // Camera look around
         camera.rot.x += dMy * camera.mSens * FPS.dTimeSec;
@@ -71,9 +76,6 @@ int main() {
         else if (m_right && !m_left) vel = -20;
         else                         vel = 0;
         camera.pos += camera.forward * vel * FPS.dTimeSec;
-        camera.pos.print();
-        camera.rot.print();
-        std::cout << "---\n";
 
         // Perform transformation
         for (ULLInt i = 0; i < mesh.pos.size(); i++) {
@@ -86,25 +88,36 @@ int main() {
         // Draw mesh based on transformed vertices
         for (ULLInt i = 0; i < mesh.faces.size(); i++) {
             Vec3uli f = mesh.faces[i];
-            sf::ConvexShape triangle;
-            triangle.setPointCount(3);
             // NDC coordinates
             Vec3f v0 = transformedVs[f.x];
             Vec3f v1 = transformedVs[f.y];
             Vec3f v2 = transformedVs[f.z];
             // Screen coordinates
-            Vec2f p0 = Vec2f((v0.x + 1) * 400, (v0.y + 1) * 300);
-            Vec2f p1 = Vec2f((v1.x + 1) * 400, (v1.y + 1) * 300);
-            Vec2f p2 = Vec2f((v2.x + 1) * 400, (v2.y + 1) * 300);
+            Vec2f p0 = Vec2f((v0.x + 1) * width/2, (v0.y + 1) * height/2);
+            Vec2f p1 = Vec2f((v1.x + 1) * width/2, (v1.y + 1) * height/2);
+            Vec2f p2 = Vec2f((v2.x + 1) * width/2, (v2.y + 1) * height/2);
 
-            triangle.setPoint(0, sf::Vector2f(p0.x, p0.y));
-            triangle.setPoint(1, sf::Vector2f(p1.x, p1.y));
-            triangle.setPoint(2, sf::Vector2f(p2.x, p2.y));
+            sf::Color colorA = sf::Color(mesh.color[f.x].x, mesh.color[f.x].y, mesh.color[f.x].z);
+            sf::Color colorB = sf::Color(mesh.color[f.y].x, mesh.color[f.y].y, mesh.color[f.y].z);
+            sf::Color colorC = sf::Color(mesh.color[f.z].x, mesh.color[f.z].y, mesh.color[f.z].z);
 
-            sf::Color color = i % 2 ? sf::Color::Red : sf::Color::Blue;
-            triangle.setFillColor(color);
+            // Create 3 lines for each face to draw wireframe
+            sf::Vertex line01[] = {
+                sf::Vertex(sf::Vector2f(p0.x, p0.y), colorA),
+                sf::Vertex(sf::Vector2f(p1.x, p1.y), colorB)
+            };
+            sf::Vertex line12[] = {
+                sf::Vertex(sf::Vector2f(p1.x, p1.y), colorB),
+                sf::Vertex(sf::Vector2f(p2.x, p2.y), colorC)
+            };
+            sf::Vertex line02[] = {
+                sf::Vertex(sf::Vector2f(p0.x, p0.y), colorA),
+                sf::Vertex(sf::Vector2f(p2.x, p2.y), colorC)
+            };
 
-            window.draw(triangle);
+            window.draw(line01, 2, sf::Lines);
+            window.draw(line12, 2, sf::Lines);
+            window.draw(line02, 2, sf::Lines);
         }
 
         window.display();

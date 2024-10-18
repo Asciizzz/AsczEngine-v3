@@ -22,11 +22,12 @@ struct Mesh {
     Vecs3f pos;
     Vecs3f normal;
     Vecs2f tex;
+    Vecs3f color;
     UInts mID;
 
     Vecs3uli faces;
 
-    Mesh(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3uli &faces);
+    Mesh(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces);
 
     Mesh operator+=(Mesh &mesh);
 };
@@ -40,19 +41,14 @@ public:
     Vec3f *pos;
     Vec3f *normal;
     Vec2f *tex;
+    Vec3f *color;
     UInt *mID;
 
     // Faces (triangles)
     Vec3uli *faces;
 
     Mesh3D(ULLInt numVs=0, ULLInt numFs=0);
-    Mesh3D(
-        UInt id,
-        Vecs3f &pos,
-        Vecs3f &normal,
-        Vecs2f &tex,
-        Vecs3uli &faces
-    );
+    Mesh3D(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces);
     Mesh3D(Mesh &mesh);
 
     // Memory management
@@ -65,13 +61,13 @@ public:
     void freeFaces();
 
     // Upload host data to device
-    void uploadData(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3uli &faces);
+    void uploadData(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces);
 
     // Mesh operators
     void operator+=(Mesh3D &mesh);
 
     // DEBUG
-    void printVertices(bool pos=true, bool normal=true, bool tex=true, bool mID=true);
+    void printVertices(bool pos=true, bool normal=true, bool tex=true, bool color=true, bool mID=true);
     void printFaces();
 };
 

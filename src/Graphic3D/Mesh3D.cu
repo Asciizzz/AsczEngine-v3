@@ -2,14 +2,15 @@
 
 // Mesh struct
 
-Mesh::Mesh(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3uli &faces) :
-    pos(pos), normal(normal), tex(tex), mID(pos.size(), id), faces(faces)
+Mesh::Mesh(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces) :
+    pos(pos), normal(normal), tex(tex), color(color), mID(pos.size(), id), faces(faces)
 {}
 
 Mesh Mesh::operator+=(Mesh &mesh) {
     pos.insert(pos.end(), mesh.pos.begin(), mesh.pos.end());
     normal.insert(normal.end(), mesh.normal.begin(), mesh.normal.end());
     tex.insert(tex.end(), mesh.tex.begin(), mesh.tex.end());
+    color.insert(color.end(), mesh.color.begin(), mesh.color.end());
     mID.insert(mID.end(), mesh.mID.begin(), mesh.mID.end());
     faces.insert(faces.end(), mesh.faces.begin(), mesh.faces.end());
     return *this;
@@ -24,18 +25,12 @@ Mesh3D::Mesh3D(ULLInt numVs, ULLInt numFs) :
     mallocFaces();
 }
 
-Mesh3D::Mesh3D(
-    UInt id,
-    Vecs3f &pos,
-    Vecs3f &normal,
-    Vecs2f &tex,
-    Vecs3uli &faces
-) :
+Mesh3D::Mesh3D(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces) :
     numVs(pos.size()), numFs(faces.size())
 {
     mallocVertices();
     mallocFaces();
-    uploadData(id, pos, normal, tex, faces);
+    uploadData(id, pos, normal, tex, color, faces);
 }
 
 Mesh3D::Mesh3D(Mesh &mesh) :
@@ -43,7 +38,7 @@ Mesh3D::Mesh3D(Mesh &mesh) :
 {
     mallocVertices();
     mallocFaces();
-    uploadData(mesh.mID[0], mesh.pos, mesh.normal, mesh.tex, mesh.faces);
+    uploadData(mesh.mID[0], mesh.pos, mesh.normal, mesh.tex, mesh.color, mesh.faces);
 }
 
 // Memory management
@@ -52,6 +47,7 @@ void Mesh3D::mallocVertices() {
     cudaMalloc(&pos, numVs * sizeof(Vec3f));
     cudaMalloc(&normal, numVs * sizeof(Vec3f));
     cudaMalloc(&tex, numVs * sizeof(Vec2f));
+    cudaMalloc(&color, numVs * sizeof(Vec3f));
     cudaMalloc(&mID, numVs * sizeof(UInt));
 }
 
@@ -65,6 +61,7 @@ void Mesh3D::freeVertices() {
     cudaFree(pos);
     cudaFree(normal);
     cudaFree(tex);
+    cudaFree(color);
     cudaFree(mID);
 }
 
@@ -84,26 +81,14 @@ void Mesh3D::freeFaces() {
 
 // Upload host data to device
 
-void Mesh3D::uploadData(
-    UInt id,
-    Vecs3f &pos,
-    Vecs3f &normal,
-    Vecs2f &tex,
-    Vecs3uli &faces
-) {
-    if (pos.size() != numVs ||
-        normal.size() != numVs ||
-        tex.size() != numVs ||
-        faces.size() != numFs
-    ) {
-        std::cerr << "Error: Data size mismatch" << std::endl;
-        return;
-    }
-
+void Mesh3D::uploadData(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces) {
+    // Vertices
     setMeshIDKernel<<<(numVs + 255) / 256, 256>>>(this->mID, numVs, id);
     cudaMemcpy(this->pos, pos.data(), pos.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
     cudaMemcpy(this->normal, normal.data(), normal.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
     cudaMemcpy(this->tex, tex.data(), tex.size() * sizeof(Vec2f), cudaMemcpyHostToDevice);
+    cudaMemcpy(this->color, color.data(), color.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
+    // Faces indices
     cudaMemcpy(this->faces, faces.data(), faces.size() * sizeof(Vec3uli), cudaMemcpyHostToDevice);
 }
 
@@ -115,23 +100,32 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     Vec3f *newPos;
     Vec3f *newNormal;
     Vec2f *newTex;
+    Vec3f *newColor;
     UInt *newMID;
     cudaMalloc(&newPos, newNumVs * sizeof(Vec3f));
     cudaMalloc(&newNormal, newNumVs * sizeof(Vec3f));
     cudaMalloc(&newTex, newNumVs * sizeof(Vec2f));
+    cudaMalloc(&newColor, newNumVs * sizeof(Vec3f));
     cudaMalloc(&newMID, newNumVs * sizeof(UInt));
+    // Copy old data
     cudaMemcpy(newPos, pos, numVs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newNormal, normal, numVs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTex, tex, numVs * sizeof(Vec2f), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newColor, color, numVs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newMID, mID, numVs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+    // Copy new data
     cudaMemcpy(newPos + numVs, mesh.pos, mesh.numVs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newNormal + numVs, mesh.normal, mesh.numVs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTex + numVs, mesh.tex, mesh.numVs * sizeof(Vec2f), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newColor + numVs, mesh.color, mesh.numVs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newMID + numVs, mesh.mID, mesh.numVs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+    // Free old data
     freeVertices();
+    // Update vertices
     pos = newPos;
     normal = newNormal;
     tex = newTex;
+    color = newColor;
     mID = newMID;
 
     // Resize faces (with offset for the added vertices)
@@ -151,15 +145,17 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
 
 // DEBUG
 
-void Mesh3D::printVertices(bool p_pos, bool p_normal, bool p_tex, bool p_mID) {
+void Mesh3D::printVertices(bool p_pos, bool p_normal, bool p_tex, bool p_color, bool p_mID) {
     Vec3f *hPos = new Vec3f[numVs];
     Vec3f *hNormal = new Vec3f[numVs];
     Vec2f *hTex = new Vec2f[numVs];
+    Vec3f *hColor = new Vec3f[numVs];
     UInt *hMID = new UInt[numVs];
 
     cudaMemcpy(hPos, pos, numVs * sizeof(Vec3f), cudaMemcpyDeviceToHost);
     cudaMemcpy(hNormal, normal, numVs * sizeof(Vec3f), cudaMemcpyDeviceToHost);
     cudaMemcpy(hTex, tex, numVs * sizeof(Vec2f), cudaMemcpyDeviceToHost);
+    cudaMemcpy(hColor, color, numVs * sizeof(Vec3f), cudaMemcpyDeviceToHost);
     cudaMemcpy(hMID, mID, numVs * sizeof(UInt), cudaMemcpyDeviceToHost);
 
     for (ULLInt i = 0; i < numVs; i++) {
@@ -167,13 +163,11 @@ void Mesh3D::printVertices(bool p_pos, bool p_normal, bool p_tex, bool p_mID) {
         if (p_pos) printf("| Pos: (%f, %f, %f)\n", hPos[i].x, hPos[i].y, hPos[i].z);
         if (p_normal) printf("| Normal: (%f, %f, %f)\n", hNormal[i].x, hNormal[i].y, hNormal[i].z);
         if (p_tex) printf("| Tex: (%f, %f)\n", hTex[i].x, hTex[i].y);
+        if (p_color) printf("| Color: (%f, %f, %f)\n", hColor[i].x, hColor[i].y, hColor[i].z);
         if (p_mID) printf("| mID: %u\n", hMID[i]);
     }
 
-    delete[] hPos;
-    delete[] hNormal;
-    delete[] hTex;
-    delete[] hMID;
+    delete[] hPos, hNormal, hTex, hColor, hMID;
 }
 
 void Mesh3D::printFaces() {
