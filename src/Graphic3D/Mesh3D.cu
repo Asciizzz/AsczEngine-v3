@@ -53,6 +53,11 @@ Mesh3D::Mesh3D(Mesh &mesh) :
     uploadData(mesh.mID[0], mesh.pos, mesh.normal, mesh.tex, mesh.color, mesh.faces);
 }
 
+Mesh3D::~Mesh3D() {
+    freeVertices();
+    freeFaces();
+}
+
 // Memory management
 
 void Mesh3D::mallocVertices() {

@@ -17,8 +17,12 @@ public:
     Mat4f view;
     void updateView();
 
-    float fov = M_PI_2, aspect = 1;
-    float near = 0.5, far = 500;
+    float aspect = 1;
+    Vec2f res = {800, 600};
+    void setResolution(float w, float h);
+    float fov = M_PI_2;
+    float near = 0.5;
+    float far = 500;
     Mat4f projection;
     void updateProjection();
 

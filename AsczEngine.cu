@@ -1,7 +1,6 @@
 #include <FpsHandler.cuh>
 #include <CsLogHandler.cuh>
-#include <Mesh3D.cuh>
-#include <Camera3D.cuh>
+#include <Render3D.cuh>
 
 #include <SFML/Graphics.hpp>
 
@@ -16,9 +15,6 @@ struct Point2D {
     Vec3f color;
     bool isInsideFrustum;
 };
-
-int width = 1600;
-int height = 900;
 
 sf::Color vec3fToColor(Vec3f v) {
     return sf::Color(v.x, v.y, v.z);
@@ -41,7 +37,7 @@ __global__ void toPoint2D(
     point2D[i].isInsideFrustum = camera.isInsideFrustum(pos[i]);
 }
 
-__global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, ULLInt numFs) {
+__global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, Vec2f resHalf, ULLInt numFs) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
 
@@ -52,12 +48,12 @@ __global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, ULLInt nu
     Vec3f v1 = point2D[f.y].pos;
     Vec3f v2 = point2D[f.z].pos;
     // Screen space
-    v0.x = (v0.x + 1) * 800;
-    v0.y = (1 - v0.y) * 450;
-    v1.x = (v1.x + 1) * 800;
-    v1.y = (1 - v1.y) * 450;
-    v2.x = (v2.x + 1) * 800;
-    v2.y = (1 - v2.y) * 450;
+    v0.x = (v0.x + 1) * resHalf.x;
+    v0.y = (1 - v0.y) * resHalf.y;
+    v1.x = (v1.x + 1) * resHalf.x;
+    v1.y = (1 - v1.y) * resHalf.y;
+    v2.x = (v2.x + 1) * resHalf.x;
+    v2.y = (1 - v2.y) * resHalf.y;
     // Color
     Vec3f c0 = point2D[f.x].color;
     Vec3f c1 = point2D[f.y].color;
@@ -77,7 +73,10 @@ int main() {
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
-    sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
+    Render3D &RENDER = Render3D::instance();
+    RENDER.setResolution(1600, 900);
+
+    sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
 
     // Graphing calculator for y = f(x, z)
@@ -122,20 +121,17 @@ int main() {
     }
 
     Mesh test(0, pos, normal, tex, color, faces);
-    Mesh3D MESH(test);
+    RENDER.MESH += Mesh3D(test);
 
     // Device memory for transformed vertices
-    Point2D *d_point2D = new Point2D[MESH.numVs];
-    cudaMalloc(&d_point2D, MESH.numVs * sizeof(Point2D));
+    Point2D *d_point2D = new Point2D[RENDER.MESH.numVs];
+    cudaMalloc(&d_point2D, RENDER.MESH.numVs * sizeof(Point2D));
 
     // Device memory for lines
-    Line *d_lines = new Line[MESH.numFs];
-    cudaMalloc(&d_lines, MESH.numFs * sizeof(Line));
+    Line *d_lines = new Line[RENDER.MESH.numFs];
+    cudaMalloc(&d_lines, RENDER.MESH.numFs * sizeof(Line));
     // Host memory for lines
-    Line *lines = new Line[MESH.numFs];
-
-    Camera3D camera;
-    camera.aspect = float(width) / height;
+    Line *lines = new Line[RENDER.MESH.numFs];
 
     float moveX = 0;
     float moveZ = 0;
@@ -153,27 +149,31 @@ int main() {
             // Press f1 to toggle focus
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::F1) {
-                    camera.focus = !camera.focus;
-                    window.setMouseCursorVisible(!camera.focus);
-                    sf::Mouse::setPosition(sf::Vector2i(width/2, height/2), window);
+                    RENDER.CAMERA.focus = !RENDER.CAMERA.focus;
+                    window.setMouseCursorVisible(!RENDER.CAMERA.focus);
+                    sf::Mouse::setPosition(sf::Vector2i(
+                        RENDER.RES_HALF.x, RENDER.RES_HALF.y
+                    ), window);
                 }
             }
         }
 
-        if (camera.focus) {
+        if (RENDER.CAMERA.focus) {
             // Mouse movement handling
             sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-            sf::Mouse::setPosition(sf::Vector2i(width/2, height/2), window);
+            sf::Mouse::setPosition(sf::Vector2i(
+                RENDER.RES_HALF.x, RENDER.RES_HALF.y
+            ), window);
 
             // Move from center
-            int dMx = mousePos.x - width/2;
-            int dMy = mousePos.y - height/2;
+            int dMx = mousePos.x - RENDER.RES_HALF.x;
+            int dMy = mousePos.y - RENDER.RES_HALF.y;
 
             // Camera look around
-            camera.rot.x -= dMy * camera.mSens * FPS.dTimeSec;
-            camera.rot.y -= dMx * camera.mSens * FPS.dTimeSec;
-            camera.restrictRot();
-            camera.updateMVP();
+            RENDER.CAMERA.rot.x -= dMy * RENDER.CAMERA.mSens * FPS.dTimeSec;
+            RENDER.CAMERA.rot.y -= dMx * RENDER.CAMERA.mSens * FPS.dTimeSec;
+            RENDER.CAMERA.restrictRot();
+            RENDER.CAMERA.updateMVP();
 
             // Mouse Click = move forward
             float vel = 0;
@@ -189,29 +189,29 @@ int main() {
             if (k_ctrl && !k_shift)      vel *= 0.2;
             else if (k_shift && !k_ctrl) vel *= 4;
             // Update camera position
-            camera.pos += camera.forward * vel * FPS.dTimeSec;
+            RENDER.CAMERA.pos += RENDER.CAMERA.forward * vel * FPS.dTimeSec;
         }
 
         // Rotate the mesh
         // float rotY = M_PI_2 / 6 * FPS.dTimeSec;
-        // MESH.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
+        // RENDER.MESH.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
 
         // Perform 2D projection
-        toPoint2D<<<MESH.blockNumVs, MESH.blockSize>>>(
-            d_point2D, camera, MESH.pos, MESH.color, MESH.numVs
+        toPoint2D<<<RENDER.MESH.blockNumVs, RENDER.MESH.blockSize>>>(
+            d_point2D, RENDER.CAMERA, RENDER.MESH.pos, RENDER.MESH.color, RENDER.MESH.numVs
         );
 
         // Turn faces into lines for wireframe
-        toLines<<<MESH.blockNumFs, MESH.blockSize>>>(
-            d_point2D, MESH.faces, d_lines, MESH.numFs
+        toLines<<<RENDER.MESH.blockNumFs, RENDER.MESH.blockSize>>>(
+            d_point2D, RENDER.MESH.faces, d_lines, RENDER.RES_HALF, RENDER.MESH.numFs
         );
 
         // Copy lines from device to host
-        cudaMemcpy(lines, d_lines, MESH.numFs * sizeof(Line), cudaMemcpyDeviceToHost);
+        cudaMemcpy(lines, d_lines, RENDER.MESH.numFs * sizeof(Line), cudaMemcpyDeviceToHost);
 
         window.clear(sf::Color::Black);
         // Draw mesh based on transformed vertices
-        for (ULLInt i = 0; i < MESH.numFs; i++) {
+        for (ULLInt i = 0; i < RENDER.MESH.numFs; i++) {
             Line l = lines[i];
             if (!l.in0 || !l.in1 || !l.in2) continue;
 

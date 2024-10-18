@@ -7,7 +7,7 @@ ClearScreen:
 AsczEngine:
 	nvcc \
 		-I include/Default \
-		-I include/Math3D \
+		-I include/MathLib \
 		-I include/Graphic3D \
 		\
 		-I libraries/SFML/include \
@@ -17,10 +17,11 @@ AsczEngine:
 		\
 		src/Default/FpsHandler.cu \
 		src/Default/CsLogHandler.cu \
-		src/Math3D/Vector.cu \
-		src/Math3D/Matrix.cu \
+		src/MathLib/Vector.cu \
+		src/MathLib/Matrix.cu \
 		src/Graphic3D/Mesh3D.cu \
 		src/Graphic3D/Camera3D.cu \
+		src/Graphic3D/Render3D.cu \
 		\
 		AsczEngine.cu \
 		\
