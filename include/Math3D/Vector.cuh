@@ -45,6 +45,9 @@ struct Vec3f {
     __host__ __device__ Vec3f operator+(const Vec3f &vec);
     __host__ __device__ Vec3f operator-(const Vec3f &vec);
     __host__ __device__ Vec3f operator*(const float scl);
+    __host__ __device__ void operator+=(const Vec3f &vec);
+    __host__ __device__ void operator-=(const Vec3f &vec);
+    __host__ __device__ void operator*=(const float scl);
     // Advanced operations
     __host__ __device__ float operator*(const Vec3f &vec); // Dot product
     __host__ __device__ Vec3f operator&(const Vec3f &vec); // Cross product

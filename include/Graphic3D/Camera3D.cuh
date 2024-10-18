@@ -7,6 +7,8 @@ class Camera3D {
 public:
     Camera3D();
 
+    float mSens = 0.1f;
+
     Vec3f pos, rot; // Pitch, Yaw, Roll (roll rarely used)
     void restrictRot();
 

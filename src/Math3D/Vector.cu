@@ -17,6 +17,7 @@ __host__ __device__ Vec3f::Vec3f(float x, float y, float z) : x(x), y(y), z(z) {
 __host__ __device__ Vec4f Vec3f::toVec4f() {
     return Vec4f(x, y, z, 1);
 }
+
 __host__ __device__ Vec3f Vec3f::operator+(const Vec3f& v) {
     return Vec3f(x + v.x, y + v.y, z + v.z);
 }
@@ -26,6 +27,16 @@ __host__ __device__ Vec3f Vec3f::operator-(const Vec3f& v) {
 __host__ __device__ Vec3f Vec3f::operator*(const float scalar) {
     return Vec3f(x * scalar, y * scalar, z * scalar);
 }
+__host__ __device__ void Vec3f::operator+=(const Vec3f& v) {
+    x += v.x; y += v.y; z += v.z;
+}
+__host__ __device__ void Vec3f::operator-=(const Vec3f& v) {
+    x -= v.x; y -= v.y; z -= v.z;
+}
+__host__ __device__ void Vec3f::operator*=(const float scalar) {
+    x *= scalar; y *= scalar; z *= scalar;
+}
+
 __host__ __device__ float Vec3f::operator*(const Vec3f& v) {
     return x * v.x + y * v.y + z * v.z;
 }
