@@ -5,25 +5,6 @@
 #include <SFML/Graphics.hpp>
 
 int main() {
-    Mesh square(
-        0, // ID
-        Vecs3f{ // Position
-            Vec3f(-1, -1, 0), Vec3f(1, -1, 0), Vec3f(1, 1, 0), Vec3f(-1, 1, 0)
-        },
-        Vecs3f{ // Normal
-            Vec3f(0, 0, 1), Vec3f(0, 0, 1), Vec3f(0, 0, 1), Vec3f(0, 0, 1)
-        },
-        Vecs2f{ // Texture
-            Vec2f(0, 0), Vec2f(1, 0), Vec2f(1, 1), Vec2f(0, 1)
-        },
-        Vecs3f{ // Color
-            Vec3f(255, 0, 0), Vec3f(0, 255, 0), Vec3f(0, 0, 255), Vec3f(255, 255, 0)
-        },
-        Vecs3uli{ // Faces
-            Vec3uli(0, 1, 2), Vec3uli(0, 2, 3)
-        }
-    );
-
     // Create a cube mesh with 8 vertices and 12 faces
     Mesh cube(
         1, // ID
