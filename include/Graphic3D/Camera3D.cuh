@@ -26,7 +26,7 @@ public:
     void updateMVP();
 
     // Frustum culling check
-    bool isInsideFrustum(Vec3f &v);
+    __host__ __device__ bool isInsideFrustum(Vec3f &v);
 };
 
 #endif

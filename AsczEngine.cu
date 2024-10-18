@@ -5,6 +5,70 @@
 
 #include <SFML/Graphics.hpp>
 
+struct Line {
+    Vec3f p0, p1;
+    Vec3f color0, color1;
+    bool canDraw;
+};
+
+struct Point2D {
+    Vec3f pos;
+    Vec3f color;
+    bool isInsideFrustum;
+};
+
+int width = 1600;
+int height = 900;
+
+__global__ void toTransformVertices(
+    Point2D *transformedVs, Camera3D camera,
+    Vec3f *pos, Vec3f *color, ULLInt numVs
+) {
+    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numVs) return;
+
+    Vec4f v4 = pos[i].toVec4f();
+    Vec4f t4 = camera.mvp * v4;
+    Vec3f t3 = t4.toVec3f();
+
+    // Check if the point is inside the frustum
+    transformedVs[i].pos = t3;
+    transformedVs[i].color = color[i];
+    transformedVs[i].isInsideFrustum = camera.isInsideFrustum(pos[i]);
+}
+
+__global__ void toLines(Point2D *transformedVs, Vec3uli *faces, Line *lines, ULLInt numFs) {
+    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numFs) return;
+
+    Vec3uli f = faces[i];
+
+    // NDC
+    Vec3f v0 = transformedVs[f.x].pos;
+    Vec3f v1 = transformedVs[f.y].pos;
+    Vec3f v2 = transformedVs[f.z].pos;
+    // Screen space
+    v0.x = (v0.x + 1) * 800;
+    v0.y = (1 - v0.y) * 450;
+    v1.x = (v1.x + 1) * 800;
+    v1.y = (1 - v1.y) * 450;
+    v2.x = (v2.x + 1) * 800;
+    v2.y = (1 - v2.y) * 450;
+    // Color
+    Vec3f c0 = transformedVs[f.x].color;
+    Vec3f c1 = transformedVs[f.y].color;
+    Vec3f c2 = transformedVs[f.z].color;
+    // Inside frustum
+    bool in0 = transformedVs[f.x].isInsideFrustum;
+    bool in1 = transformedVs[f.y].isInsideFrustum;
+    bool in2 = transformedVs[f.z].isInsideFrustum;
+
+
+    lines[i * 3] = Line{v0, v1, c0, c1, in0 && in1};
+    lines[i * 3 + 1] = Line{v1, v2, c1, c2, in1 && in2};
+    lines[i * 3 + 2] = Line{v2, v0, c2, c0, in2 && in0};
+}
+
 int main() {
     // Initialize Default stuff
     FpsHandler &FPS = FpsHandler::instance();
@@ -58,12 +122,18 @@ int main() {
     // For the time being we gonna just use for loop to transform vertices
     Mesh3D MESH(test); 
 
-    Vecs3f transformedVs(MESH.numVs);
+    // Device memory for transformed vertices
+    Point2D *d_transformedVs = new Point2D[MESH.numVs];
+    cudaMalloc(&d_transformedVs, MESH.numVs * sizeof(Point2D));
+
+    // Device memory for lines
+    Line *d_lines = new Line[MESH.numFs * 3];
+    cudaMalloc(&d_lines, MESH.numFs * 3 * sizeof(Line));
+    // Host memory for lines
+    Line *lines = new Line[MESH.numFs * 3];
 
     Camera3D camera;
 
-    int width = 1600;
-    int height = 900;
     sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
     window.setMouseCursorVisible(false);
 
@@ -124,69 +194,32 @@ int main() {
             camera.pos += camera.forward * vel * FPS.dTimeSec;
         }
 
-        // Dynamic graph function
-        moveX += FPS.dTimeSec;
-        moveZ += FPS.dTimeSec;
-        for (ULLInt i = 0; i < MESH.numVs; i++) {
-            Vec3f v = test.pos[i];
-            v.y = sin(v.x / 10 + moveX) * cos(v.z / 10 + moveZ) * 10;
-            test.pos[i] = v;
-        }
-
         // Perform transformation
-        for (ULLInt i = 0; i < test.pos.size(); i++) {
-            // Fun functions
-            // test.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI * FPS.dTimeSec, 0));
+        toTransformVertices<<<(MESH.numVs + 255) / 256, 256>>>(
+            d_transformedVs, camera, MESH.pos, MESH.color, MESH.numVs
+        );
 
-            // Project vertices to NDC
-            Vec4f v = test.pos[i].toVec4f();
-            v = camera.mvp * v;
-            v.y *= -1; // Invert Y axis
-            transformedVs[i] = v.toVec3f();
-        }
+        // Turn faces into lines for wireframe
+        toLines<<<(MESH.numFs + 255) / 256, 256>>>(
+            d_transformedVs, MESH.faces, d_lines, MESH.numFs
+        );
+
+        // Copy lines from device to host
+        cudaMemcpy(lines, d_lines, MESH.numFs * 3 * sizeof(Line), cudaMemcpyDeviceToHost);
 
         window.clear(sf::Color::Black);
         // Draw mesh based on transformed vertices
-        for (ULLInt i = 0; i < MESH.numFs; i++) {
-            Vec3uli f = test.faces[i];
+        for (ULLInt i = 0; i < MESH.numFs * 3; i++) {
+            Line l = lines[i];
+            if (!l.canDraw) continue;
+            sf::Color c0(l.color0.x, l.color0.y, l.color0.z);
+            sf::Color c1(l.color1.x, l.color1.y, l.color1.z);
 
-            // If a single point of the test outside of the frustum, skip drawing
-            if (!camera.isInsideFrustum(test.pos[f.x]) ||
-                !camera.isInsideFrustum(test.pos[f.y]) ||
-                !camera.isInsideFrustum(test.pos[f.z])) {
-                continue;
-            }
-
-            // NDC coordinates
-            Vec3f v0 = transformedVs[f.x];
-            Vec3f v1 = transformedVs[f.y];
-            Vec3f v2 = transformedVs[f.z];
-            // Screen coordinates
-            Vec2f p0 = Vec2f((v0.x + 1) * width/2, (v0.y + 1) * height/2);
-            Vec2f p1 = Vec2f((v1.x + 1) * width/2, (v1.y + 1) * height/2);
-            Vec2f p2 = Vec2f((v2.x + 1) * width/2, (v2.y + 1) * height/2);
-
-            sf::Color colorA = sf::Color(test.color[f.x].x, test.color[f.x].y, test.color[f.x].z);
-            sf::Color colorB = sf::Color(test.color[f.y].x, test.color[f.y].y, test.color[f.y].z);
-            sf::Color colorC = sf::Color(test.color[f.z].x, test.color[f.z].y, test.color[f.z].z);
-
-            // Create 3 lines for each face to draw wireframe
-            sf::Vertex line01[] = {
-                sf::Vertex(sf::Vector2f(p0.x, p0.y), colorA),
-                sf::Vertex(sf::Vector2f(p1.x, p1.y), colorB)
+            sf::Vertex line[] = {
+                sf::Vertex(sf::Vector2f(l.p0.x, l.p0.y), c0),
+                sf::Vertex(sf::Vector2f(l.p1.x, l.p1.y), c1)
             };
-            sf::Vertex line12[] = {
-                sf::Vertex(sf::Vector2f(p1.x, p1.y), colorB),
-                sf::Vertex(sf::Vector2f(p2.x, p2.y), colorC)
-            };
-            sf::Vertex line02[] = {
-                sf::Vertex(sf::Vector2f(p0.x, p0.y), colorA),
-                sf::Vertex(sf::Vector2f(p2.x, p2.y), colorC)
-            };
-
-            window.draw(line01, 2, sf::Lines);
-            window.draw(line12, 2, sf::Lines);
-            window.draw(line02, 2, sf::Lines);
+            window.draw(line, 2, sf::Lines);
         }
 
         // Log handling
