@@ -21,6 +21,9 @@ int main() {
         })
     );
 
+    // For the time being we gonna just use for loop to transform vertices
+    Vecs3f transformedVs(mesh.pos.size());
+
     Mesh3D MESH(mesh);
 
     MESH.printVertices();
@@ -55,25 +58,57 @@ int main() {
         int dMy = mousePos.y - 300;
 
         // Camera look around
-        camera.rot.x -= dMy * camera.mSens * FPS.dTimeSec;
+        camera.rot.x += dMy * camera.mSens * FPS.dTimeSec;
         camera.rot.y += dMx * camera.mSens * FPS.dTimeSec;
         camera.restrictRot();
         camera.updateMVP();
 
-        bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-        bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
-
         // Mouse Click = move forward
         float vel = 0;
+        bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+        bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
         if (m_left && !m_right)      vel = 20;
         else if (m_right && !m_left) vel = -20;
         else                         vel = 0;
         camera.pos += camera.forward * vel * FPS.dTimeSec;
+        // camera.pos.print();
 
-        camera.rot.print();
-        camera.pos.print();
+
+        // Perform transformation
+        for (ULLInt i = 0; i < mesh.pos.size(); i++) {
+            Vec4f v = mesh.pos[i].toVec4f();
+            v = camera.mvp * v;
+            transformedVs[i] = v.toVec3f();
+
+            Vec2f p = Vec2f((v.x + 1) * 400, (v.y + 1) * 300);
+            std::cout << "v" << i << ": " << p.x << ", " << p.y << " | ";
+        }
+        std::cout << std::endl;
 
         window.clear(sf::Color::Black);
+        // Draw mesh based on transformed vertices
+        for (ULLInt i = 0; i < mesh.faces.size(); i++) {
+            Vec3uli f = mesh.faces[i];
+            sf::ConvexShape triangle;
+            triangle.setPointCount(3);
+            // NDC coordinates
+            Vec3f v0 = transformedVs[f.x];
+            Vec3f v1 = transformedVs[f.y];
+            Vec3f v2 = transformedVs[f.z];
+            // Screen coordinates
+            Vec2f p0 = Vec2f((v0.x + 1) * 400, (v0.y + 1) * 300);
+            Vec2f p1 = Vec2f((v1.x + 1) * 400, (v1.y + 1) * 300);
+            Vec2f p2 = Vec2f((v2.x + 1) * 400, (v2.y + 1) * 300);
+
+            triangle.setPoint(0, sf::Vector2f(p0.x, p0.y));
+            triangle.setPoint(1, sf::Vector2f(p1.x, p1.y));
+            triangle.setPoint(2, sf::Vector2f(p2.x, p2.y));
+
+            sf::Color color = i % 2 ? sf::Color::Red : sf::Color::Blue;
+            triangle.setFillColor(color);
+
+            window.draw(triangle);
+        }
 
         window.display();
 
