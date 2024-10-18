@@ -64,21 +64,18 @@ struct Vec3f {
     __host__ __device__ void rotate(const Vec3f &origin, const Vec3f &rot);
     __host__ __device__ void scale(const Vec3f &origin, const Vec3f &scl);
     __host__ __device__ void scale(const Vec3f &origin, const float scl);
-
-    void print() { // Will remove this later
-        printf("Vec3(%f, %f, %f)\n", x, y, z);
-    }
 };
 
 struct Vec4f {
     float x, y, z, w;
     __host__ __device__ Vec4f();
     __host__ __device__ Vec4f(float x, float y, float z, float w);
-    __host__ __device__ Vec3f toVec3f(); // From Homogeneous to Cartesian
+    __host__ __device__ Vec3f toVec3f(bool norm=true); // From Homogeneous to Cartesian
 
-    void print() { // Will remove this later
-        printf("Vec4(%f, %f, %f, %f)\n", x, y, z, w);
-    }
+    // We only need operator + - and scalar multiplication
+    __host__ __device__ Vec4f operator+(const Vec4f &vec);
+    __host__ __device__ Vec4f operator-(const Vec4f &vec);
+    __host__ __device__ Vec4f operator*(const float scl);
 };
 
 #endif

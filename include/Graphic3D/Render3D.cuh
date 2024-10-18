@@ -22,10 +22,18 @@ public:
     Camera3D camera;
     Buffer3D buffer;
 
-    Vec3f *screen;
+    Vec4f *projection; // x, y, depth, isInsideFrustum
+    void allocateProjection();
+    void freeProjection();
+    void resizeProjection();
+
+    // Render pipeline
+    void vertexProjection();
 
 private:
     Render3D() {}
 };
+
+__global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, ULLInt numVs);
 
 #endif

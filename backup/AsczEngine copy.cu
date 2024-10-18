@@ -33,9 +33,9 @@ __global__ void toLines(Vec4f *projection, Vec4f *color, Vec3uli *faces, Line *l
     bool in1 = v1.w > 0;
     bool in2 = v2.w > 0;
 
-    Vec3f p0 = v0.toVec3f(false);
-    Vec3f p1 = v1.toVec3f(false);
-    Vec3f p2 = v2.toVec3f(false);
+    Vec3f p0 = Vec3f(v0.x, v0.y, v0.z);
+    Vec3f p1 = Vec3f(v1.x, v1.y, v1.z);
+    Vec3f p2 = Vec3f(v2.x, v2.y, v2.z);
 
     lines[i].p0 = p0; lines[i].p1 = p1; lines[i].p2 = p2;
     lines[i].color0 = c0; lines[i].color1 = c1; lines[i].color2 = c2;
@@ -185,10 +185,12 @@ int main() {
         RENDER.buffer.clearBuffer();
         RENDER.vertexProjection();
 
-        // Not part of the pipeline, just for visualization
+        // Turn faces into lines for wireframe
         toLines<<<RENDER.mesh.blockNumFs, RENDER.mesh.blockSize>>>(
             RENDER.projection, RENDER.mesh.color, RENDER.mesh.faces, d_lines, RENDER.mesh.numFs
         );
+
+        // Copy lines from device to host
         cudaMemcpy(lines, d_lines, RENDER.mesh.numFs * sizeof(Line), cudaMemcpyDeviceToHost);
 
         window.clear(sf::Color::Black);

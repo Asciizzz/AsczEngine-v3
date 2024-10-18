@@ -7,6 +7,8 @@
 class Buffer3D {
 public:
     int buffWidth, buffHeight, buffSize;
+    int blockSize = 256;
+    int blockCount;
 
     // Device pointers
     float *depth;
@@ -19,6 +21,18 @@ public:
     Buffer3D();
     void resize(int width, int height, int pixelSize=1);
     void free();
+
+    void clearBuffer();
 };
+
+__global__ void clearBufferKernel(
+    float *depth,
+    Vec4f *color,
+    Vec3f *world,
+    Vec3f *normal,
+    Vec2f *texture,
+    UInt *meshID,
+    int buffSize
+);
 
 #endif

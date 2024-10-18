@@ -120,6 +120,16 @@ void Vec3f::scale(const Vec3f& origin, const float scl) {
 // VEC4
 Vec4f::Vec4f() : x(0), y(0), z(0), w(0) {}
 Vec4f::Vec4f(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
-Vec3f Vec4f::toVec3f() {
-    return Vec3f(x / w, y / w, z / w);
+Vec3f Vec4f::toVec3f(bool norm) {
+    if (norm) return Vec3f(x / w, y / w, z / w);
+    return Vec3f(x, y, z);
+}
+Vec4f Vec4f::operator+(const Vec4f& v) {
+    return Vec4f(x + v.x, y + v.y, z + v.z, w + v.w);
+}
+Vec4f Vec4f::operator-(const Vec4f& v) {
+    return Vec4f(x - v.x, y - v.y, z - v.z, w - v.w);
+}
+Vec4f Vec4f::operator*(const float scalar) {
+    return Vec4f(x * scalar, y * scalar, z * scalar, w * scalar);
 }
