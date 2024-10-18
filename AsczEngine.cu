@@ -20,6 +20,10 @@ struct Point2D {
 int width = 1600;
 int height = 900;
 
+sf::Color vec3fToColor(Vec3f v) {
+    return sf::Color(v.x, v.y, v.z);
+}
+
 __global__ void toTransformVertices(
     Point2D *point2D, Camera3D camera,
     Vec3f *pos, Vec3f *color, ULLInt numVs
@@ -207,9 +211,9 @@ int main() {
             Line l = lines[i];
             if (!l.in0 || !l.in1 || !l.in2) continue;
 
-            sf::Color c0(l.color0.x, l.color0.y, l.color0.z);
-            sf::Color c1(l.color1.x, l.color1.y, l.color1.z);
-            sf::Color c2(l.color2.x, l.color2.y, l.color2.z);
+            sf::Color c0 = vec3fToColor(l.color0);
+            sf::Color c1 = vec3fToColor(l.color1);
+            sf::Color c2 = vec3fToColor(l.color2);
 
             sf::Vertex v1(sf::Vector2f(l.p0.x, l.p0.y), c0);
             sf::Vertex v2(sf::Vector2f(l.p1.x, l.p1.y), c1);
