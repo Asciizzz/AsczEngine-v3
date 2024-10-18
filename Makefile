@@ -21,6 +21,7 @@ AsczEngine:
 		src/Graphic3D/Camera3D.cu \
 		src/Graphic3D/Buffer3D.cu \
 		src/Graphic3D/Render3D.cu \
+		src\Graphic3D\SFMLTexture.cu \
 		src/Default/FpsHandler.cu \
 		src/Default/CsLogHandler.cu \
 		\

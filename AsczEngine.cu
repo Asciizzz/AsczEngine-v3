@@ -2,7 +2,7 @@
 #include <CsLogHandler.cuh>
 #include <Render3D.cuh>
 
-#include <SFML/Graphics.hpp>
+#include <SFMLTexture.cuh>
 
 struct Line {
     Vec3f p0, p1, p2;
@@ -181,7 +181,7 @@ int main() {
         // float rotY = M_PI_2 / 6 * FPS.dTimeSec;
         // RENDER.mesh.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
 
-        // Clear buffer
+        // Render Pipeline
         RENDER.buffer.clearBuffer();
         RENDER.vertexProjection();
 
@@ -218,7 +218,7 @@ int main() {
         sf::Color fpsColor((1 - gRatio) * 255, gRatio * 255, 0);
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
         LOG.drawLog(window);
-        
+
         window.display();
 
         // Frame end

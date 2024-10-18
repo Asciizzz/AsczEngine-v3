@@ -28,6 +28,9 @@ Vec3f Vec3f::operator-(const Vec3f& v) {
 Vec3f Vec3f::operator*(const float scalar) {
     return Vec3f(x * scalar, y * scalar, z * scalar);
 }
+Vec3f Vec3f::operator/(const float scalar) {
+    return Vec3f(x / scalar, y / scalar, z / scalar);
+}
 void Vec3f::operator+=(const Vec3f& v) {
     x += v.x; y += v.y; z += v.z;
 }
@@ -36,6 +39,9 @@ void Vec3f::operator-=(const Vec3f& v) {
 }
 void Vec3f::operator*=(const float scalar) {
     x *= scalar; y *= scalar; z *= scalar;
+}
+void Vec3f::operator/=(const float scalar) {
+    x /= scalar; y /= scalar; z /= scalar;
 }
 
 float Vec3f::operator*(const Vec3f& v) {

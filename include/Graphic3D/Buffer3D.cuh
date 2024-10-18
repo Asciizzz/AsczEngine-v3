@@ -19,6 +19,7 @@ public:
     UInt *meshID;
 
     Buffer3D();
+    ~Buffer3D();
     void resize(int width, int height, int pixelSize=1);
     void free();
 
