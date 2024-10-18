@@ -18,6 +18,8 @@ We will have 4 arrays for vertex data:
 - Mesh ID (id)
 */
 
+#define Meshs std::vector<Mesh>
+
 struct Mesh {
     Vecs3f pos;
     Vecs3f normal;

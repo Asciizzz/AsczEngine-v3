@@ -1,42 +1,63 @@
 #include <FpsHandler.cuh>
+#include <CsLogHandler.cuh>
 #include <Mesh3D.cuh>
 #include <Camera3D.cuh>
 
 #include <SFML/Graphics.hpp>
 
 int main() {
-    // Create a cube mesh with 8 vertices and 12 faces
-    Mesh test(1,// ID
-        Vecs3f{ // Position
-            Vec3f(-1, -1, -1), Vec3f(1, -1, -1), Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
-            Vec3f(-1, -1, 1), Vec3f(1, -1, 1), Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
-        },
-        Vecs3f{ // Normal
-            Vec3f(-1, -1, -1), Vec3f(1, -1, -1), Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
-            Vec3f(-1, -1, 1), Vec3f(1, -1, 1), Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
-        },
-        Vecs2f{ // Texture
-            Vec2f(0, 0), Vec2f(1, 0), Vec2f(1, 1), Vec2f(0, 1),
-            Vec2f(0, 0), Vec2f(1, 0), Vec2f(1, 1), Vec2f(0, 1)
-        },
-        Vecs3f{ // Color
-            Vec3f(255, 0, 0), Vec3f(0, 255, 0), Vec3f(0, 0, 255), Vec3f(255, 255, 0),
-            Vec3f(255, 0, 0), Vec3f(0, 255, 0), Vec3f(0, 0, 255), Vec3f(255, 255, 0)
-        },
-        Vecs3uli{ // Faces
-            Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
-            Vec3uli(4, 5, 6), Vec3uli(4, 6, 7),
-            Vec3uli(0, 4, 7), Vec3uli(0, 7, 3),
-            Vec3uli(1, 5, 6), Vec3uli(1, 6, 2),
-            Vec3uli(0, 1, 5), Vec3uli(0, 5, 4),
-            Vec3uli(2, 3, 7), Vec3uli(2, 7, 6)
+    // Initialize Default stuff
+    FpsHandler &FPS = FpsHandler::instance();
+    CsLogHandler LOG = CsLogHandler();
+
+    // Graphing calculator for y = f(x, z)
+
+    Vecs3f pos;
+    Vecs3f normal;
+    Vecs2f tex;
+    Vecs3f color;
+
+    Vecs3uli faces;
+
+    // Append points to the grid
+    Vec2f rangeX(-100, 100);
+    Vec2f rangeZ(-100, 100);
+    Vec2f step(1, 1);
+
+    int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
+    int sizeZ = (rangeZ.y - rangeZ.x) / step.y + 1;
+
+    for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
+        for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
+            // Position of the point
+            float y = sin(x / 10) * cos(z / 10) * 10;
+            pos.push_back(Vec3f(x, y, z));
+            // Not important for now
+            normal.push_back(Vec3f(0, 1, 0));
+            tex.push_back(Vec2f(0, 0));
+
+            // Cool color
+            float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
+            float ratioY = (y - rangeX.x) / (rangeX.y - rangeX.x);
+            float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
+            color.push_back(Vec3f(255 * ratioX, 255 * ratioZ, 255));
         }
-    );
+    }
+
+    // Append faces to the grid
+    for (ULLInt x = 0; x < sizeX - 1; x++) {
+        for (ULLInt z = 0; z < sizeZ - 1; z++) {
+            ULLInt i = x * sizeZ + z;
+            faces.push_back(Vec3uli(i, i + 1, i + sizeZ));
+            faces.push_back(Vec3uli(i + 1, i + sizeZ + 1, i + sizeZ));
+        }
+    }
+
+    // Create a cube mesh with 8 vertices and 12 faces
+    Mesh test(0, pos, normal, tex, color, faces);
 
     // For the time being we gonna just use for loop to transform vertices
-    Mesh3D MESH(test);
-    MESH.printVertices();
-    MESH.printFaces();
+    Mesh3D MESH(test); 
 
     Vecs3f transformedVs(MESH.numVs);
 
@@ -49,7 +70,6 @@ int main() {
 
     camera.aspect = float(width) / float(height);
 
-    FpsHandler &FPS = FpsHandler::instance();
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
@@ -95,7 +115,7 @@ int main() {
         // Perform transformation
         for (ULLInt i = 0; i < test.pos.size(); i++) {
             // Fun functions
-            test.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI * FPS.dTimeSec, 0));
+            // test.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI * FPS.dTimeSec, 0));
 
             // Project vertices to NDC
             Vec4f v = test.pos[i].toVec4f();
@@ -148,6 +168,16 @@ int main() {
             window.draw(line02, 2, sf::Lines);
         }
 
+        // Log handling
+
+        // FPS <= 10: Fully Red
+        // FPS >= 60: Fully Green
+        double gRatio = double(FPS.fps - 10) / 50;
+        gRatio = std::max(0.0, std::min(gRatio, 1.0));
+        sf::Color fpsColor((1 - gRatio) * 255, gRatio * 255, 0);
+        LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
+        LOG.drawLog(window);
+        
         window.display();
 
         // Frame end

@@ -16,6 +16,7 @@ AsczEngine:
 		-o AsczEngine \
 		\
 		src/Default/FpsHandler.cu \
+		src/Default/CsLogHandler.cu \
 		src/Math3D/Vector.cu \
 		src/Math3D/Matrix.cu \
 		src/Graphic3D/Mesh3D.cu \
