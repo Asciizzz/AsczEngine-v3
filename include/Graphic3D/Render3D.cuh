@@ -13,14 +13,16 @@ public:
     Render3D(const Render3D&) = delete;
     Render3D &operator=(const Render3D&) = delete;
 
-    Vec2f RES = {800, 600};
-    Vec2f RES_HALF = {400, 300};
-    int PIXEL_SIZE = 4;
+    Vec2f res = {800, 600};
+    Vec2f res_half = {400, 300};
+    int pixel_size = 4;
     void setResolution(float w, float h);
 
-    Mesh3D MESH;
-    Camera3D CAMERA;
-    Buffer3D BUFFER;
+    Mesh3D mesh;
+    Camera3D camera;
+    Buffer3D buffer;
+
+    Vec3f *screen;
 
 private:
     Render3D() {}

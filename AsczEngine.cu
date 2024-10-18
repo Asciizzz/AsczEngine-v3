@@ -73,7 +73,6 @@ int main() {
 
     Render3D &RENDER = Render3D::instance();
     RENDER.setResolution(1600, 900);
-    RENDER.BUFFER.resize(int(RENDER.RES.x), int(RENDER.RES.y), RENDER.PIXEL_SIZE);
 
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
@@ -99,7 +98,8 @@ int main() {
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             // World pos of the point
-            float y = sin(x / 10) * cos(z / 10) * 10;
+            // float y = sin(x / 10) * cos(z / 10) * 10;
+            float y = rand() % 20 - 10;
 
             maxY = std::max(maxY, y);
             minY = std::min(minY, y);
@@ -135,17 +135,17 @@ int main() {
     }
 
     Mesh test(0, world, normal, texture, color, faces);
-    RENDER.MESH += Mesh3D(test);
+    RENDER.mesh += Mesh3D(test);
 
     // Device memory for transformed vertices
-    Point2D *d_point2D = new Point2D[RENDER.MESH.numVs];
-    cudaMalloc(&d_point2D, RENDER.MESH.numVs * sizeof(Point2D));
+    Point2D *d_point2D = new Point2D[RENDER.mesh.numVs];
+    cudaMalloc(&d_point2D, RENDER.mesh.numVs * sizeof(Point2D));
 
     // Device memory for lines
-    Line *d_lines = new Line[RENDER.MESH.numFs];
-    cudaMalloc(&d_lines, RENDER.MESH.numFs * sizeof(Line));
+    Line *d_lines = new Line[RENDER.mesh.numFs];
+    cudaMalloc(&d_lines, RENDER.mesh.numFs * sizeof(Line));
     // Host memory for lines
-    Line *lines = new Line[RENDER.MESH.numFs];
+    Line *lines = new Line[RENDER.mesh.numFs];
 
     while (window.isOpen()) {
         // Frame start
@@ -161,31 +161,31 @@ int main() {
             // Press f1 to toggle focus
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::F1) {
-                    RENDER.CAMERA.focus = !RENDER.CAMERA.focus;
-                    window.setMouseCursorVisible(!RENDER.CAMERA.focus);
+                    RENDER.camera.focus = !RENDER.camera.focus;
+                    window.setMouseCursorVisible(!RENDER.camera.focus);
                     sf::Mouse::setPosition(sf::Vector2i(
-                        RENDER.RES_HALF.x, RENDER.RES_HALF.y
+                        RENDER.res_half.x, RENDER.res_half.y
                     ), window);
                 }
             }
         }
 
-        if (RENDER.CAMERA.focus) {
+        if (RENDER.camera.focus) {
             // Mouse movement handling
             sf::Vector2i mousepos = sf::Mouse::getPosition(window);
             sf::Mouse::setPosition(sf::Vector2i(
-                RENDER.RES_HALF.x, RENDER.RES_HALF.y
+                RENDER.res_half.x, RENDER.res_half.y
             ), window);
 
             // Move from center
-            int dMx = mousepos.x - RENDER.RES_HALF.x;
-            int dMy = mousepos.y - RENDER.RES_HALF.y;
+            int dMx = mousepos.x - RENDER.res_half.x;
+            int dMy = mousepos.y - RENDER.res_half.y;
 
             // Camera look around
-            RENDER.CAMERA.rot.x -= dMy * RENDER.CAMERA.mSens * FPS.dTimeSec;
-            RENDER.CAMERA.rot.y -= dMx * RENDER.CAMERA.mSens * FPS.dTimeSec;
-            RENDER.CAMERA.restrictRot();
-            RENDER.CAMERA.updateMVP();
+            RENDER.camera.rot.x -= dMy * RENDER.camera.mSens * FPS.dTimeSec;
+            RENDER.camera.rot.y -= dMx * RENDER.camera.mSens * FPS.dTimeSec;
+            RENDER.camera.restrictRot();
+            RENDER.camera.updateMVP();
 
             // Mouse Click = move forward
             float vel = 0;
@@ -201,29 +201,29 @@ int main() {
             if (k_ctrl && !k_shift)      vel *= 0.2;
             else if (k_shift && !k_ctrl) vel *= 4;
             // Update camera World pos
-            RENDER.CAMERA.pos += RENDER.CAMERA.forward * vel * FPS.dTimeSec;
+            RENDER.camera.pos += RENDER.camera.forward * vel * FPS.dTimeSec;
         }
 
         // Rotate the mesh
         // float rotY = M_PI_2 / 6 * FPS.dTimeSec;
-        // RENDER.MESH.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
+        // RENDER.mesh.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
 
         // Perform 2D projection
-        toPoint2D<<<RENDER.MESH.blockNumVs, RENDER.MESH.blockSize>>>(
-            d_point2D, RENDER.CAMERA, RENDER.MESH.world, RENDER.MESH.color, RENDER.MESH.numVs
+        toPoint2D<<<RENDER.mesh.blockNumVs, RENDER.mesh.blockSize>>>(
+            d_point2D, RENDER.camera, RENDER.mesh.world, RENDER.mesh.color, RENDER.mesh.numVs
         );
 
         // Turn faces into lines for wireframe
-        toLines<<<RENDER.MESH.blockNumFs, RENDER.MESH.blockSize>>>(
-            d_point2D, RENDER.MESH.faces, d_lines, RENDER.MESH.numFs
+        toLines<<<RENDER.mesh.blockNumFs, RENDER.mesh.blockSize>>>(
+            d_point2D, RENDER.mesh.faces, d_lines, RENDER.mesh.numFs
         );
 
         // Copy lines from device to host
-        cudaMemcpy(lines, d_lines, RENDER.MESH.numFs * sizeof(Line), cudaMemcpyDeviceToHost);
+        cudaMemcpy(lines, d_lines, RENDER.mesh.numFs * sizeof(Line), cudaMemcpyDeviceToHost);
 
         window.clear(sf::Color::Black);
         // Draw mesh based on transformed vertices
-        for (ULLInt i = 0; i < RENDER.MESH.numFs; i++) {
+        for (ULLInt i = 0; i < RENDER.mesh.numFs; i++) {
             Line l = lines[i];
             if (!l.in0 || !l.in1 || !l.in2) continue;
 
