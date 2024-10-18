@@ -28,6 +28,7 @@ struct Mesh {
     Vecs3uli faces;
 
     Mesh(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vecs3uli &faces);
+    Mesh(Mesh &mesh);
 
     Mesh operator+=(Mesh &mesh);
 };

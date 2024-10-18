@@ -6,8 +6,7 @@
 
 int main() {
     // Create a cube mesh with 8 vertices and 12 faces
-    Mesh cube(
-        1, // ID
+    Mesh test(1,// ID
         Vecs3f{ // Position
             Vec3f(-1, -1, -1), Vec3f(1, -1, -1), Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
             Vec3f(-1, -1, 1), Vec3f(1, -1, 1), Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
@@ -35,7 +34,7 @@ int main() {
     );
 
     // For the time being we gonna just use for loop to transform vertices
-    Mesh3D MESH(cube);
+    Mesh3D MESH(test);
     MESH.printVertices();
     MESH.printFaces();
 
@@ -94,12 +93,12 @@ int main() {
         camera.pos += camera.forward * vel * FPS.dTimeSec;
 
         // Perform transformation
-        for (ULLInt i = 0; i < cube.pos.size(); i++) {
+        for (ULLInt i = 0; i < test.pos.size(); i++) {
             // Fun functions
-            cube.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI * FPS.dTimeSec, 0));
+            test.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI * FPS.dTimeSec, 0));
 
             // Project vertices to NDC
-            Vec4f v = cube.pos[i].toVec4f();
+            Vec4f v = test.pos[i].toVec4f();
             v = camera.mvp * v;
             v.y *= -1; // Invert Y axis
             transformedVs[i] = v.toVec3f();
@@ -108,12 +107,12 @@ int main() {
         window.clear(sf::Color::Black);
         // Draw mesh based on transformed vertices
         for (ULLInt i = 0; i < MESH.numFs; i++) {
-            Vec3uli f = cube.faces[i];
+            Vec3uli f = test.faces[i];
 
-            // If a single point of the cube outside of the frustum, skip drawing
-            if (!camera.isInsideFrustum(cube.pos[f.x]) ||
-                !camera.isInsideFrustum(cube.pos[f.y]) ||
-                !camera.isInsideFrustum(cube.pos[f.z])) {
+            // If a single point of the test outside of the frustum, skip drawing
+            if (!camera.isInsideFrustum(test.pos[f.x]) ||
+                !camera.isInsideFrustum(test.pos[f.y]) ||
+                !camera.isInsideFrustum(test.pos[f.z])) {
                 continue;
             }
 
@@ -126,9 +125,9 @@ int main() {
             Vec2f p1 = Vec2f((v1.x + 1) * width/2, (v1.y + 1) * height/2);
             Vec2f p2 = Vec2f((v2.x + 1) * width/2, (v2.y + 1) * height/2);
 
-            sf::Color colorA = sf::Color(cube.color[f.x].x, cube.color[f.x].y, cube.color[f.x].z);
-            sf::Color colorB = sf::Color(cube.color[f.y].x, cube.color[f.y].y, cube.color[f.y].z);
-            sf::Color colorC = sf::Color(cube.color[f.z].x, cube.color[f.z].y, cube.color[f.z].z);
+            sf::Color colorA = sf::Color(test.color[f.x].x, test.color[f.x].y, test.color[f.x].z);
+            sf::Color colorB = sf::Color(test.color[f.y].x, test.color[f.y].y, test.color[f.y].z);
+            sf::Color colorC = sf::Color(test.color[f.z].x, test.color[f.z].y, test.color[f.z].z);
 
             // Create 3 lines for each face to draw wireframe
             sf::Vertex line01[] = {

@@ -6,13 +6,25 @@ Mesh::Mesh(UInt id, Vecs3f &pos, Vecs3f &normal, Vecs2f &tex, Vecs3f &color, Vec
     pos(pos), normal(normal), tex(tex), color(color), mID(pos.size(), id), faces(faces)
 {}
 
+Mesh::Mesh(Mesh &mesh) :
+    pos(mesh.pos), normal(mesh.normal),
+    tex(mesh.tex), color(mesh.color),
+    mID(mesh.mID), faces(mesh.faces)
+{}
+
 Mesh Mesh::operator+=(Mesh &mesh) {
+    ULLInt oldSize = pos.size();
     pos.insert(pos.end(), mesh.pos.begin(), mesh.pos.end());
     normal.insert(normal.end(), mesh.normal.begin(), mesh.normal.end());
     tex.insert(tex.end(), mesh.tex.begin(), mesh.tex.end());
     color.insert(color.end(), mesh.color.begin(), mesh.color.end());
     mID.insert(mID.end(), mesh.mID.begin(), mesh.mID.end());
     faces.insert(faces.end(), mesh.faces.begin(), mesh.faces.end());
+
+    // Shift the faces indices
+    for (ULLInt i = oldSize; i < faces.size(); i++) {
+        faces[i] += oldSize;
+    }
     return *this;
 }
 
