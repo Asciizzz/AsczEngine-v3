@@ -11,7 +11,7 @@ struct Line {
 };
 
 struct Point2D {
-    Vec3f pos;
+    Vec3f world;
     Vec3f color;
     bool isInsideFrustum;
 };
@@ -22,19 +22,19 @@ sf::Color vec3fToColor(Vec3f v) {
 
 __global__ void toPoint2D(
     Point2D *point2D, Camera3D camera,
-    Vec3f *pos, Vec3f *color, ULLInt numVs
+    Vec3f *world, Vec3f *color, ULLInt numVs
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numVs) return;
 
-    Vec4f v4 = pos[i].toVec4f();
+    Vec4f v4 = world[i].toVec4f();
     Vec4f t4 = camera.mvp * v4;
     Vec3f t3 = t4.toVec3f();
 
     // Check if the point is inside the frustum
-    point2D[i].pos = t3;
+    point2D[i].world = t3;
     point2D[i].color = color[i];
-    point2D[i].isInsideFrustum = camera.isInsideFrustum(pos[i]);
+    point2D[i].isInsideFrustum = camera.isInsideFrustum(world[i]);
 }
 
 __global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, Vec2f resHalf, ULLInt numFs) {
@@ -44,9 +44,9 @@ __global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, Vec2f res
     Vec3uli f = faces[i];
 
     // NDC
-    Vec3f v0 = point2D[f.x].pos;
-    Vec3f v1 = point2D[f.y].pos;
-    Vec3f v2 = point2D[f.z].pos;
+    Vec3f v0 = point2D[f.x].world;
+    Vec3f v1 = point2D[f.y].world;
+    Vec3f v2 = point2D[f.z].world;
     // Screen space
     v0.x = (v0.x + 1) * resHalf.x;
     v0.y = (1 - v0.y) * resHalf.y;
@@ -81,7 +81,7 @@ int main() {
     window.setMouseCursorVisible(false);
 
     // Graphing calculator for y = f(x, z)
-    Vecs3f pos;
+    Vecs3f world;
     Vecs3f normal;
     Vecs2f tex;
     Vecs3f color;
@@ -98,9 +98,9 @@ int main() {
 
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
-            // Position of the point
+            // World pos of the point
             float y = sin(x / 10) * cos(z / 10) * 10;
-            pos.push_back(Vec3f(x, y, z));
+            world.push_back(Vec3f(x, y, z));
             // Not important for now
             normal.push_back(Vec3f(0, 1, 0));
             tex.push_back(Vec2f(0, 0));
@@ -121,7 +121,7 @@ int main() {
         }
     }
 
-    Mesh test(0, pos, normal, tex, color, faces);
+    Mesh test(0, world, normal, tex, color, faces);
     RENDER.MESH += Mesh3D(test);
 
     // Device memory for transformed vertices
@@ -159,14 +159,14 @@ int main() {
 
         if (RENDER.CAMERA.focus) {
             // Mouse movement handling
-            sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+            sf::Vector2i mousepos = sf::Mouse::getPosition(window);
             sf::Mouse::setPosition(sf::Vector2i(
                 RENDER.RES_HALF.x, RENDER.RES_HALF.y
             ), window);
 
             // Move from center
-            int dMx = mousePos.x - RENDER.RES_HALF.x;
-            int dMy = mousePos.y - RENDER.RES_HALF.y;
+            int dMx = mousepos.x - RENDER.RES_HALF.x;
+            int dMy = mousepos.y - RENDER.RES_HALF.y;
 
             // Camera look around
             RENDER.CAMERA.rot.x -= dMy * RENDER.CAMERA.mSens * FPS.dTimeSec;
@@ -187,7 +187,7 @@ int main() {
             // Move slower/faster
             if (k_ctrl && !k_shift)      vel *= 0.2;
             else if (k_shift && !k_ctrl) vel *= 4;
-            // Update camera position
+            // Update camera World pos
             RENDER.CAMERA.pos += RENDER.CAMERA.forward * vel * FPS.dTimeSec;
         }
 
@@ -197,7 +197,7 @@ int main() {
 
         // Perform 2D projection
         toPoint2D<<<RENDER.MESH.blockNumVs, RENDER.MESH.blockSize>>>(
-            d_point2D, RENDER.CAMERA, RENDER.MESH.pos, RENDER.MESH.color, RENDER.MESH.numVs
+            d_point2D, RENDER.CAMERA, RENDER.MESH.world, RENDER.MESH.color, RENDER.MESH.numVs
         );
 
         // Turn faces into lines for wireframe
