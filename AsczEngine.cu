@@ -100,17 +100,21 @@ int main() {
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             // World pos of the point
             float y = sin(x / 10) * cos(z / 10) * 10;
+
             maxY = std::max(maxY, y);
             minY = std::min(minY, y);
 
             world.push_back(Vec3f(x, y, z));
-            // Not important for now
             normal.push_back(Vec3f(0, 1, 0));
-            texture.push_back(Vec2f(0, 0));
 
-            // Cool color
+            // x and z ratio (0 - 1)
             float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
+
+            // Texture
+            texture.push_back(Vec2f(ratioX, ratioZ));
+
+            // Cool color
             color.push_back(Vec4f(255 * ratioX, 125, 125 * ratioZ, 255));
         }
     }
@@ -132,7 +136,6 @@ int main() {
 
     Mesh test(0, world, normal, texture, color, faces);
     RENDER.MESH += Mesh3D(test);
-    RENDER.MESH.printVertices();
 
     // Device memory for transformed vertices
     Point2D *d_point2D = new Point2D[RENDER.MESH.numVs];
