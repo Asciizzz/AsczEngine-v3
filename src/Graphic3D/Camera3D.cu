@@ -3,8 +3,8 @@
 Camera3D::Camera3D() {}
 
 void Camera3D::restrictRot() {
-    if (rot.x < -M_PI_2) rot.x = -M_PI_2;
-    else if (rot.x > M_PI_2) rot.x = M_PI_2;
+    if (rot.x <= -M_PI_2) rot.x = -M_PI_2 + 0.001;
+    else if (rot.x >= M_PI_2) rot.x = M_PI_2 - 0.001;
 
     if (rot.y > M_2_PI) rot.y -= M_2_PI;
     else if (rot.y < 0) rot.y += M_2_PI;

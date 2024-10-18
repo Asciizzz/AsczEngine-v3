@@ -8,6 +8,7 @@ public:
     Camera3D();
 
     float mSens = 0.1f;
+    bool focus = true;
 
     Vec3f pos, rot; // Pitch, Yaw, Roll (roll rarely used)
     void restrictRot();

@@ -80,37 +80,48 @@ int main() {
                 sf::Keyboard::isKeyPressed(sf::Keyboard::Escape)) {
                 window.close();
             }
+
+            // Press f1 to toggle focus
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::F1) {
+                    camera.focus = !camera.focus;
+                    window.setMouseCursorVisible(!camera.focus);
+                    sf::Mouse::setPosition(sf::Vector2i(width/2, height/2), window);
+                }
+            }
         }
 
-        // Mouse movement handling
-        sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-        sf::Mouse::setPosition(sf::Vector2i(width/2, height/2), window);
+        if (camera.focus) {
+            // Mouse movement handling
+            sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+            sf::Mouse::setPosition(sf::Vector2i(width/2, height/2), window);
 
-        // Move from center
-        int dMx = mousePos.x - width/2;
-        int dMy = mousePos.y - height/2;
+            // Move from center
+            int dMx = mousePos.x - width/2;
+            int dMy = mousePos.y - height/2;
 
-        // Camera look around
-        camera.rot.x -= dMy * camera.mSens * FPS.dTimeSec;
-        camera.rot.y -= dMx * camera.mSens * FPS.dTimeSec;
-        camera.restrictRot();
-        camera.updateMVP();
+            // Camera look around
+            camera.rot.x -= dMy * camera.mSens * FPS.dTimeSec;
+            camera.rot.y -= dMx * camera.mSens * FPS.dTimeSec;
+            camera.restrictRot();
+            camera.updateMVP();
 
-        // Mouse Click = move forward
-        float vel = 0;
-        bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-        bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
-        bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
-        bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
-        // Move forward/backward
-        if (m_left && !m_right)      vel = 20;
-        else if (m_right && !m_left) vel = -20;
-        else                         vel = 0;
-        // Move slower/faster
-        if (k_ctrl && !k_shift)      vel *= 0.2;
-        else if (k_shift && !k_ctrl) vel *= 4;
-        // Update camera position
-        camera.pos += camera.forward * vel * FPS.dTimeSec;
+            // Mouse Click = move forward
+            float vel = 0;
+            bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+            bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
+            bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
+            bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
+            // Move forward/backward
+            if (m_left && !m_right)      vel = 20;
+            else if (m_right && !m_left) vel = -20;
+            else                         vel = 0;
+            // Move slower/faster
+            if (k_ctrl && !k_shift)      vel *= 0.2;
+            else if (k_shift && !k_ctrl) vel *= 4;
+            // Update camera position
+            camera.pos += camera.forward * vel * FPS.dTimeSec;
+        }
 
         // Perform transformation
         for (ULLInt i = 0; i < test.pos.size(); i++) {
