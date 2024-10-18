@@ -5,29 +5,57 @@
 #include <SFML/Graphics.hpp>
 
 int main() {
-    Mesh mesh(
+    Mesh square(
         0, // ID
-        Vecs3f({ // Position
+        Vecs3f{ // Position
             Vec3f(-1, -1, 0), Vec3f(1, -1, 0), Vec3f(1, 1, 0), Vec3f(-1, 1, 0)
-        }),
-        Vecs3f({ // Normal
+        },
+        Vecs3f{ // Normal
             Vec3f(0, 0, 1), Vec3f(0, 0, 1), Vec3f(0, 0, 1), Vec3f(0, 0, 1)
-        }),
-        Vecs2f({ // Texture
+        },
+        Vecs2f{ // Texture
             Vec2f(0, 0), Vec2f(1, 0), Vec2f(1, 1), Vec2f(0, 1)
-        }),
-        Vecs3f({ // Color
+        },
+        Vecs3f{ // Color
             Vec3f(255, 0, 0), Vec3f(0, 255, 0), Vec3f(0, 0, 255), Vec3f(255, 255, 0)
-        }),
-        Vecs3uli({ // Faces
+        },
+        Vecs3uli{ // Faces
             Vec3uli(0, 1, 2), Vec3uli(0, 2, 3)
-        })
+        }
+    );
+
+    // Create a cube mesh with 8 vertices and 12 faces
+    Mesh cube(
+        1, // ID
+        Vecs3f{ // Position
+            Vec3f(-1, -1, -1), Vec3f(1, -1, -1), Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
+            Vec3f(-1, -1, 1), Vec3f(1, -1, 1), Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
+        },
+        Vecs3f{ // Normal
+            Vec3f(-1, -1, -1), Vec3f(1, -1, -1), Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
+            Vec3f(-1, -1, 1), Vec3f(1, -1, 1), Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
+        },
+        Vecs2f{ // Texture
+            Vec2f(0, 0), Vec2f(1, 0), Vec2f(1, 1), Vec2f(0, 1),
+            Vec2f(0, 0), Vec2f(1, 0), Vec2f(1, 1), Vec2f(0, 1)
+        },
+        Vecs3f{ // Color
+            Vec3f(255, 0, 0), Vec3f(0, 255, 0), Vec3f(0, 0, 255), Vec3f(255, 255, 0),
+            Vec3f(255, 0, 0), Vec3f(0, 255, 0), Vec3f(0, 0, 255), Vec3f(255, 255, 0)
+        },
+        Vecs3uli{ // Faces
+            Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
+            Vec3uli(4, 5, 6), Vec3uli(4, 6, 7),
+            Vec3uli(0, 4, 7), Vec3uli(0, 7, 3),
+            Vec3uli(1, 5, 6), Vec3uli(1, 6, 2),
+            Vec3uli(0, 1, 5), Vec3uli(0, 5, 4),
+            Vec3uli(2, 3, 7), Vec3uli(2, 7, 6)
+        }
     );
 
     // For the time being we gonna just use for loop to transform vertices
-    Vecs3f transformedVs(mesh.pos.size());
-
-    Mesh3D MESH(mesh);
+    Mesh3D MESH(cube);
+    Vecs3f transformedVs(MESH.numVs);
 
     MESH.printVertices();
     MESH.printFaces();
@@ -78,16 +106,20 @@ int main() {
         camera.pos += camera.forward * vel * FPS.dTimeSec;
 
         // Perform transformation
-        for (ULLInt i = 0; i < mesh.pos.size(); i++) {
-            Vec4f v = mesh.pos[i].toVec4f();
+        for (ULLInt i = 0; i < cube.pos.size(); i++) {
+            // Fun function to rotate the cube
+            cube.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI / 6 * FPS.dTimeSec, 0));
+
+            // Project vertices to NDC
+            Vec4f v = cube.pos[i].toVec4f();
             v = camera.mvp * v;
             transformedVs[i] = v.toVec3f();
         }
 
         window.clear(sf::Color::Black);
         // Draw mesh based on transformed vertices
-        for (ULLInt i = 0; i < mesh.faces.size(); i++) {
-            Vec3uli f = mesh.faces[i];
+        for (ULLInt i = 0; i < MESH.numFs; i++) {
+            Vec3uli f = cube.faces[i];
             // NDC coordinates
             Vec3f v0 = transformedVs[f.x];
             Vec3f v1 = transformedVs[f.y];
@@ -97,9 +129,9 @@ int main() {
             Vec2f p1 = Vec2f((v1.x + 1) * width/2, (v1.y + 1) * height/2);
             Vec2f p2 = Vec2f((v2.x + 1) * width/2, (v2.y + 1) * height/2);
 
-            sf::Color colorA = sf::Color(mesh.color[f.x].x, mesh.color[f.x].y, mesh.color[f.x].z);
-            sf::Color colorB = sf::Color(mesh.color[f.y].x, mesh.color[f.y].y, mesh.color[f.y].z);
-            sf::Color colorC = sf::Color(mesh.color[f.z].x, mesh.color[f.z].y, mesh.color[f.z].z);
+            sf::Color colorA = sf::Color(cube.color[f.x].x, cube.color[f.x].y, cube.color[f.x].z);
+            sf::Color colorB = sf::Color(cube.color[f.y].x, cube.color[f.y].y, cube.color[f.y].z);
+            sf::Color colorC = sf::Color(cube.color[f.z].x, cube.color[f.z].y, cube.color[f.z].z);
 
             // Create 3 lines for each face to draw wireframe
             sf::Vertex line01[] = {

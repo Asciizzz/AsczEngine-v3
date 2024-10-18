@@ -23,6 +23,9 @@ public:
 
     Mat4f mvp;
     void updateMVP();
+
+    // Frustum culling check
+    bool isInsideFrustum(Vec3f &v);
 };
 
 #endif
