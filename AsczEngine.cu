@@ -55,10 +55,10 @@ int main() {
 
     // For the time being we gonna just use for loop to transform vertices
     Mesh3D MESH(cube);
-    Vecs3f transformedVs(MESH.numVs);
-
     MESH.printVertices();
     MESH.printFaces();
+
+    Vecs3f transformedVs(MESH.numVs);
 
     Camera3D camera;
 
@@ -120,6 +120,14 @@ int main() {
         // Draw mesh based on transformed vertices
         for (ULLInt i = 0; i < MESH.numFs; i++) {
             Vec3uli f = cube.faces[i];
+
+            // If a single point of the cube outside of the frustum, skip drawing
+            if (!camera.isInsideFrustum(cube.pos[f.x]) ||
+                !camera.isInsideFrustum(cube.pos[f.y]) ||
+                !camera.isInsideFrustum(cube.pos[f.z])) {
+                continue;
+            }
+
             // NDC coordinates
             Vec3f v0 = transformedVs[f.x];
             Vec3f v1 = transformedVs[f.y];
