@@ -11,7 +11,7 @@ struct Line {
 };
 
 struct Point2D {
-    Vec3f world;
+    Vec3f screen;
     Vec3f color;
     bool isInsideFrustum;
 };
@@ -31,29 +31,27 @@ __global__ void toPoint2D(
     Vec4f t4 = camera.mvp * v4;
     Vec3f t3 = t4.toVec3f();
 
+    // Screen space 
+    t3.x = (t3.x + 1) * camera.res.x / 2;
+    t3.y = (1 - t3.y) * camera.res.y / 2;
+    t3.z = camera.near + (camera.far - camera.near) * t3.z;
+
     // Check if the point is inside the frustum
-    point2D[i].world = t3;
+    point2D[i].screen = t3;
     point2D[i].color = color[i];
     point2D[i].isInsideFrustum = camera.isInsideFrustum(world[i]);
 }
 
-__global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, Vec2f resHalf, ULLInt numFs) {
+__global__ void toLines(Point2D *point2D, Vec3uli *faces, Line *lines, ULLInt numFs) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
 
     Vec3uli f = faces[i];
 
-    // NDC
-    Vec3f v0 = point2D[f.x].world;
-    Vec3f v1 = point2D[f.y].world;
-    Vec3f v2 = point2D[f.z].world;
-    // Screen space
-    v0.x = (v0.x + 1) * resHalf.x;
-    v0.y = (1 - v0.y) * resHalf.y;
-    v1.x = (v1.x + 1) * resHalf.x;
-    v1.y = (1 - v1.y) * resHalf.y;
-    v2.x = (v2.x + 1) * resHalf.x;
-    v2.y = (1 - v2.y) * resHalf.y;
+    // Screen pos
+    Vec3f v0 = point2D[f.x].screen;
+    Vec3f v1 = point2D[f.y].screen;
+    Vec3f v2 = point2D[f.z].screen;
     // Color
     Vec3f c0 = point2D[f.x].color;
     Vec3f c1 = point2D[f.y].color;
@@ -202,7 +200,7 @@ int main() {
 
         // Turn faces into lines for wireframe
         toLines<<<RENDER.MESH.blockNumFs, RENDER.MESH.blockSize>>>(
-            d_point2D, RENDER.MESH.faces, d_lines, RENDER.RES_HALF, RENDER.MESH.numFs
+            d_point2D, RENDER.MESH.faces, d_lines, RENDER.MESH.numFs
         );
 
         // Copy lines from device to host
