@@ -94,10 +94,15 @@ int main() {
     int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
     int sizeZ = (rangeZ.y - rangeZ.x) / step.y + 1;
 
+    float maxY = -INFINITY;
+    float minY = INFINITY;
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             // World pos of the point
             float y = sin(x / 10) * cos(z / 10) * 10;
+            maxY = std::max(maxY, y);
+            minY = std::min(minY, y);
+
             world.push_back(Vec3f(x, y, z));
             // Not important for now
             normal.push_back(Vec3f(0, 1, 0));
@@ -108,6 +113,12 @@ int main() {
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
             color.push_back(Vec4f(255 * ratioX, 125, 125 * ratioZ, 255));
         }
+    }
+
+    for (ULLInt i = 0; i < world.size(); i++) {
+        // Set opacity based on the height
+        float ratioY = (world[i].y - minY) / (maxY - minY);
+        color[i].w = 10 + 200 * ratioY;
     }
 
     // Append faces to the grid

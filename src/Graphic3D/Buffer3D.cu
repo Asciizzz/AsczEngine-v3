@@ -10,16 +10,16 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
     free();
 
     cudaMalloc(&depth, buffSize * sizeof(float));
-    cudaMalloc(&color, buffSize * sizeof(Vec3f));
-    cudaMalloc(&normal, buffSize * sizeof(Vec3f));
+    cudaMalloc(&color, buffSize * sizeof(Vec4f));
     cudaMalloc(&world, buffSize * sizeof(Vec3f));
-    cudaMalloc(&tex, buffSize * sizeof(Vec2f));
+    cudaMalloc(&normal, buffSize * sizeof(Vec3f));
+    cudaMalloc(&texture, buffSize * sizeof(Vec2f));
 }
 
 void Buffer3D::free() {
     if (depth) cudaFree(depth);
     if (color) cudaFree(color);
-    if (normal) cudaFree(normal);
     if (world) cudaFree(world);
-    if (tex) cudaFree(tex);
+    if (normal) cudaFree(normal);
+    if (texture) cudaFree(texture);
 }
