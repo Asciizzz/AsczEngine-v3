@@ -40,7 +40,7 @@ int main() {
             float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioY = (y - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-            color.push_back(Vec3f(255 * ratioX, 255 * ratioZ, 255));
+            color.push_back(Vec3f(255 * ratioX, 255 * ratioY, 255 * ratioZ));
         }
     }
 
