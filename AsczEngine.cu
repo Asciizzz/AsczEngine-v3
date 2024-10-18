@@ -133,8 +133,6 @@ int main() {
     // Host memory for lines
     Line *lines = new Line[RENDER.MESH.numFs];
 
-    float moveX = 0;
-    float moveZ = 0;
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();

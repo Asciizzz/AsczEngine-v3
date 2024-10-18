@@ -211,7 +211,7 @@ void Mesh3D::printFaces() {
     cudaMemcpy(hFaces, faces, numFs * sizeof(Vec3uli), cudaMemcpyDeviceToHost);
 
     for (ULLInt i = 0; i < numFs; i++) {
-        printf("Face %lu: (%lu, %lu, %lu)\n", i, hFaces[i].x, hFaces[i].y, hFaces[i].z);
+        printf("Face %llu: (%lu, %lu, %lu)\n", i, hFaces[i].x, hFaces[i].y, hFaces[i].z);
     }
 
     delete[] hFaces;

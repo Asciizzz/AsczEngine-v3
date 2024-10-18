@@ -1,8 +1,7 @@
 #ifndef RENDER3D_CUH
 #define RENDER3D_CUH
 
-#include <Camera3D.cuh>
-#include <Mesh3D.cuh>
+#include <Buffer3D.cuh>
 
 class Render3D {
 public:
