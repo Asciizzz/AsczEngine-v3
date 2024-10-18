@@ -193,8 +193,8 @@ int main() {
         }
 
         // Rotate the mesh
-        float rotY = M_PI_2 / 6 * FPS.dTimeSec;
-        MESH.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
+        // float rotY = M_PI_2 / 6 * FPS.dTimeSec;
+        // MESH.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
 
         // Perform 2D projection
         toPoint2D<<<MESH.blockNumVs, MESH.blockSize>>>(
