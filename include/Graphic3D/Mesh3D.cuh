@@ -45,11 +45,11 @@ public:
     ULLInt blockNumVs, blockNumFs;
 
     // Vertices
+    UInt *meshID;
     Vec3f *world;
     Vec3f *normal;
     Vec2f *texture;
     Vec4f *color;
-    UInt *meshID;
 
     // Faces (triangles)
     Vec3uli *faces;
