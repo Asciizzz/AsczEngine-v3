@@ -59,7 +59,7 @@ int main() {
 
         // Camera look around
         camera.rot.x += dMy * camera.mSens * FPS.dTimeSec;
-        camera.rot.y += dMx * camera.mSens * FPS.dTimeSec;
+        camera.rot.y -= dMx * camera.mSens * FPS.dTimeSec;
         camera.restrictRot();
         camera.updateMVP();
 
@@ -71,19 +71,16 @@ int main() {
         else if (m_right && !m_left) vel = -20;
         else                         vel = 0;
         camera.pos += camera.forward * vel * FPS.dTimeSec;
-        // camera.pos.print();
-
+        camera.pos.print();
+        camera.rot.print();
+        std::cout << "---\n";
 
         // Perform transformation
         for (ULLInt i = 0; i < mesh.pos.size(); i++) {
             Vec4f v = mesh.pos[i].toVec4f();
             v = camera.mvp * v;
             transformedVs[i] = v.toVec3f();
-
-            Vec2f p = Vec2f((v.x + 1) * 400, (v.y + 1) * 300);
-            std::cout << "v" << i << ": " << p.x << ", " << p.y << " | ";
         }
-        std::cout << std::endl;
 
         window.clear(sf::Color::Black);
         // Draw mesh based on transformed vertices

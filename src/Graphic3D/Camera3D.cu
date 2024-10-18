@@ -11,9 +11,9 @@ void Camera3D::restrictRot() {
 }
 
 void Camera3D::updateView() {
-    forward.x = cos(rot.y) * cos(rot.x);
+    forward.x = sin(rot.y) * cos(rot.x);
     forward.y = sin(rot.x);
-    forward.z = sin(rot.y) * cos(rot.x);
+    forward.z = cos(rot.y) * cos(rot.x);
     forward.norm();
 
     right = forward & Vec3f(0, 1, 0);
