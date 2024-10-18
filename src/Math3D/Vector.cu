@@ -44,5 +44,5 @@ __host__ __device__ void Vec3f::norm() {
 __host__ __device__ Vec4f::Vec4f() : x(0), y(0), z(0), w(0) {}
 __host__ __device__ Vec4f::Vec4f(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
 __host__ __device__ Vec3f Vec4f::toVec3f() {
-    return Vec3f(x, y, z);
+    return Vec3f(x / w, y / w, z / w);
 }

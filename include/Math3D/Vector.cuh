@@ -60,7 +60,7 @@ struct Vec4f {
     float x, y, z, w;
     __host__ __device__ Vec4f();
     __host__ __device__ Vec4f(float x, float y, float z, float w);
-    __host__ __device__ Vec3f toVec3f();
+    __host__ __device__ Vec3f toVec3f(); // From Homogeneous to Cartesian
 
     void print() { // Will remove this later
         printf("Vec4(%f, %f, %f, %f)\n", x, y, z, w);

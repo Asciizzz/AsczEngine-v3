@@ -11,9 +11,9 @@ void Camera3D::restrictRot() {
 }
 
 void Camera3D::updateView() {
-    forward.x = cos(rot.y) * cos(rot.x);
+    forward.x = cos(rot.x) * sin(rot.y);
     forward.y = sin(rot.x);
-    forward.z = sin(rot.y) * cos(rot.x);
+    forward.z = cos(rot.x) * cos(rot.y);
     forward.norm();
 
     right = forward & Vec3f(0, 1, 0);
@@ -39,4 +39,28 @@ void Camera3D::updateView() {
     };
 
     view = Mat4f(rMat) * Mat4f(tMat);
+}
+
+void Camera3D::updateProjection() {
+    float f = 1 / tan(fov / 2);
+    float ar = aspect;
+
+    float p22 = (far + near) / (near - far);
+    float p23 = (2 * far * near) / (near - far);
+
+    float pMat[4][4] = {
+        {f / ar, 0, 0, 0},
+        {0, f, 0, 0},
+        {0, 0, p22, p23},
+        {0, 0, -1, 0}
+    };
+    projection = Mat4f(pMat);
+}
+
+
+void Camera3D::updateMVP() {
+    updateView();
+    updateProjection();
+
+    mvp = projection * view;
 }

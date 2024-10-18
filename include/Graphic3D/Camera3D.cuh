@@ -7,18 +7,20 @@ class Camera3D {
 public:
     Camera3D();
 
-    Vec3f pos;
-    Vec3f rot; // Pitch, Yaw, Roll (roll rarely used)
+    Vec3f pos, rot; // Pitch, Yaw, Roll (roll rarely used)
     void restrictRot();
 
-    float fov, aspect;
-    float near, far;
-
-    Vec3f forward;
-    Vec3f right;
-    Vec3f up;
+    Vec3f forward, right, up;
     Mat4f view;
     void updateView();
+
+    float fov = M_PI_2, aspect = 1;
+    float near = 1, far = 1000;
+    Mat4f projection;
+    void updateProjection();
+
+    Mat4f mvp;
+    void updateMVP();
 };
 
 #endif

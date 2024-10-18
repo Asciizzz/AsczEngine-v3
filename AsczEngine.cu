@@ -1,5 +1,6 @@
 #include <FpsHandler.cuh>
 #include <Mesh3D.cuh>
+#include <Camera3D.cuh>
 
 int main() {
     Mesh mesh(
@@ -22,6 +23,11 @@ int main() {
 
     MESH.printVertices();
     MESH.printFaces();
+
+    Camera3D camera;
+    camera.updateMVP();
+
+    camera.mvp.print();
 
     return 0;
 }
