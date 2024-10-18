@@ -194,19 +194,19 @@ int main() {
         window.clear(sf::Color::Black);
         // Draw mesh based on transformed vertices
         for (ULLInt i = 0; i < RENDER.mesh.numFs; i++) {
-            Line l = lines[i];
-            if (!l.in0 || !l.in1 || !l.in2) continue;
+            Line line = lines[i];
+            if (!line.in0 || !line.in1 || !line.in2) continue;
 
-            sf::Color c0 = vec4fToColor(l.color0);
-            sf::Color c1 = vec4fToColor(l.color1);
-            sf::Color c2 = vec4fToColor(l.color2);
+            sf::Color c0 = vec4fToColor(line.color0);
+            sf::Color c1 = vec4fToColor(line.color1);
+            sf::Color c2 = vec4fToColor(line.color2);
 
-            sf::Vertex v1(sf::Vector2f(l.p0.x, l.p0.y), c0);
-            sf::Vertex v2(sf::Vector2f(l.p1.x, l.p1.y), c1);
-            sf::Vertex v3(sf::Vector2f(l.p2.x, l.p2.y), c2);
+            sf::Vertex v1(sf::Vector2f(line.p0.x, line.p0.y), c0);
+            sf::Vertex v2(sf::Vector2f(line.p1.x, line.p1.y), c1);
+            sf::Vertex v3(sf::Vector2f(line.p2.x, line.p2.y), c2);
 
-            sf::Vertex line[] = {v1, v2, v3, v1};
-            window.draw(line, 4, sf::LineStrip);
+            sf::Vertex strip[] = {v1, v2, v3, v1};
+            window.draw(strip, 4, sf::LineStrip);
         }
 
         // Log handling
