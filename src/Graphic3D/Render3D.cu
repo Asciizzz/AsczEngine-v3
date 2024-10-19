@@ -112,20 +112,20 @@ __global__ void createDepthMapKernel(
     for (int y = minY; y <= maxY; y++) {
         int bIdx = x + y * buffWidth;
 
-        float alpha = ((p1.y - p2.y) * (x - p2.x) + (p2.x - p1.x) * (y - p2.y)) /
-                      ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
-        float beta = ((p2.y - p0.y) * (x - p2.x) + (p0.x - p2.x) * (y - p2.y)) /
-                     ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
-        float gamma = 1.0f - alpha - beta;
+        float alp = ((p1.y - p2.y) * (x - p2.x) + (p2.x - p1.x) * (y - p2.y)) /
+                    ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
+        float bet = ((p2.y - p0.y) * (x - p2.x) + (p0.x - p2.x) * (y - p2.y)) /
+                    ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
+        float gam = 1.0f - alp - bet;
 
-        if (alpha < 0 || beta < 0 || gamma < 0) continue;
+        if (alp < 0 || bet < 0 || gam < 0) continue;
 
-        float zDepth = alpha * p0.z + beta * p1.z + gamma * p2.z;
+        float zDepth = alp * p0.z + bet * p1.z + gam * p2.z;
 
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffDepth[bIdx] = zDepth;
             buffFaceId[bIdx] = i;
-            buffBary[bIdx] = Vec3f(alpha, beta, gamma);
+            buffBary[bIdx] = Vec3f(alp, bet, gam);
         }
     }
 }
@@ -148,34 +148,34 @@ __global__ void rasterizationKernel(
     ULLInt vIdx2 = faces[fIdx].z;
 
     // Get barycentric coordinates
-    float alpha = buffBary[i].x;
-    float beta = buffBary[i].y;
-    float gamma = buffBary[i].z;
+    float alp = buffBary[i].x;
+    float bet = buffBary[i].y;
+    float gam = buffBary[i].z;
 
     // Set color
     Vec4f c0 = color[vIdx0];
     Vec4f c1 = color[vIdx1];
     Vec4f c2 = color[vIdx2];
-    buffColor[i] = c0 * alpha + c1 * beta + c2 * gamma;
+    buffColor[i] = c0 * alp + c1 * bet + c2 * gam;
 
     // Set world position
     Vec3f w0 = world[vIdx0];
     Vec3f w1 = world[vIdx1];
     Vec3f w2 = world[vIdx2];
-    buffWorld[i] = w0 * alpha + w1 * beta + w2 * gamma;
+    buffWorld[i] = w0 * alp + w1 * bet + w2 * gam;
 
     // Set normal
     Vec3f n0 = normal[vIdx0];
     Vec3f n1 = normal[vIdx1];
     Vec3f n2 = normal[vIdx2];
     n0.norm(); n1.norm(); n2.norm();
-    buffNormal[i] = n0 * alpha + n1 * beta + n2 * gamma;
+    buffNormal[i] = n0 * alp + n1 * bet + n2 * gam;
 
     // Set texture
     Vec2f t0 = texture[vIdx0];
     Vec2f t1 = texture[vIdx1];
     Vec2f t2 = texture[vIdx2];
-    buffTexture[i] = t0 * alpha + t1 * beta + t2 * gamma;
+    buffTexture[i] = t0 * alp + t1 * bet + t2 * gam;
 
     // Set mesh ID
     buffMeshId[i] = meshID[vIdx0];
