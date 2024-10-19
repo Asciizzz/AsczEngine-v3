@@ -26,8 +26,8 @@ int main() {
     Vecs3uli faces;
 
     // Append points to the grid
-    Vec2f rangeX(-5, 5);
-    Vec2f rangeZ(-5, 5);
+    Vec2f rangeX(-100, 100);
+    Vec2f rangeZ(-100, 100);
     Vec2f step(1, 1);
 
     int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
@@ -55,7 +55,7 @@ int main() {
             texture.push_back(Vec2f(ratioX, ratioZ));
 
             // Cool color
-            color.push_back(Vec4f(255 * ratioX, 125, 125 * ratioZ, 255));
+            color.push_back(Vec4f(255 * ratioX, 255, 255 * ratioZ, 255));
         }
     }
 
@@ -74,7 +74,7 @@ int main() {
         }
     }
 
-    Mesh test(0, world, normal, texture, color, faces);
+    Mesh graph(0, world, normal, texture, color, faces);
 
     Mesh cube(1,
         Vecs3f({
@@ -111,7 +111,7 @@ int main() {
         })
     );
 
-    RENDER.mesh += Mesh3D(cube);
+    RENDER.mesh += Mesh3D(graph);
     RENDER.allocateProjection();
 
     while (window.isOpen()) {

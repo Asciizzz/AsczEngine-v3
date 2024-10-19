@@ -33,8 +33,8 @@ void Render3D::rasterizeFaces() {
     // Currently very buggy
     for (int i = 0; i < 2; i++)
         rasterizeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-            projection, mesh.color, mesh.world, mesh.normal, mesh.texture, mesh.faces, mesh.numFs,
-            buffer.depth, buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.meshID, buffer.width, buffer.height
+            projection, mesh.color, mesh.faces, mesh.numFs,
+            buffer.depth, buffer.color, buffer.width, buffer.height
         );
     cudaDeviceSynchronize();
 }
@@ -59,21 +59,23 @@ __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D
     projection[i] = p;
 }
 
-__device__ static float atomicMinFloat(float* address, float val)
-{
-    int* address_as_i = (int*) address;
-    int old = *address_as_i, assumed;
+__device__ bool atomicMinFloat(float* addr, float value) {
+    int* addr_as_int = (int*)addr;
+    int old = *addr_as_int, assumed;
+
     do {
         assumed = old;
-        old = ::atomicCAS(address_as_i, assumed,
-            __float_as_int(::fminf(val, __int_as_float(assumed))));
+        old = atomicCAS(addr_as_int, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
     } while (assumed != old);
-    return __int_as_float(old);
+
+    return __int_as_float(old) > value;
 }
 
 __global__ void rasterizeFacesKernel(
-    Vec4f *projection, Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, Vec3uli *faces, ULLInt numFs,
-    float *buffDepth, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture, UInt *buffMeshID, int buffWidth, int buffHeight
+    // Mesh data
+    Vec4f *projection, Vec4f *color, Vec3uli *faces, ULLInt numFs,
+    // Buffer data
+    float *buffDepth, Vec4f *buffColor, int buffWidth, int buffHeight
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
@@ -105,21 +107,19 @@ __global__ void rasterizeFacesKernel(
     for (int y = minY; y <= maxY; y++) {
         int bIdx = x + y * buffWidth;
 
-        // Barycentric coordinates
         float alpha = ((p1.y - p2.y) * (x - p2.x) + (p2.x - p1.x) * (y - p2.y)) /
                       ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
         float beta = ((p2.y - p0.y) * (x - p2.x) + (p0.x - p2.x) * (y - p2.y)) /
                      ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
         float gamma = 1.0f - alpha - beta;
 
-        // Point not in the triangle
         if (alpha < 0 || beta < 0 || gamma < 0) continue;
 
-        // Z-buffering
         float zDepth = alpha * p0.z + beta * p1.z + gamma * p2.z;
-        if (atomicMinFloat(&buffDepth[bIdx], zDepth) < zDepth) continue;
 
-        buffDepth[bIdx] = zDepth;
-        buffColor[bIdx] = c0 * alpha + c1 * beta + c2 * gamma;
+        if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
+            buffDepth[bIdx] = zDepth;
+            buffColor[bIdx] = c0 * alpha + c1 * beta + c2 * gamma;
+        }
     }
 }
