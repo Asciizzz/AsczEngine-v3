@@ -27,15 +27,24 @@ void Render3D::vertexProjection() {
     cudaDeviceSynchronize();
 }
 
-void Render3D::rasterizeFaces() {
+void Render3D::createDepthMap() {
     buffer.clearBuffer();
 
     // Currently very buggy
     for (int i = 0; i < 2; i++)
-        rasterizeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-            projection, mesh.color, mesh.faces, mesh.numFs,
-            buffer.depth, buffer.color, buffer.width, buffer.height
+        createDepthMapKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
+            projection, mesh.faces, mesh.numFs,
+            buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height
         );
+    cudaDeviceSynchronize();
+}
+
+void Render3D::rasterization() {
+    rasterizationKernel<<<buffer.blockCount, buffer.blockSize>>>(
+        mesh.color, mesh.world, mesh.normal, mesh.texture, mesh.meshID, mesh.faces,
+        buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.meshID,
+        buffer.faceID, buffer.bary, buffer.width, buffer.height
+    );
     cudaDeviceSynchronize();
 }
 
@@ -71,11 +80,11 @@ __device__ bool atomicMinFloat(float* addr, float value) {
     return __int_as_float(old) > value;
 }
 
-__global__ void rasterizeFacesKernel(
+__global__ void createDepthMapKernel(
     // Mesh data
-    Vec4f *projection, Vec4f *color, Vec3uli *faces, ULLInt numFs,
+    Vec4f *projection, Vec3uli *faces, ULLInt numFs,
     // Buffer data
-    float *buffDepth, Vec4f *buffColor, int buffWidth, int buffHeight
+    float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
@@ -84,10 +93,6 @@ __global__ void rasterizeFacesKernel(
     Vec4f p0 = projection[f.x];
     Vec4f p1 = projection[f.y];
     Vec4f p2 = projection[f.z];
-
-    Vec4f c0 = color[f.x];
-    Vec4f c1 = color[f.y];
-    Vec4f c2 = color[f.z];
 
     if (p0.w <= 0 || p1.w <= 0 || p2.w <= 0) return;
 
@@ -119,7 +124,59 @@ __global__ void rasterizeFacesKernel(
 
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffDepth[bIdx] = zDepth;
-            buffColor[bIdx] = c0 * alpha + c1 * beta + c2 * gamma;
+            buffFaceId[bIdx] = i;
+            buffBary[bIdx] = Vec3f(alpha, beta, gamma);
         }
     }
+}
+
+__global__ void rasterizationKernel(
+    // Mesh data
+    Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, UInt *meshID, Vec3uli *faces,
+    // Buffer data
+    Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
+    UInt *buffMeshId, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= buffWidth * buffHeight) return;
+
+    ULLInt fIdx = buffFaceId[i];
+
+    // Set vertex index
+    ULLInt vIdx0 = faces[fIdx].x;
+    ULLInt vIdx1 = faces[fIdx].y;
+    ULLInt vIdx2 = faces[fIdx].z;
+
+    // Get barycentric coordinates
+    float alpha = buffBary[i].x;
+    float beta = buffBary[i].y;
+    float gamma = buffBary[i].z;
+
+    // Set color
+    Vec4f c0 = color[vIdx0];
+    Vec4f c1 = color[vIdx1];
+    Vec4f c2 = color[vIdx2];
+    buffColor[i] = c0 * alpha + c1 * beta + c2 * gamma;
+
+    // Set world position
+    Vec3f w0 = world[vIdx0];
+    Vec3f w1 = world[vIdx1];
+    Vec3f w2 = world[vIdx2];
+    buffWorld[i] = w0 * alpha + w1 * beta + w2 * gamma;
+
+    // Set normal
+    Vec3f n0 = normal[vIdx0];
+    Vec3f n1 = normal[vIdx1];
+    Vec3f n2 = normal[vIdx2];
+    n0.norm(); n1.norm(); n2.norm();
+    buffNormal[i] = n0 * alpha + n1 * beta + n2 * gamma;
+
+    // Set texture
+    Vec2f t0 = texture[vIdx0];
+    Vec2f t1 = texture[vIdx1];
+    Vec2f t2 = texture[vIdx2];
+    buffTexture[i] = t0 * alpha + t1 * beta + t2 * gamma;
+
+    // Set mesh ID
+    buffMeshId[i] = meshID[vIdx0];
 }

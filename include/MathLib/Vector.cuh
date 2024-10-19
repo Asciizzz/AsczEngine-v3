@@ -24,6 +24,14 @@ struct Vec2f {
     float x, y;
     __host__ __device__ Vec2f();
     __host__ __device__ Vec2f(float x, float y);
+
+    // Basic operations
+    __host__ __device__ Vec2f operator+(const Vec2f &vec);
+    __host__ __device__ Vec2f operator+(const float t);
+    __host__ __device__ Vec2f operator-(const Vec2f &vec);
+    __host__ __device__ Vec2f operator-(const float t);
+    __host__ __device__ Vec2f operator*(const float scl);
+    __host__ __device__ Vec2f operator/(const float scl);
 };
 
 struct Vec3uli { // For faces indices

@@ -29,7 +29,8 @@ public:
 
     // Render pipeline
     void vertexProjection();
-    void rasterizeFaces();
+    void createDepthMap();
+    void rasterization();
 
 private:
     Render3D() {}
@@ -37,11 +38,17 @@ private:
 
 // Pipeline Kernels
 __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs);
-__global__ void rasterizeFacesKernel(
+__global__ void createDepthMapKernel(
     // Mesh data
-    Vec4f *projection, Vec4f *color, Vec3uli *faces, ULLInt numFs,
+    Vec4f *projection, Vec3uli *faces, ULLInt numFs,
     // Buffer data
-    float *buffDepth, Vec4f *buffColor, int buffWidth, int buffHeight
+    float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
+);
+__global__ void rasterizationKernel(
+    // Mesh data
+    Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, UInt *meshID, Vec3uli *faces,
+    // Buffer data
+    Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture, UInt *buffMeshId, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
 );
 
 #endif

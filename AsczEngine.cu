@@ -248,7 +248,8 @@ int main() {
 
         // Render Pipeline
         RENDER.vertexProjection();
-        RENDER.rasterizeFaces();
+        RENDER.createDepthMap();
+        RENDER.rasterization();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)

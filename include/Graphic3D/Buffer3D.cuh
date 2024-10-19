@@ -17,6 +17,8 @@ public:
     Vec3f *normal;
     Vec2f *texture;
     UInt *meshID;
+    ULLInt *faceID;
+    Vec3f *bary;
 
     Buffer3D();
     ~Buffer3D();
@@ -33,6 +35,8 @@ __global__ void clearBufferKernel(
     Vec3f *normal,
     Vec2f *texture,
     UInt *meshID,
+    ULLInt *faceID,
+    Vec3f *bary,
     int size
 );
 

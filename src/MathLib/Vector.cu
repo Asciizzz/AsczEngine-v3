@@ -4,6 +4,24 @@
 // VEC2f
 Vec2f::Vec2f() : x(0), y(0) {}
 Vec2f::Vec2f(float x, float y) : x(x), y(y) {}
+Vec2f Vec2f::operator+(const Vec2f& v) {
+    return Vec2f(x + v.x, y + v.y);
+}
+Vec2f Vec2f::operator+(const float t) {
+    return Vec2f(x + t, y + t);
+}
+Vec2f Vec2f::operator-(const Vec2f& v) {
+    return Vec2f(x - v.x, y - v.y);
+}
+Vec2f Vec2f::operator-(const float t) {
+    return Vec2f(x - t, y - t);
+}
+Vec2f Vec2f::operator*(const float scl) {
+    return Vec2f(x * scl, y * scl);
+}
+Vec2f Vec2f::operator/(const float scl) {
+    return Vec2f(x / scl, y / scl);
+}
 
 // VEC3uli (unsigned long int)
 Vec3uli::Vec3uli() : x(0), y(0), z(0) {}
@@ -32,11 +50,11 @@ Vec3f Vec3f::operator-(const Vec3f& v) {
 Vec3f Vec3f::operator-(const float t) {
     return Vec3f(x - t, y - t, z - t);
 }
-Vec3f Vec3f::operator*(const float scalar) {
-    return Vec3f(x * scalar, y * scalar, z * scalar);
+Vec3f Vec3f::operator*(const float scl) {
+    return Vec3f(x * scl, y * scl, z * scl);
 }
-Vec3f Vec3f::operator/(const float scalar) {
-    return Vec3f(x / scalar, y / scalar, z / scalar);
+Vec3f Vec3f::operator/(const float scl) {
+    return Vec3f(x / scl, y / scl, z / scl);
 }
 void Vec3f::operator+=(const Vec3f& v) {
     x += v.x; y += v.y; z += v.z;
@@ -44,11 +62,11 @@ void Vec3f::operator+=(const Vec3f& v) {
 void Vec3f::operator-=(const Vec3f& v) {
     x -= v.x; y -= v.y; z -= v.z;
 }
-void Vec3f::operator*=(const float scalar) {
-    x *= scalar; y *= scalar; z *= scalar;
+void Vec3f::operator*=(const float scl) {
+    x *= scl; y *= scl; z *= scl;
 }
-void Vec3f::operator/=(const float scalar) {
-    x /= scalar; y /= scalar; z /= scalar;
+void Vec3f::operator/=(const float scl) {
+    x /= scl; y /= scl; z /= scl;
 }
 
 float Vec3f::operator*(const Vec3f& v) {
@@ -143,6 +161,6 @@ Vec4f Vec4f::operator+(const Vec4f& v) {
 Vec4f Vec4f::operator-(const Vec4f& v) {
     return Vec4f(x - v.x, y - v.y, z - v.z, w - v.w);
 }
-Vec4f Vec4f::operator*(const float scalar) {
-    return Vec4f(x * scalar, y * scalar, z * scalar, w * scalar);
+Vec4f Vec4f::operator*(const float scl) {
+    return Vec4f(x * scl, y * scl, z * scl, w * scl);
 }
