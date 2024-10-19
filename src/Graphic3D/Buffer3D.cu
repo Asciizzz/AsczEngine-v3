@@ -51,7 +51,7 @@ __global__ void clearBufferKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= size) return;
 
-    depth[i] = 100;
+    depth[i] = 1;
     color[i] = Vec4f(0, 0, 0, 0);
     world[i] = Vec3f(0, 0, 0);
     normal[i] = Vec3f(0, 0, 0);

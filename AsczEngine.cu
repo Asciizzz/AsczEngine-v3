@@ -26,8 +26,8 @@ int main() {
     Vecs3uli faces;
 
     // Append points to the grid
-    Vec2f rangeX(-100, 100);
-    Vec2f rangeZ(-100, 100);
+    Vec2f rangeX(-5, 5);
+    Vec2f rangeZ(-5, 5);
     Vec2f step(1, 1);
 
     int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
@@ -38,8 +38,8 @@ int main() {
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             // World pos of the point
-            // float y = sin(x / 10) * cos(z / 10) * 10;
-            float y = rand() % 20 - 10;
+            float y = sin(x / 10) * cos(z / 10) * 10;
+            // float y = rand() % 20 - 10;
 
             maxY = std::max(maxY, y);
             minY = std::min(minY, y);
@@ -75,7 +75,43 @@ int main() {
     }
 
     Mesh test(0, world, normal, texture, color, faces);
-    RENDER.mesh += Mesh3D(test);
+
+    Mesh cube(1,
+        Vecs3f({
+            Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
+            Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
+            Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
+            Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
+        }),
+        Vecs3f({
+            Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
+            Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
+            Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
+            Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
+        }),
+        Vecs2f({
+            Vec2f(0, 0), Vec2f(1, 0),
+            Vec2f(1, 1), Vec2f(0, 1),
+            Vec2f(0, 0), Vec2f(1, 0),
+            Vec2f(1, 1), Vec2f(0, 1)
+        }),
+        Vecs4f({ // Red Green Blue Yellow Cyan Magenta Orange Purple 
+            Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
+            Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
+            Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
+            Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
+        }),
+        Vecs3uli({
+            Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
+            Vec3uli(4, 5, 6), Vec3uli(4, 6, 7),
+            Vec3uli(0, 4, 7), Vec3uli(0, 7, 3),
+            Vec3uli(1, 5, 6), Vec3uli(1, 6, 2),
+            Vec3uli(0, 1, 5), Vec3uli(0, 5, 4),
+            Vec3uli(3, 2, 6), Vec3uli(3, 6, 7)
+        })
+    );
+
+    RENDER.mesh += Mesh3D(cube);
     RENDER.allocateProjection();
 
     while (window.isOpen()) {
@@ -90,8 +126,8 @@ int main() {
                 window.close();
             }
 
-            // Press f1 to toggle focus
             if (event.type == sf::Event::KeyPressed) {
+                // Press f1 to toggle focus
                 if (event.key.code == sf::Keyboard::F1) {
                     RENDER.camera.focus = !RENDER.camera.focus;
                     window.setMouseCursorVisible(!RENDER.camera.focus);

@@ -31,10 +31,11 @@ void Render3D::rasterizeFaces() {
     buffer.clearBuffer();
 
     // Currently very buggy
-    rasterizeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-        projection, mesh.color, mesh.faces, mesh.numFs,
-        buffer.depth, buffer.color, buffer.width, buffer.height
-    );
+    for (int i = 0; i < 2; i++)
+        rasterizeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
+            projection, mesh.color, mesh.faces, mesh.numFs,
+            buffer.depth, buffer.color, buffer.width, buffer.height
+        );
     cudaDeviceSynchronize();
 }
 
@@ -58,12 +59,16 @@ __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D
     projection[i] = p;
 }
 
-__device__ int floatAsInt(float val) {
-    return *reinterpret_cast<int*>(&val); // Reinterpret float as int (bitwise representation)
-}
-
-__device__ float intAsFloat(int val) {
-    return *reinterpret_cast<float*>(&val); // Reinterpret int back as float
+__device__ static float atomicMinFloat(float* address, float val)
+{
+    int* address_as_i = (int*) address;
+    int old = *address_as_i, assumed;
+    do {
+        assumed = old;
+        old = ::atomicCAS(address_as_i, assumed,
+            __float_as_int(::fminf(val, __int_as_float(assumed))));
+    } while (assumed != old);
+    return __int_as_float(old);
 }
 
 __global__ void rasterizeFacesKernel(
@@ -112,7 +117,7 @@ __global__ void rasterizeFacesKernel(
 
         float zDepth = alpha * p0.z + beta * p1.z + gamma * p2.z;
 
-        if (zDepth < buffDepth[bIdx]) {
+        if (atomicMinFloat(&buffDepth[bIdx], zDepth) > zDepth) {
             buffDepth[bIdx] = zDepth;
             buffColor[bIdx] = c0 * alpha + c1 * beta + c2 * gamma;
         }
