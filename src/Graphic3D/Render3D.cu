@@ -33,8 +33,8 @@ void Render3D::rasterizeFaces() {
     // Currently very buggy
     for (int i = 0; i < 2; i++)
         rasterizeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-            projection, mesh.color, mesh.faces, mesh.numFs,
-            buffer.depth, buffer.color, buffer.width, buffer.height
+            projection, mesh.color, mesh.world, mesh.normal, mesh.texture, mesh.faces, mesh.numFs,
+            buffer.depth, buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.meshID, buffer.width, buffer.height
         );
     cudaDeviceSynchronize();
 }
@@ -72,10 +72,8 @@ __device__ static float atomicMinFloat(float* address, float val)
 }
 
 __global__ void rasterizeFacesKernel(
-    // Mesh data
-    Vec4f *projection, Vec4f *color, Vec3uli *faces, ULLInt numFs,
-    // Buffer data
-    float *buffDepth, Vec4f *buffColor, int buffWidth, int buffHeight
+    Vec4f *projection, Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, Vec3uli *faces, ULLInt numFs,
+    float *buffDepth, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture, UInt *buffMeshID, int buffWidth, int buffHeight
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
@@ -107,19 +105,21 @@ __global__ void rasterizeFacesKernel(
     for (int y = minY; y <= maxY; y++) {
         int bIdx = x + y * buffWidth;
 
+        // Barycentric coordinates
         float alpha = ((p1.y - p2.y) * (x - p2.x) + (p2.x - p1.x) * (y - p2.y)) /
                       ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
         float beta = ((p2.y - p0.y) * (x - p2.x) + (p0.x - p2.x) * (y - p2.y)) /
                      ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
         float gamma = 1.0f - alpha - beta;
 
+        // Point not in the triangle
         if (alpha < 0 || beta < 0 || gamma < 0) continue;
 
+        // Z-buffering
         float zDepth = alpha * p0.z + beta * p1.z + gamma * p2.z;
+        if (atomicMinFloat(&buffDepth[bIdx], zDepth) < zDepth) continue;
 
-        if (atomicMinFloat(&buffDepth[bIdx], zDepth) > zDepth) {
-            buffDepth[bIdx] = zDepth;
-            buffColor[bIdx] = c0 * alpha + c1 * beta + c2 * gamma;
-        }
+        buffDepth[bIdx] = zDepth;
+        buffColor[bIdx] = c0 * alpha + c1 * beta + c2 * gamma;
     }
 }

@@ -38,10 +38,8 @@ private:
 // Pipeline Kernels
 __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs);
 __global__ void rasterizeFacesKernel(
-    // Mesh data
-    Vec4f *projection, Vec4f *color, Vec3uli *faces, ULLInt numFs,
-    // Buffer data
-    float *buffDepth, Vec4f *buffColor, int buffWidth, int buffHeight
+    Vec4f *projection, Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, Vec3uli *faces, ULLInt numFs,
+    float *buffDepth, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture, UInt *buffMeshID, int buffWidth, int buffHeight
 );
 
 #endif
