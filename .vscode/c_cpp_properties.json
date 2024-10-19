@@ -6,7 +6,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/include/Default",
                 "${workspaceFolder}/include/Graphic3D",
-                "${workspaceFolder}/include/MathLib"
+                "${workspaceFolder}/include/MathLib",
+                "${workspaceFolder}/include/Shader3D"
             ],
             "defines": [
                 "_DEBUG",

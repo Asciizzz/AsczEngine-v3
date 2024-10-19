@@ -59,7 +59,6 @@ public:
     Mesh3D(ULLInt numVs=0, ULLInt numFs=0);
     Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
     Mesh3D(Mesh &mesh);
-    ~Mesh3D();
 
     // Memory management
     void mallocVertices();
