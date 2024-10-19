@@ -13,7 +13,7 @@ int main() {
     RENDER.setResolution(1600, 900);
 
     Camera3D &CAMERA = RENDER.camera;
-    CAMERA.pos = Vec3f(0, 0, -15);
+    CAMERA.pos = Vec3f(0, 0, 15);
 
     SFMLTexture SFTex = SFMLTexture(1600, 900);
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");

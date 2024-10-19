@@ -29,9 +29,8 @@ void Render3D::vertexProjection() {
 
 void Render3D::createDepthMap() {
     buffer.clearBuffer();
-    buffer.nightSky();
+    buffer.nightSky(); // Cool effect
 
-    // Currently very buggy
     for (int i = 0; i < 2; i++)
         createDepthMapKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
             projection, mesh.faces, mesh.numFs,

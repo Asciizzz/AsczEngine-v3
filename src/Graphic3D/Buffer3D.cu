@@ -91,6 +91,6 @@ __global__ void nightSkyKernel(Vec4f *color, int width, int height) {
 
     color[i] = Vec4f(0, 0, 0, 255);
     color[i].x = 4 * (1 - ratioY);
-    color[i].z = 10 * (1 - ratioX);
+    color[i].y = 10 * (1 - ratioX);
     color[i].z = 20 * (1 - ratioY);
 }
