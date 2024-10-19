@@ -11,6 +11,8 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
 
     free(); // Free the previous buffer
 
+    // For active pixels
+    cudaMalloc(&active, size * sizeof(bool));
     // For depth checking
     cudaMalloc(&depth, size * sizeof(float));
     // For lighting
@@ -26,6 +28,7 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
 }
 
 void Buffer3D::free() {
+    if (active) cudaFree(active);
     if (depth) cudaFree(depth);
     if (color) cudaFree(color);
     if (world) cudaFree(world);
@@ -38,13 +41,14 @@ void Buffer3D::free() {
 
 void Buffer3D::clearBuffer() {
     clearBufferKernel<<<blockCount, blockSize>>>(
-        depth, color, world, normal, texture, meshID, faceID, bary, size
+        active, depth, color, world, normal, texture, meshID, faceID, bary, size
     );
     cudaDeviceSynchronize();
 }
 
 // Kernel for clearing the buffer
 __global__ void clearBufferKernel(
+    bool *active,
     float *depth,
     Vec4f *color,
     Vec3f *world,
@@ -58,6 +62,7 @@ __global__ void clearBufferKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= size) return;
 
+    active[i] = false; // Inactive
     depth[i] = 1; // Furthest depth
     color[i] = Vec4f(); // Black
     world[i] = Vec3f(); // Limbo
@@ -81,10 +86,11 @@ __global__ void nightSkyKernel(Vec4f *color, int width, int height) {
     int x = i % width;
     int y = i / width;
 
-    float ratioX = (float)x / width;
-    float ratioY = (float)y / height;
+    float ratioX = float(x) / float(width);
+    float ratioY = float(y) / float(height);
 
     color[i] = Vec4f(0, 0, 0, 255);
-    color[i].x = 0.5 * 255 * (1 - ratioY);
-    color[i].z = 0.5 * 255 * ratioY;
+    color[i].x = 5 * (1 - ratioY);
+    color[i].z = 5 * (1 - ratioY);
+    color[i].z = 10 * (1 - ratioY);
 }

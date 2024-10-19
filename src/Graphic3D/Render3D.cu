@@ -35,7 +35,7 @@ void Render3D::createDepthMap() {
     for (int i = 0; i < 2; i++)
         createDepthMapKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
             projection, mesh.faces, mesh.numFs,
-            buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height
+            buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height
         );
     cudaDeviceSynchronize();
 }
@@ -43,7 +43,7 @@ void Render3D::createDepthMap() {
 void Render3D::rasterization() {
     rasterizationKernel<<<buffer.blockCount, buffer.blockSize>>>(
         mesh.color, mesh.world, mesh.normal, mesh.texture, mesh.meshID, mesh.faces,
-        buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.meshID,
+        buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.meshID,
         buffer.faceID, buffer.bary, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
@@ -81,10 +81,9 @@ __device__ bool atomicMinFloat(float* addr, float value) {
 }
 
 __global__ void createDepthMapKernel(
-    // Mesh data
     Vec4f *projection, Vec3uli *faces, ULLInt numFs,
-    // Buffer data
-    float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
+    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
+    int buffWidth, int buffHeight
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
@@ -94,6 +93,7 @@ __global__ void createDepthMapKernel(
     Vec4f p1 = projection[f.y];
     Vec4f p2 = projection[f.z];
 
+    // Face outside the frustum
     if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
 
     // Bounding box
@@ -123,6 +123,7 @@ __global__ void createDepthMapKernel(
         float zDepth = alp * p0.z + bet * p1.z + gam * p2.z;
 
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
+            buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
             buffFaceId[bIdx] = i;
             buffBary[bIdx] = Vec3f(alp, bet, gam);
@@ -131,14 +132,12 @@ __global__ void createDepthMapKernel(
 }
 
 __global__ void rasterizationKernel(
-    // Mesh data
     Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, UInt *meshID, Vec3uli *faces,
-    // Buffer data
-    Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
+    bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
     UInt *buffMeshId, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight) return;
+    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
 
     ULLInt fIdx = buffFaceId[i];
 
@@ -184,16 +183,17 @@ __global__ void rasterizationKernel(
 // BETA: Lighting
 void Render3D::lighting() {
     lightingKernel<<<buffer.blockCount, buffer.blockSize>>>(
-        buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.width, buffer.height
+        buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
 }
 
 __global__ void lightingKernel(
-    Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture, int buffWidth, int buffHeight
+    bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
+    int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight) return;
+    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
     
     // We will apply directional light facing negative xz
     Vec3f lightDir = Vec3f(-1, 0, -1);

@@ -11,6 +11,7 @@ public:
     int blockCount;
 
     // Device pointers
+    bool *active;
     float *depth;
     Vec4f *color;
     Vec3f *world;
@@ -32,6 +33,7 @@ public:
 };
 
 __global__ void clearBufferKernel(
+    bool *active,
     float *depth,
     Vec4f *color,
     Vec3f *world,
