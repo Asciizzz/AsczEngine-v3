@@ -4,22 +4,22 @@ Buffer3D::Buffer3D() {}
 Buffer3D::~Buffer3D() { free(); }
 
 void Buffer3D::resize(int width, int height, int pixelSize) {
-    buffWidth = width / pixelSize;
-    buffHeight = height / pixelSize;
-    buffSize = buffWidth * buffHeight;
-    blockCount = (buffSize + blockSize - 1) / blockSize;
+    this->width = width / pixelSize;
+    this->height = height / pixelSize;
+    size = width * height;
+    blockCount = (size + blockSize - 1) / blockSize;
 
     free(); // Free the previous buffer
 
     // For depth checking
-    cudaMalloc(&depth, buffSize * sizeof(float));
+    cudaMalloc(&depth, size * sizeof(float));
     // For lighting
-    cudaMalloc(&color, buffSize * sizeof(Vec4f));
-    cudaMalloc(&world, buffSize * sizeof(Vec3f));
-    cudaMalloc(&normal, buffSize * sizeof(Vec3f));
+    cudaMalloc(&color, size * sizeof(Vec4f));
+    cudaMalloc(&world, size * sizeof(Vec3f));
+    cudaMalloc(&normal, size * sizeof(Vec3f));
     // For texture mapping
-    cudaMalloc(&texture, buffSize * sizeof(Vec2f));
-    cudaMalloc(&meshID, buffSize * sizeof(UInt));
+    cudaMalloc(&texture, size * sizeof(Vec2f));
+    cudaMalloc(&meshID, size * sizeof(UInt));
 }
 
 void Buffer3D::free() {
@@ -33,7 +33,7 @@ void Buffer3D::free() {
 
 void Buffer3D::clearBuffer() {
     clearBufferKernel<<<blockCount, blockSize>>>(
-        depth, color, world, normal, texture, meshID, buffSize
+        depth, color, world, normal, texture, meshID, size
     );
     cudaDeviceSynchronize();
 }
@@ -46,12 +46,12 @@ __global__ void clearBufferKernel(
     Vec3f *normal,
     Vec2f *texture,
     UInt *meshID,
-    int buffSize
+    int size
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffSize) return;
+    if (i >= size) return;
 
-    depth[i] = INFINITY;
+    depth[i] = 100;
     color[i] = Vec4f(0, 0, 0, 0);
     world[i] = Vec3f(0, 0, 0);
     normal[i] = Vec3f(0, 0, 0);

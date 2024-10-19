@@ -4,44 +4,6 @@
 
 #include <SFMLTexture.cuh>
 
-struct Line {
-    Vec3f p0, p1, p2;
-    Vec4f color0, color1, color2;
-    bool in0, in1, in2;
-};
-
-sf::Color vec4fToColor(Vec4f v) {
-    return sf::Color(v.x, v.y, v.z, v.w);
-}
-
-__global__ void toLines(Vec4f *projection, Vec4f *color, Vec3uli *faces, Line *lines, ULLInt numFs) {
-    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numFs) return;
-
-    Vec3uli f = faces[i];
-
-    // Screen pos
-    Vec4f v0 = projection[f.x];
-    Vec4f v1 = projection[f.y];
-    Vec4f v2 = projection[f.z];
-    // Color
-    Vec4f c0 = color[f.x];
-    Vec4f c1 = color[f.y];
-    Vec4f c2 = color[f.z];
-    // Inside frustum
-    bool in0 = v0.w > 0;
-    bool in1 = v1.w > 0;
-    bool in2 = v2.w > 0;
-
-    Vec3f p0 = v0.toVec3f(false);
-    Vec3f p1 = v1.toVec3f(false);
-    Vec3f p2 = v2.toVec3f(false);
-
-    lines[i].p0 = p0; lines[i].p1 = p1; lines[i].p2 = p2;
-    lines[i].color0 = c0; lines[i].color1 = c1; lines[i].color2 = c2;
-    lines[i].in0 = in0; lines[i].in1 = in1; lines[i].in2 = in2;
-}
-
 int main() {
     // Initialize Default stuff
     FpsHandler &FPS = FpsHandler::instance();
@@ -49,6 +11,8 @@ int main() {
 
     Render3D &RENDER = Render3D::instance();
     RENDER.setResolution(1600, 900);
+
+    SFMLTexture SFTex = SFMLTexture(1600, 900);
 
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
@@ -114,15 +78,10 @@ int main() {
     RENDER.mesh += Mesh3D(test);
     RENDER.allocateProjection();
 
-    // Device memory for lines
-    Line *d_lines = new Line[RENDER.mesh.numFs];
-    cudaMalloc(&d_lines, RENDER.mesh.numFs * sizeof(Line));
-    // Host memory for lines
-    Line *lines = new Line[RENDER.mesh.numFs];
-
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
+        window.clear(sf::Color::Black);
 
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -182,32 +141,17 @@ int main() {
         // RENDER.mesh.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
 
         // Render Pipeline
-        RENDER.buffer.clearBuffer();
         RENDER.vertexProjection();
 
-        // Not part of the pipeline, just for visualization
-        toLines<<<RENDER.mesh.blockNumFs, RENDER.mesh.blockSize>>>(
-            RENDER.projection, RENDER.mesh.color, RENDER.mesh.faces, d_lines, RENDER.mesh.numFs
+        // Not working for some reason
+        RENDER.rasterizeFaces();
+        SFTex.updateTexture(
+            RENDER.buffer.color,
+            RENDER.buffer.width,
+            RENDER.buffer.height,
+            RENDER.pixelSize
         );
-        cudaMemcpy(lines, d_lines, RENDER.mesh.numFs * sizeof(Line), cudaMemcpyDeviceToHost);
-
-        window.clear(sf::Color::Black);
-        // Draw mesh based on transformed vertices
-        for (ULLInt i = 0; i < RENDER.mesh.numFs; i++) {
-            Line line = lines[i];
-            if (!line.in0 || !line.in1 || !line.in2) continue;
-
-            sf::Color c0 = vec4fToColor(line.color0);
-            sf::Color c1 = vec4fToColor(line.color1);
-            sf::Color c2 = vec4fToColor(line.color2);
-
-            sf::Vertex v1(sf::Vector2f(line.p0.x, line.p0.y), c0);
-            sf::Vertex v2(sf::Vector2f(line.p1.x, line.p1.y), c1);
-            sf::Vertex v3(sf::Vector2f(line.p2.x, line.p2.y), c2);
-
-            sf::Vertex strip[] = {v1, v2, v3, v1};
-            window.draw(strip, 4, sf::LineStrip);
-        }
+        window.draw(SFTex.sprite);
 
         // Log handling
 

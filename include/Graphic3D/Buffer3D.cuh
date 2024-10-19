@@ -6,7 +6,7 @@
 
 class Buffer3D {
 public:
-    int buffWidth, buffHeight, buffSize;
+    int width, height, size;
     int blockSize = 256;
     int blockCount;
 
@@ -33,7 +33,7 @@ __global__ void clearBufferKernel(
     Vec3f *normal,
     Vec2f *texture,
     UInt *meshID,
-    int buffSize
+    int size
 );
 
 #endif

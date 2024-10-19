@@ -27,6 +27,17 @@ void Render3D::vertexProjection() {
     cudaDeviceSynchronize();
 }
 
+void Render3D::rasterizeFaces() {
+    buffer.clearBuffer();
+
+    // Currently very buggy
+    rasterizeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
+        projection, mesh.color, mesh.faces, mesh.numFs,
+        buffer.depth, buffer.color, buffer.width, buffer.height
+    );
+    cudaDeviceSynchronize();
+}
+
 // Kernels
 
 __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs) {
@@ -40,10 +51,70 @@ __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D
     // Convert to screen space
     t3.x = (t3.x + 1) * camera.res.x / p_s / 2;
     t3.y = (1 - t3.y) * camera.res.y / p_s / 2;
-    t3.z = camera.near + (camera.far - camera.near) * t3.z;
 
     Vec4f p = t3.toVec4f();
     p.w = camera.isInsideFrustum(world[i]);
 
     projection[i] = p;
+}
+
+__device__ int floatAsInt(float val) {
+    return *reinterpret_cast<int*>(&val); // Reinterpret float as int (bitwise representation)
+}
+
+__device__ float intAsFloat(int val) {
+    return *reinterpret_cast<float*>(&val); // Reinterpret int back as float
+}
+
+__global__ void rasterizeFacesKernel(
+    // Mesh data
+    Vec4f *projection, Vec4f *color, Vec3uli *faces, ULLInt numFs,
+    // Buffer data
+    float *buffDepth, Vec4f *buffColor, int buffWidth, int buffHeight
+) {
+    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numFs) return;
+
+    Vec3uli f = faces[i];
+    Vec4f p0 = projection[f.x];
+    Vec4f p1 = projection[f.y];
+    Vec4f p2 = projection[f.z];
+
+    Vec4f c0 = color[f.x];
+    Vec4f c1 = color[f.y];
+    Vec4f c2 = color[f.z];
+
+    if (p0.w <= 0 || p1.w <= 0 || p2.w <= 0) return;
+
+    // Bounding box
+    int minX = min(min(p0.x, p1.x), p2.x);
+    int maxX = max(max(p0.x, p1.x), p2.x);
+    int minY = min(min(p0.y, p1.y), p2.y);
+    int maxY = max(max(p0.y, p1.y), p2.y);
+
+    // Clip the bounding box
+    minX = max(minX, 0);
+    maxX = min(maxX, buffWidth - 1);
+    minY = max(minY, 0);
+    maxY = min(maxY, buffHeight - 1);
+
+    for (int x = minX; x <= maxX; x++)
+    for (int y = minY; y <= maxY; y++) {
+        int bIdx = x + y * buffWidth;
+
+        float alpha = ((p1.y - p2.y) * (x - p2.x) + (p2.x - p1.x) * (y - p2.y)) /
+                      ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
+        float beta = ((p2.y - p0.y) * (x - p2.x) + (p0.x - p2.x) * (y - p2.y)) /
+                     ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
+        float gamma = 1.0f - alpha - beta;
+
+        if (alpha < 0 || beta < 0 || gamma < 0) continue;
+
+        float zDepth = alpha * p0.z + beta * p1.z + gamma * p2.z;
+
+        if (zDepth < buffDepth[bIdx]) {
+            buffDepth[bIdx] = zDepth;
+            buffColor[bIdx] = c0 * alpha + c1 * beta + c2 * gamma;
+        }
+    }
 }

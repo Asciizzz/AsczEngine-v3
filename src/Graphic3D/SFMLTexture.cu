@@ -12,8 +12,6 @@ void SFMLTexture::resize(int width, int height) {
     texture.create(width, height);
     sprite.setTexture(texture);
 
-    free();
-
     // Allocate memory for the Pixel buffer
     sfPixel = new sf::Uint8[width * height * 4];
     cudaMalloc(&d_sfPixel, width * height * 4 * sizeof(sf::Uint8));
@@ -23,7 +21,9 @@ void SFMLTexture::resize(int width, int height) {
 }
 
 void SFMLTexture::updateTexture(Vec4f *color, int b_w, int b_h, int p_s) {
-    updateTextureKernel<<<blockCount, blockSize>>>(d_sfPixel, color, b_w, b_h, p_s);
+    int bCount = (b_w * b_h + blockSize - 1) / blockSize;
+
+    updateTextureKernel<<<bCount, blockSize>>>(d_sfPixel, color, b_w, b_h, p_s);
     cudaMemcpy(sfPixel, d_sfPixel, pixelCount * sizeof(sf::Uint8), cudaMemcpyDeviceToHost);
     texture.update(sfPixel);
 }

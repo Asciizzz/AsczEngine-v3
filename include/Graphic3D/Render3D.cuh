@@ -29,11 +29,19 @@ public:
 
     // Render pipeline
     void vertexProjection();
+    void rasterizeFaces();
 
 private:
     Render3D() {}
 };
 
+// Pipeline Kernels
 __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs);
+__global__ void rasterizeFacesKernel(
+    // Mesh data
+    Vec4f *projection, Vec4f *color, Vec3uli *faces, ULLInt numFs,
+    // Buffer data
+    float *buffDepth, Vec4f *buffColor, int buffWidth, int buffHeight
+);
 
 #endif
