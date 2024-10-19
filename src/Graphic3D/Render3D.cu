@@ -29,6 +29,7 @@ void Render3D::vertexProjection() {
 
 void Render3D::createDepthMap() {
     buffer.clearBuffer();
+    buffer.nightSky();
 
     // Currently very buggy
     for (int i = 0; i < 2; i++)
@@ -49,7 +50,6 @@ void Render3D::rasterization() {
 }
 
 // Kernels
-
 __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numVs) return;
@@ -94,7 +94,7 @@ __global__ void createDepthMapKernel(
     Vec4f p1 = projection[f.y];
     Vec4f p2 = projection[f.z];
 
-    if (p0.w <= 0 || p1.w <= 0 || p2.w <= 0) return;
+    if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
 
     // Bounding box
     int minX = min(min(p0.x, p1.x), p2.x);
@@ -179,4 +179,35 @@ __global__ void rasterizationKernel(
 
     // Set mesh ID
     buffMeshId[i] = meshID[vIdx0];
+}
+
+// BETA: Lighting
+void Render3D::lighting() {
+    lightingKernel<<<buffer.blockCount, buffer.blockSize>>>(
+        buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.width, buffer.height
+    );
+    cudaDeviceSynchronize();
+}
+
+__global__ void lightingKernel(
+    Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture, int buffWidth, int buffHeight
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= buffWidth * buffHeight) return;
+    
+    // We will apply directional light facing negative xz
+    Vec3f lightDir = Vec3f(-1, 0, -1);
+
+    // Get the normal
+    Vec3f n = buffNormal[i];
+
+    // Calculate the cosine of the angle between the normal and the light direction
+    float dot = n * lightDir;
+    
+    float cosA = dot / (n.mag() * lightDir.mag());
+
+    float diff = 0.2 + 0.8 * cosA;
+
+    // Apply the light
+    buffColor[i] = buffColor[i] * diff;
 }

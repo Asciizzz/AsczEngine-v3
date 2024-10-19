@@ -26,6 +26,9 @@ public:
     void free();
 
     void clearBuffer();
+
+    // Fun buffer functions
+    void nightSky();
 };
 
 __global__ void clearBufferKernel(
@@ -39,5 +42,8 @@ __global__ void clearBufferKernel(
     Vec3f *bary,
     int size
 );
+
+// FUN BUFFER FUNCTIONS
+__global__ void nightSkyKernel(Vec4f *color, int width, int height);
 
 #endif

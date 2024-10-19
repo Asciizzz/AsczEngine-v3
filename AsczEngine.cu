@@ -17,69 +17,7 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
 
-    // Graphing calculator for y = f(x, z)
-    Vecs3f world;
-    Vecs3f normal;
-    Vecs2f texture;
-    Vecs4f color;
-
-    Vecs3uli faces;
-
-    // Append points to the grid
-    Vec2f rangeX(-500, 500);
-    Vec2f rangeZ(-500, 500);
-    Vec2f step(1, 1);
-
-    int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
-    int sizeZ = (rangeZ.y - rangeZ.x) / step.y + 1;
-
-    float maxY = -INFINITY;
-    float minY = INFINITY;
-    for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
-        for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
-            // World pos of the point
-            // float y = sin(x / 10) * cos(z / 10) * 10;
-            float y = rand() % 20 - 10;
-
-            maxY = std::max(maxY, y);
-            minY = std::min(minY, y);
-
-            world.push_back(Vec3f(x, y, z));
-            normal.push_back(Vec3f(0, 1, 0));
-
-            // x and z ratio (0 - 1)
-            float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
-            float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-
-            // Texture
-            texture.push_back(Vec2f(ratioX, ratioZ));
-
-            // Cool color
-            color.push_back(Vec4f(40 * ratioX + 130, 255, 40 * ratioX + 130, 255));
-        }
-    }
-
-    for (ULLInt i = 0; i < world.size(); i++) {
-        // Set green color based on y value
-        float ratioY = (world[i].y - minY) / (maxY - minY);
-        color[i].y = 150 + 100 * ratioY;
-
-        // Random ratio range from 0.8 to 1.2
-        color[i].y *= 0.8 + 0.4 * (rand() % 100) / 100;
-        color[i].y = std::min(255.0f, std::max(0.0f, color[i].y));
-    }
-
-    // Append faces to the grid
-    for (ULLInt x = 0; x < sizeX - 1; x++) {
-        for (ULLInt z = 0; z < sizeZ - 1; z++) {
-            ULLInt i = x * sizeZ + z;
-            faces.push_back(Vec3uli(i, i + 1, i + sizeZ));
-            faces.push_back(Vec3uli(i + 1, i + sizeZ + 1, i + sizeZ));
-        }
-    }
-
-    Mesh3D graph(0, world, normal, texture, color, faces);
-
+    // A cube
     Mesh3D cube(1,
         Vecs3f({
             Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
@@ -125,7 +63,70 @@ int main() {
     cube.translate(1, Vec3f(0, 1, 0));
 
     float cubeScale = 30;
-    cube.scale(1, Vec3f(), Vec3f(cubeScale));
+    cube.scale(0, Vec3f(), Vec3f(cubeScale));
+
+    // Graphing calculator for y = f(x, z)
+    Vecs3f world;
+    Vecs3f normal;
+    Vecs2f texture;
+    Vecs4f color;
+
+    Vecs3uli faces;
+
+    // Append points to the grid
+    Vec2f rangeX(-500, 500);
+    Vec2f rangeZ(-500, 500);
+    Vec2f step(1, 1);
+
+    int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
+    int sizeZ = (rangeZ.y - rangeZ.x) / step.y + 1;
+
+    float maxY = -INFINITY;
+    float minY = INFINITY;
+    for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
+        for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
+            // World pos of the point
+            // float y = sin(x / 10) * cos(z / 10) * 10;
+            float y = rand() % 20 - 10;
+
+            maxY = std::max(maxY, y);
+            minY = std::min(minY, y);
+
+            world.push_back(Vec3f(x, y, z));
+            normal.push_back(Vec3f(0, 0, -1));
+
+            // x and z ratio (0 - 1)
+            float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
+            float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
+
+            // Texture
+            texture.push_back(Vec2f(ratioX, ratioZ));
+
+            // Cool color
+            color.push_back(Vec4f(40 * ratioX + 130, 255, 40 * ratioX + 130, 255));
+        }
+    }
+
+    for (ULLInt i = 0; i < world.size(); i++) {
+        // Set green color based on y value
+        float ratioY = (world[i].y - minY) / (maxY - minY);
+        color[i].y = 150 + 100 * ratioY;
+
+        // Random ratio range from 0.8 to 1.2
+        color[i].y *= 0.8 + 0.4 * (rand() % 100) / 100;
+        color[i].y = std::min(255.0f, std::max(0.0f, color[i].y));
+    }
+
+    // Append faces to the grid
+    for (ULLInt x = 0; x < sizeX - 1; x++) {
+        for (ULLInt z = 0; z < sizeZ - 1; z++) {
+            ULLInt i = x * sizeZ + z;
+            faces.push_back(Vec3uli(i, i + 1, i + sizeZ));
+            faces.push_back(Vec3uli(i + 1, i + sizeZ + 1, i + sizeZ));
+        }
+    }
+
+    Mesh3D graph(1, world, normal, texture, color, faces);
 
     // STAR GENERATOR ALGORITHM
     /* Explanation:
@@ -176,9 +177,9 @@ int main() {
 
     Mesh3D star(2, starWorld, starNormal, starTexture, starColor, starFaces);
 
-    RENDER.mesh += graph;
     RENDER.mesh += cube;
-    RENDER.mesh += star;
+    // RENDER.mesh += graph;
+    // RENDER.mesh += star;
     RENDER.allocateProjection();
 
     graph.freeMemory();
@@ -250,6 +251,7 @@ int main() {
         RENDER.vertexProjection();
         RENDER.createDepthMap();
         RENDER.rasterization();
+        RENDER.lighting();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
@@ -276,6 +278,11 @@ int main() {
         // Frame end
         FPS.endFrame();
     }
+
+    // Clean up
+    RENDER.freeProjection();
+    RENDER.mesh.freeMemory();
+    RENDER.buffer.free();
 
     return 0;
 }

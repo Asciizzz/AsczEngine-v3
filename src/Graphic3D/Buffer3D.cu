@@ -67,3 +67,24 @@ __global__ void clearBufferKernel(
     faceID[i] = NULL; // No face
     bary[i] = Vec3f(); // Limbo
 }
+
+// Night sky
+void Buffer3D::nightSky() {
+    nightSkyKernel<<<blockCount, blockSize>>>(color, width, height);
+    cudaDeviceSynchronize();
+}
+
+__global__ void nightSkyKernel(Vec4f *color, int width, int height) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= width * height) return;
+
+    int x = i % width;
+    int y = i / width;
+
+    float ratioX = (float)x / width;
+    float ratioY = (float)y / height;
+
+    color[i] = Vec4f(0, 0, 0, 255);
+    color[i].x = 0.5 * 255 * (1 - ratioY);
+    color[i].z = 0.5 * 255 * ratioY;
+}
