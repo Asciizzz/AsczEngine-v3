@@ -7,8 +7,8 @@ Mesh::Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &colo
     texture(texture), color(color), faces(faces)
 {}
 
-Mesh::Mesh(Mesh &mesh) :
-    meshID(mesh.meshID), world(mesh.world), normal(mesh.normal),
+Mesh::Mesh(Mesh &mesh, UInt id) :
+    meshID(mesh.world.size(), id), world(mesh.world), normal(mesh.normal),
     texture(mesh.texture), color(mesh.color), faces(mesh.faces)
 {}
 

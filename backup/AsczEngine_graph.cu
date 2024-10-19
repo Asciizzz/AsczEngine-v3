@@ -35,14 +35,8 @@ int main() {
         Vec2f(0, 0), Vec2f(1, 0),
         Vec2f(1, 1), Vec2f(0, 1)
     };
-    Vecs4f cube0Color = {
+    Vecs4f cubeColor = {
         Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
-        Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
-        Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-        Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
-    };
-    Vecs4f cube1Color = {
-        Vec4f(0, 255, 0, 255), Vec4f(255, 0, 0, 255), 
         Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
         Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
         Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
@@ -57,23 +51,136 @@ int main() {
     };
 
     // A cube
-    Mesh3D cube0(0, cubeWorld, cubeNormal, cubeTexture, cube0Color, cubeFaces);
-    Mesh3D cube1(1, cubeWorld, cubeNormal, cubeTexture, cube1Color, cubeFaces);
+    Mesh3D cube0(0, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
+    Mesh3D cube1(1, cubeWorld, cubeNormal,  cubeTexture, cubeColor, cubeFaces);
 
     cube0.translate(0, Vec3f(0, 1, 0));
-    cube1.translate(1, Vec3f(2, 1, 0));
+    cube1.translate(1, Vec3f(0, 1, 0));
 
-    float cubeScale = 10;
+    float cubeScale = 30;
     cube0.scale(0, Vec3f(), Vec3f(cubeScale));
     cube1.scale(1, Vec3f(), Vec3f(cubeScale));
 
-    RENDER.mesh += cube0;
-    RENDER.mesh += cube1;
+    // Graphing calculator for y = f(x, z)
+    Vecs3f world;
+    Vecs3f normal;
+    Vecs2f texture;
+    Vecs4f color;
+
+    Vecs3uli faces;
+
+    // Append points to the grid
+    Vec2f rangeX(-100, 100);
+    Vec2f rangeZ(-100, 100);
+    Vec2f step(1, 1);
+
+    int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
+    int sizeZ = (rangeZ.y - rangeZ.x) / step.y + 1;
+
+    float maxY = -INFINITY;
+    float minY = INFINITY;
+    for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
+        for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
+            // World pos of the point
+            // float y = sin(x / 10) * cos(z / 10) * 10;
+            float y = rand() % 20 - 10;
+
+            maxY = std::max(maxY, y);
+            minY = std::min(minY, y);
+
+            world.push_back(Vec3f(x, y, z));
+            normal.push_back(Vec3f(0, 0, -1));
+
+            // x and z ratio (0 - 1)
+            float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
+            float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
+
+            // Texture
+            texture.push_back(Vec2f(ratioX, ratioZ));
+
+            // Cool color
+            color.push_back(Vec4f(40 * ratioX + 130, 255, 40 * ratioX + 130, 255));
+        }
+    }
+
+    for (ULLInt i = 0; i < world.size(); i++) {
+        // Set green color based on y value
+        float ratioY = (world[i].y - minY) / (maxY - minY);
+        color[i].y = 150 + 100 * ratioY;
+
+        // Random ratio range from 0.8 to 1.2
+        color[i].y *= 0.8 + 0.4 * (rand() % 100) / 100;
+        color[i].y = std::min(255.0f, std::max(0.0f, color[i].y));
+    }
+
+    // Append faces to the grid
+    for (ULLInt x = 0; x < sizeX - 1; x++) {
+        for (ULLInt z = 0; z < sizeZ - 1; z++) {
+            ULLInt i = x * sizeZ + z;
+            faces.push_back(Vec3uli(i, i + 1, i + sizeZ));
+            faces.push_back(Vec3uli(i + 1, i + sizeZ + 1, i + sizeZ));
+        }
+    }
+
+    Mesh3D graph(1, world, normal, texture, color, faces);
+
+    // STAR GENERATOR ALGORITHM
+    /* Explanation:
+    - We will generate a bunch of triangles(faces) very far away from the camera
+    - Star will be generated randomly in a sphere area 600 < r < 1000
+    - Star will have a random color
+    */
+    Vecs3f starWorld;
+    Vecs3f starNormal;
+    Vecs2f starTexture;
+    Vecs4f starColor;
+    Vecs3uli starFaces;
+
+    int numStars = 2;
+    int curStars = 0;
+    while (curStars < numStars) {
+        Vec3f v0(
+            rand() % 2000 - 1000,
+            rand() % 2000 - 1000,
+            rand() % 2000 - 1000
+        );
+
+        if (v0.mag() < 900 || v0.mag() > 1000) continue;
+
+        Vec3f v1 = v0 + Vec3f(rand() % 16 - 8, rand() % 16 - 8, rand() % 16 - 8);
+        Vec3f v2 = v0 + Vec3f(rand() % 16 - 8, rand() % 16 - 8, rand() % 16 - 8);
+
+        starWorld.push_back(v0);
+        starWorld.push_back(v1);
+        starWorld.push_back(v2);
+
+        starNormal.push_back(Vec3f());
+        starNormal.push_back(Vec3f());
+        starNormal.push_back(Vec3f());
+
+        starTexture.push_back(Vec2f(0, 0));
+        starTexture.push_back(Vec2f(0, 0));
+        starTexture.push_back(Vec2f(0, 0));
+
+        starColor.push_back(Vec4f(255, 255, 255, 255));
+        starColor.push_back(Vec4f(255, 255, 255, 255));
+        starColor.push_back(Vec4f(255, 255, 255, 255));
+
+        starFaces.push_back(Vec3uli(curStars * 3, curStars * 3 + 1, curStars * 3 + 2));
+
+        curStars++;
+    }
+
+    Mesh3D star(2, starWorld, starNormal, starTexture, starColor, starFaces);
+
+    RENDER.mesh += cube;
+    RENDER.mesh += graph;
     // RENDER.mesh += star;
     RENDER.allocateProjection();
 
-    cube0.freeMemory();
-    cube1.freeMemory();
+    graph.freeMemory();
+    cube.freeMemory();
+    star.freeMemory();
 
     while (window.isOpen()) {
         // Frame start

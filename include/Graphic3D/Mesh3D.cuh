@@ -30,7 +30,7 @@ struct Mesh {
     Vecs3uli faces;
 
     Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
-    Mesh(Mesh &mesh);
+    Mesh(Mesh &mesh, UInt id);
     Mesh() {}
 
     Mesh operator+=(Mesh &mesh);

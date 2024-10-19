@@ -94,7 +94,7 @@ __global__ void createDepthMapKernel(
     Vec4f p2 = projection[f.z];
 
     // Face outside the frustum
-    if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
+    if (p0.w <= 0 || p1.w <= 0 || p2.w <= 0) return;
 
     // Bounding box
     int minX = min(min(p0.x, p1.x), p2.x);
@@ -196,7 +196,7 @@ __global__ void lightingKernel(
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
     
     // We will apply directional light facing negative xz
-    Vec3f lightDir = Vec3f(-1, 0, -1);
+    Vec3f lightDir = Vec3f(0, 0, -1);
 
     // Get the normal
     Vec3f n = buffNormal[i];
