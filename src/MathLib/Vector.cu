@@ -22,8 +22,14 @@ Vec4f Vec3f::toVec4f() {
 Vec3f Vec3f::operator+(const Vec3f& v) {
     return Vec3f(x + v.x, y + v.y, z + v.z);
 }
+Vec3f Vec3f::operator+(const float t) {
+    return Vec3f(x + t, y + t, z + t);
+}
 Vec3f Vec3f::operator-(const Vec3f& v) {
     return Vec3f(x - v.x, y - v.y, z - v.z);
+}
+Vec3f Vec3f::operator-(const float t) {
+    return Vec3f(x - t, y - t, z - t);
 }
 Vec3f Vec3f::operator*(const float scalar) {
     return Vec3f(x * scalar, y * scalar, z * scalar);

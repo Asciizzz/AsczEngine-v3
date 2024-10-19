@@ -29,6 +29,12 @@ Mesh Mesh::operator+=(Mesh &mesh) {
     return *this;
 }
 
+Mesh Mesh::operator+(Mesh mesh) {
+    Mesh newMesh = *this;
+    newMesh += mesh;
+    return newMesh;
+}
+
 // Constructor
 
 Mesh3D::Mesh3D(ULLInt numVs, ULLInt numFs) :
@@ -150,11 +156,13 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
 
     // Resize faces (with offset for the added vertices)
     ULLInt newNumFs = numFs + mesh.numFs;
+    ULLInt newBlockNumFs = (newNumFs + blockSize - 1) / blockSize;
     Vec3uli *newFaces;
     cudaMalloc(&newFaces, newNumFs * sizeof(Vec3uli));
     cudaMemcpy(newFaces, faces, numFs * sizeof(Vec3uli), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newFaces + numFs, mesh.faces, mesh.numFs * sizeof(Vec3uli), cudaMemcpyDeviceToDevice);
-    incrementFaceIdxKernel<<<blockNumFs, blockSize>>>(newFaces, mesh.numFs, numVs);
+    incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaces, numVs, numFs, newNumFs);
+
     cudaFree(faces);
     faces = newFaces;
 
@@ -216,9 +224,9 @@ void Mesh3D::printFaces() {
 }
 
 // Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt numFs, ULLInt offset) {
+__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numFs) faces[idx] += offset;
+    if (idx < newNumFs && idx >= numFs) faces[idx] += offset;
 }
 
 __global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id) {

@@ -31,8 +31,10 @@ struct Mesh {
 
     Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
     Mesh(Mesh &mesh);
+    Mesh() {}
 
     Mesh operator+=(Mesh &mesh);
+    Mesh operator+(Mesh mesh);
 };
 
 class Mesh3D {
@@ -85,7 +87,7 @@ public:
 };
 
 // Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt numFs, ULLInt offset);
+__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs);
 __global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id);
 
 // Kernel for transforming vertices

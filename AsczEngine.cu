@@ -26,8 +26,8 @@ int main() {
     Vecs3uli faces;
 
     // Append points to the grid
-    Vec2f rangeX(-100, 100);
-    Vec2f rangeZ(-100, 100);
+    Vec2f rangeX(-500, 500);
+    Vec2f rangeZ(-500, 500);
     Vec2f step(1, 1);
 
     int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
@@ -38,8 +38,8 @@ int main() {
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             // World pos of the point
-            float y = sin(x / 10) * cos(z / 10) * 10;
-            // float y = rand() % 20 - 10;
+            // float y = sin(x / 10) * cos(z / 10) * 10;
+            float y = rand() % 20 - 10;
 
             maxY = std::max(maxY, y);
             minY = std::min(minY, y);
@@ -55,14 +55,18 @@ int main() {
             texture.push_back(Vec2f(ratioX, ratioZ));
 
             // Cool color
-            color.push_back(Vec4f(255 * ratioX, 255, 255 * ratioZ, 255));
+            color.push_back(Vec4f(40 * ratioX + 130, 255, 40 * ratioX + 130, 255));
         }
     }
 
     for (ULLInt i = 0; i < world.size(); i++) {
-        // Set opacity based on the height
+        // Set green color based on y value
         float ratioY = (world[i].y - minY) / (maxY - minY);
-        color[i].w = 100 + 150 * ratioY;
+        color[i].y = 150 + 100 * ratioY;
+
+        // Random ratio range from 0.8 to 1.2
+        color[i].y *= 0.8 + 0.4 * (rand() % 100) / 100;
+        color[i].y = std::min(255.0f, std::max(0.0f, color[i].y));
     }
 
     // Append faces to the grid
@@ -74,9 +78,9 @@ int main() {
         }
     }
 
-    Mesh graph(0, world, normal, texture, color, faces);
+    Mesh3D graph(0, world, normal, texture, color, faces);
 
-    Mesh cube(1,
+    Mesh3D cube(1,
         Vecs3f({
             Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
             Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
@@ -111,13 +115,62 @@ int main() {
         })
     );
 
-    RENDER.mesh += Mesh3D(graph);
+    // STAR GENERATOR ALGORITHM
+    /* Explanation:
+    - We will generate a bunch of triangles(faces) very far away from the camera
+    - Star will be generated randomly in a sphere area 600 < r < 1000
+    - Star will have a random color
+    */
+    Vecs3f starWorld;
+    Vecs3f starNormal;
+    Vecs2f starTexture;
+    Vecs4f starColor;
+    Vecs3uli starFaces;
+
+    int numStars = 2000;
+    int curStars = 0;
+    while (curStars < numStars) {
+        Vec3f v0(
+            rand() % 2000 - 1000,
+            rand() % 2000 - 1000,
+            rand() % 2000 - 1000
+        );
+
+        if (v0.mag() < 900 || v0.mag() > 1000) continue;
+
+        Vec3f v1 = v0 + Vec3f(rand() % 16 - 8, rand() % 16 - 8, rand() % 16 - 8);
+        Vec3f v2 = v0 + Vec3f(rand() % 16 - 8, rand() % 16 - 8, rand() % 16 - 8);
+
+        starWorld.push_back(v0);
+        starWorld.push_back(v1);
+        starWorld.push_back(v2);
+
+        starNormal.push_back(Vec3f(0, 0, 0));
+        starNormal.push_back(Vec3f(0, 0, 0));
+        starNormal.push_back(Vec3f(0, 0, 0));
+
+        starTexture.push_back(Vec2f(0, 0));
+        starTexture.push_back(Vec2f(0, 0));
+        starTexture.push_back(Vec2f(0, 0));
+
+        starColor.push_back(Vec4f(255, 255, 255, 255));
+        starColor.push_back(Vec4f(255, 255, 255, 255));
+        starColor.push_back(Vec4f(255, 255, 255, 255));
+
+        starFaces.push_back(Vec3uli(curStars * 3, curStars * 3 + 1, curStars * 3 + 2));
+
+        curStars++;
+    }
+
+    Mesh3D star(2, starWorld, starNormal, starTexture, starColor, starFaces);
+
+    RENDER.mesh += star;
+    RENDER.mesh += graph;
     RENDER.allocateProjection();
 
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
-        window.clear(sf::Color::Black);
 
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -172,25 +225,26 @@ int main() {
             RENDER.camera.pos += RENDER.camera.forward * vel * FPS.dTimeSec;
         }
 
-        // Rotate the mesh
-        // float rotY = M_PI_2 / 6 * FPS.dTimeSec;
-        // RENDER.mesh.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
+        // Rotate the star
+        float rotY = M_PI_2 / 120 * FPS.dTimeSec;
+        RENDER.mesh.rotate(2, Vec3f(0, 0, 0), Vec3f(0, -rotY, 0));
 
         // Render Pipeline
         RENDER.vertexProjection();
-
-        // Not working for some reason
         RENDER.rasterizeFaces();
+
+        // From buffer to texture
+        // (clever way to incorporate CUDA into SFML)
         SFTex.updateTexture(
             RENDER.buffer.color,
             RENDER.buffer.width,
             RENDER.buffer.height,
             RENDER.pixelSize
         );
+        window.clear(sf::Color(0, 0, 0));
         window.draw(SFTex.sprite);
 
         // Log handling
-
         // FPS <= 10: Fully Red
         // FPS >= 60: Fully Green
         double gRatio = double(FPS.fps - 10) / 50;
