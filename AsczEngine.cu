@@ -35,20 +35,12 @@ int main() {
         Vec2f(0, 0), Vec2f(1, 0),
         Vec2f(1, 1), Vec2f(0, 1)
     };
-    Vecs4f cube0Color(8, Vec4f(255, 255, 255, 255));
-    // {
-    //     Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
-    //     Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
-    //     Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-    //     Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
-    // };
-    Vecs4f cube1Color(8, Vec4f(255, 255, 255, 255));
-    // {
-    //     Vec4f(0, 255, 0, 255), Vec4f(255, 0, 0, 255), 
-    //     Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
-    //     Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-    //     Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
-    // };
+    Vecs4f cubeColor = {
+        Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
+        Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
+        Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
+        Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
+    };
     Vecs3uli cubeFaces = {
         Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
         Vec3uli(4, 5, 6), Vec3uli(4, 6, 7),
@@ -57,22 +49,40 @@ int main() {
         Vec3uli(0, 1, 5), Vec3uli(0, 5, 4),
         Vec3uli(3, 2, 6), Vec3uli(3, 6, 7)
     };
+    Mesh3D cube(0, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
+    cube.scale(0, Vec3f(), Vec3f(4));
 
-    // A cube
-    Mesh3D cube0(0, cubeWorld, cubeNormal, cubeTexture, cube0Color, cubeFaces);
-    Mesh3D cube1(1, cubeWorld, cubeNormal, cubeTexture, cube1Color, cubeFaces);
+    // Create a white wall behind the cube
+    float wallSize = 12;
+    Vecs3f wallWorld = {
+        Vec3f(-wallSize, -wallSize, -wallSize), Vec3f(wallSize, -wallSize, -wallSize),
+        Vec3f(wallSize, wallSize, -wallSize), Vec3f(-wallSize, wallSize, -wallSize)
+    };
+    Vecs3f wallNormal = { // Facing towards the cube
+        Vec3f(0, 0, 1), Vec3f(0, 0, 1),
+        Vec3f(0, 0, 1), Vec3f(0, 0, 1)
+    };
+    Vecs2f wallTexture = {
+        Vec2f(0, 0), Vec2f(1, 0),
+        Vec2f(1, 1), Vec2f(0, 1)
+    };
+    Vecs4f wallColor = {
+        Vec4f(255, 125, 125, 255), Vec4f(125, 255, 125, 255),
+        Vec4f(125, 125, 255, 255), Vec4f(255, 255, 125, 255)
+    };
+    Vecs3uli wallFaces = {
+        Vec3uli(0, 1, 2), Vec3uli(0, 2, 3)
+    };
+    Mesh3D wall(1, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
 
-    float cubeScale = 10;
-    cube0.scale(0, Vec3f(), Vec3f(cubeScale));
-    cube1.scale(1, Vec3f(), Vec3f(cubeScale));
-
-    RENDER.mesh += cube0;
+    RENDER.mesh += cube;
+    RENDER.mesh += wall;
     // RENDER.mesh += cube1;
     // RENDER.mesh += star;
     RENDER.allocateProjection();
 
-    cube0.freeMemory();
-    cube1.freeMemory();
+    // Free memory
+    cube.freeMemory();
 
     while (window.isOpen()) {
         // Frame start
@@ -132,9 +142,9 @@ int main() {
         }
 
         // Rotate the cube
-        float rotX = M_PI_2 / 12 * FPS.dTimeSec;
-        float rotZ = M_PI_2 / 7 * FPS.dTimeSec;
-        RENDER.mesh.rotate(0, Vec3f(), Vec3f(rotX, 0, rotZ));
+        float rot1 = M_PI_2 / 12 * FPS.dTimeSec;
+        float rot2 = M_PI_2 / 7 * FPS.dTimeSec;
+        RENDER.mesh.rotate(0, Vec3f(), Vec3f(0, rot1 * 40, 0));
 
         // Render Pipeline
         RENDER.vertexProjection();

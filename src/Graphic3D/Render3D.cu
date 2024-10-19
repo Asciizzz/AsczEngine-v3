@@ -195,10 +195,8 @@ __global__ void lightingKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
     
-    // We will apply directional light facing negative xz
-    Vec3f lightDir = Vec3f(0, 0, -1);
-
-    // Get the normal
+    // We will apply simple directional lighting
+    Vec3f lightDir = Vec3f(0, 0, 1);
     Vec3f n = buffNormal[i];
 
     // Calculate the cosine of the angle between the normal and the light direction
