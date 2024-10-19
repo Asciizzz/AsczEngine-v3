@@ -31,7 +31,7 @@ void Render3D::rasterizeFaces() {
     buffer.clearBuffer();
 
     // Currently very buggy
-    // for (int i = 0; i < 2; i++)
+    for (int i = 0; i < 2; i++)
         rasterizeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
             projection, mesh.color, mesh.faces, mesh.numFs,
             buffer.depth, buffer.color, buffer.width, buffer.height

@@ -99,11 +99,18 @@ int main() {
             Vec2f(0, 0), Vec2f(1, 0),
             Vec2f(1, 1), Vec2f(0, 1)
         }),
-        Vecs4f({ // Red Green Blue Yellow Cyan Magenta Orange Purple 
-            Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
-            Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
-            Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-            Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
+        Vecs4f({ 
+            // // Red Green Blue Yellow Cyan Magenta Orange Purple 
+            // Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
+            // Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
+            // Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
+            // Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
+
+            // Top side cyan, bottom side yellow
+            Vec4f(0, 255, 255, 255), Vec4f(0, 255, 255, 255),
+            Vec4f(255, 255, 0, 255), Vec4f(255, 255, 0, 255),
+            Vec4f(0, 255, 255, 255), Vec4f(0, 255, 255, 255),
+            Vec4f(255, 255, 0, 255), Vec4f(255, 255, 0, 255)
         }),
         Vecs3uli({
             Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
@@ -114,6 +121,11 @@ int main() {
             Vec3uli(3, 2, 6), Vec3uli(3, 6, 7)
         })
     );
+
+    cube.translate(1, Vec3f(0, 1, 0));
+
+    float cubeScale = 30;
+    cube.scale(1, Vec3f(), Vec3f(cubeScale));
 
     // STAR GENERATOR ALGORITHM
     /* Explanation:
@@ -145,9 +157,9 @@ int main() {
         starWorld.push_back(v1);
         starWorld.push_back(v2);
 
-        starNormal.push_back(Vec3f(0, 0, 0));
-        starNormal.push_back(Vec3f(0, 0, 0));
-        starNormal.push_back(Vec3f(0, 0, 0));
+        starNormal.push_back(Vec3f());
+        starNormal.push_back(Vec3f());
+        starNormal.push_back(Vec3f());
 
         starTexture.push_back(Vec2f(0, 0));
         starTexture.push_back(Vec2f(0, 0));
@@ -168,6 +180,10 @@ int main() {
     RENDER.mesh += cube;
     RENDER.mesh += star;
     RENDER.allocateProjection();
+
+    graph.freeMemory();
+    cube.freeMemory();
+    star.freeMemory();
 
     while (window.isOpen()) {
         // Frame start
@@ -228,7 +244,7 @@ int main() {
 
         // Rotate the star
         float rotY = M_PI_2 / 120 * FPS.dTimeSec;
-        RENDER.mesh.rotate(2, Vec3f(0, 0, 0), Vec3f(0, -rotY, 0));
+        RENDER.mesh.rotate(2, Vec3f(), Vec3f(0, -rotY, 0));
 
         // Render Pipeline
         RENDER.vertexProjection();

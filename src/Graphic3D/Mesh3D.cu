@@ -105,6 +105,11 @@ void Mesh3D::freeFaces() {
     cudaFree(faces);
 }
 
+void Mesh3D::freeMemory() {
+    freeVertices();
+    freeFaces();
+}
+
 // Upload host data to device
 
 void Mesh3D::uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces) {

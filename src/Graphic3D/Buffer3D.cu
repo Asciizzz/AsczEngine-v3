@@ -51,10 +51,10 @@ __global__ void clearBufferKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= size) return;
 
-    depth[i] = 1;
-    color[i] = Vec4f(0, 0, 0, 0);
-    world[i] = Vec3f(0, 0, 0);
-    normal[i] = Vec3f(0, 0, 0);
-    texture[i] = Vec2f(0, 0);
-    meshID[i] = NULL;
+    depth[i] = 1; // Furthest depth
+    color[i] = Vec4f(); // Black
+    world[i] = Vec3f(); // Limbo
+    normal[i] = Vec3f(); // Limbo
+    texture[i] = Vec2f(); // Limbo
+    meshID[i] = NULL; // No mesh
 }

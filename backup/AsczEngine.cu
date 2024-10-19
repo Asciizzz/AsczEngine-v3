@@ -115,7 +115,7 @@ int main() {
         // Perform transformation
         for (ULLInt i = 0; i < test.pos.size(); i++) {
             // Fun functions
-            // test.pos[i].rotate(Vec3f(0, 0, 0), Vec3f(0, M_PI * FPS.dTimeSec, 0));
+            // test.pos[i].rotate(Vec3f(), Vec3f(0, M_PI * FPS.dTimeSec, 0));
 
             // Project vertices to NDC
             Vec4f v = test.pos[i].toVec4f();

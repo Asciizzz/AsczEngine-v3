@@ -15,6 +15,7 @@ void Vec3uli::operator+=(unsigned long int d) {
 // VEC3f
 Vec3f::Vec3f() : x(0), y(0), z(0) {}
 Vec3f::Vec3f(float x, float y, float z) : x(x), y(y), z(z) {}
+Vec3f::Vec3f(float a) : x(a), y(a), z(a) {}
 Vec4f Vec3f::toVec4f() {
     return Vec4f(x, y, z, 1);
 }

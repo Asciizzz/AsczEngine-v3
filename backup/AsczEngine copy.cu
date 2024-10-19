@@ -179,7 +179,7 @@ int main() {
 
         // Rotate the mesh
         // float rotY = M_PI_2 / 6 * FPS.dTimeSec;
-        // RENDER.mesh.rotate(0, Vec3f(0, 0, 0), Vec3f(0, rotY, 0));
+        // RENDER.mesh.rotate(0, Vec3f(), Vec3f(0, rotY, 0));
 
         // Clear buffer
         RENDER.buffer.clearBuffer();

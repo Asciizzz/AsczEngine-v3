@@ -39,6 +39,7 @@ struct Vec3f {
     float x, y, z;
     __host__ __device__ Vec3f();
     __host__ __device__ Vec3f(float x, float y, float z);
+    __host__ __device__ Vec3f(float a);
     __host__ __device__ Vec4f toVec4f();
 
     // Basic operations
