@@ -184,10 +184,10 @@ void Mesh3D::translate(UInt mID, Vec3f t) {
     translateVertexKernel<<<blockNumVs, blockSize>>>(world, meshID, numVs, mID, t);
 }
 void Mesh3D::rotate(UInt mID, Vec3f origin, Vec3f rot) {
-    rotateVertexKernel<<<blockNumVs, blockSize>>>(world, meshID, numVs, mID, origin, rot);
+    rotateVertexKernel<<<blockNumVs, blockSize>>>(world, normal, meshID, numVs, mID, origin, rot);
 }
 void Mesh3D::scale(UInt mID, Vec3f origin, Vec3f scl) {
-    scaleVertexKernel<<<blockNumVs, blockSize>>>(world, meshID, numVs, mID, origin, scl);
+    scaleVertexKernel<<<blockNumVs, blockSize>>>(world, normal, meshID, numVs, mID, origin, scl);
 }
 
 // DEBUG
@@ -246,15 +246,19 @@ __global__ void translateVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, 
 
     world[idx].translate(t);
 }
-__global__ void rotateVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot) {
+__global__ void rotateVertexKernel(Vec3f *world, Vec3f *normal, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= numVs || meshID[idx] != mID) return;
 
     world[idx].rotate(origin, rot);
+    normal[idx].rotate(Vec3f(), rot);
+    normal[idx].norm();
 }
-__global__ void scaleVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl) {
+__global__ void scaleVertexKernel(Vec3f *world, Vec3f *normal, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx >= numVs || meshID[idx] != mID) return;
 
     world[idx].scale(origin, scl);
+    normal[idx].scale(origin, scl);
+    normal[idx].norm();
 }

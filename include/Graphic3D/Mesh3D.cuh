@@ -94,7 +94,7 @@ __global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id);
 
 // Kernel for transforming vertices
 __global__ void translateVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f t);
-__global__ void rotateVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot);
-__global__ void scaleVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl);
+__global__ void rotateVertexKernel(Vec3f *world, Vec3f *normal,  UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot);
+__global__ void scaleVertexKernel(Vec3f *world, Vec3f *normal,  UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl);
 
 #endif

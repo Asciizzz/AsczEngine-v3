@@ -35,18 +35,20 @@ int main() {
         Vec2f(0, 0), Vec2f(1, 0),
         Vec2f(1, 1), Vec2f(0, 1)
     };
-    Vecs4f cube0Color = {
-        Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
-        Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
-        Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-        Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
-    };
-    Vecs4f cube1Color = {
-        Vec4f(0, 255, 0, 255), Vec4f(255, 0, 0, 255), 
-        Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
-        Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-        Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
-    };
+    Vecs4f cube0Color(8, Vec4f(255, 255, 255, 255));
+    // {
+    //     Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
+    //     Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
+    //     Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
+    //     Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
+    // };
+    Vecs4f cube1Color(8, Vec4f(255, 255, 255, 255));
+    // {
+    //     Vec4f(0, 255, 0, 255), Vec4f(255, 0, 0, 255), 
+    //     Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
+    //     Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
+    //     Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
+    // };
     Vecs3uli cubeFaces = {
         Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
         Vec3uli(4, 5, 6), Vec3uli(4, 6, 7),
@@ -60,15 +62,12 @@ int main() {
     Mesh3D cube0(0, cubeWorld, cubeNormal, cubeTexture, cube0Color, cubeFaces);
     Mesh3D cube1(1, cubeWorld, cubeNormal, cubeTexture, cube1Color, cubeFaces);
 
-    cube0.translate(0, Vec3f(0, 1, 0));
-    cube1.translate(1, Vec3f(2, 1, 0));
-
     float cubeScale = 10;
     cube0.scale(0, Vec3f(), Vec3f(cubeScale));
     cube1.scale(1, Vec3f(), Vec3f(cubeScale));
 
     RENDER.mesh += cube0;
-    RENDER.mesh += cube1;
+    // RENDER.mesh += cube1;
     // RENDER.mesh += star;
     RENDER.allocateProjection();
 
@@ -132,9 +131,10 @@ int main() {
             RENDER.camera.pos += RENDER.camera.forward * vel * FPS.dTimeSec;
         }
 
-        // Rotate the star
-        float rotY = M_PI_2 / 120 * FPS.dTimeSec;
-        RENDER.mesh.rotate(2, Vec3f(), Vec3f(0, -rotY, 0));
+        // Rotate the cube
+        float rotX = M_PI_2 / 12 * FPS.dTimeSec;
+        float rotZ = M_PI_2 / 7 * FPS.dTimeSec;
+        RENDER.mesh.rotate(0, Vec3f(), Vec3f(rotX, 0, rotZ));
 
         // Render Pipeline
         RENDER.vertexProjection();
