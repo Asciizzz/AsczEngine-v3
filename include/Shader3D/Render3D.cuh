@@ -28,7 +28,7 @@ public:
     void resizeProjection();
 
     // Render pipeline
-    void vertexProjection();
+    void cameraProjection();
     void createDepthMap();
     void rasterization();
 
@@ -38,7 +38,9 @@ private:
 
 __device__ bool atomicMinFloat(float* addr, float value);
 // Pipeline Kernels
-__global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs);
+__global__ void cameraProjectionKernel(
+    Vec4f *projection, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numVs
+);
 __global__ void createDepthMapKernel(
     // Mesh data
     Vec4f *projection, Vec3uli *faces, ULLInt numFs,

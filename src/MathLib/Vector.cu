@@ -83,6 +83,14 @@ void Vec3f::norm() {
     x /= m; y /= m; z /= m;
 }
 
+Vec3f Vec3f::bary(Vec2f v, Vec2f v0, Vec2f v1, Vec2f v2) {
+    float d = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
+    float a = ((v1.y - v2.y) * (v.x - v2.x) + (v2.x - v1.x) * (v.y - v2.y)) / d;
+    float b = ((v2.y - v0.y) * (v.x - v2.x) + (v0.x - v2.x) * (v.y - v2.y)) / d;
+    float c = 1 - a - b;
+    return Vec3f(a, b, c);
+}
+
 // Transformations
 Vec3f Vec3f::translate(Vec3f& vec, const Vec3f& t) {
     return vec + t;

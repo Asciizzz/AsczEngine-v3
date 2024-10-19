@@ -244,7 +244,7 @@ int main() {
         RENDER.mesh.rotate(2, Vec3f(), Vec3f(0, -rotY, 0));
 
         // Render Pipeline
-        RENDER.vertexProjection();
+        RENDER.cameraProjection();
         RENDER.createDepthMap();
         RENDER.rasterization();
         RENDER.lighting();

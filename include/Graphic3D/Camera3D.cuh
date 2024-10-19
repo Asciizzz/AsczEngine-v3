@@ -22,7 +22,7 @@ public:
     Vec2f res = {800, 600};
     void setResolution(float w, float h);
     float fov = M_PI_2;
-    float near = 0.5;
+    float near = 0.1;
     float far = 1000;
     Mat4f projection;
     void updateProjection();

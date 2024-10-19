@@ -20,9 +20,9 @@ void Render3D::resizeProjection() {
 
 // Pipeline
 
-void Render3D::vertexProjection() {
-    vertexProjectionKernel<<<mesh.blockNumVs, mesh.blockSize>>>(
-        projection, mesh.world, camera, pixelSize, mesh.numVs
+void Render3D::cameraProjection() {
+    cameraProjectionKernel<<<mesh.blockNumVs, mesh.blockSize>>>(
+        projection, mesh.world, camera, buffer.width, buffer.height, mesh.numVs
     );
     cudaDeviceSynchronize();
 }
@@ -62,7 +62,9 @@ __device__ bool atomicMinFloat(float* addr, float value) {
 }
 
 // Kernels
-__global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs) {
+__global__ void cameraProjectionKernel(
+    Vec4f *projection, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numVs
+) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numVs) return;
 
@@ -71,8 +73,8 @@ __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D
     Vec3f t3 = t4.toVec3f(); // Convert to NDC [-1, 1]
 
     // Convert to screen space
-    t3.x = (t3.x + 1) * camera.res.x / p_s / 2;
-    t3.y = (1 - t3.y) * camera.res.y / p_s / 2;
+    t3.x = (t3.x + 1) * buffWidth / 2;
+    t3.y = (1 - t3.y) * buffHeight / 2;
 
     Vec4f p = t3.toVec4f();
     p.w = camera.isInsideFrustum(world[i]);
@@ -112,21 +114,19 @@ __global__ void createDepthMapKernel(
     for (int y = minY; y <= maxY; y++) {
         int bIdx = x + y * buffWidth;
 
-        float alp = ((p1.y - p2.y) * (x - p2.x) + (p2.x - p1.x) * (y - p2.y)) /
-                    ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
-        float bet = ((p2.y - p0.y) * (x - p2.x) + (p0.x - p2.x) * (y - p2.y)) /
-                    ((p1.y - p2.y) * (p0.x - p2.x) + (p2.x - p1.x) * (p0.y - p2.y));
-        float gam = 1.0f - alp - bet;
+        Vec3f bary = Vec3f::bary(
+            Vec2f(x, y), Vec2f(p0.x, p0.y), Vec2f(p1.x, p1.y), Vec2f(p2.x, p2.y)
+        );
 
-        if (alp < 0 || bet < 0 || gam < 0) continue;
+        if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;
 
-        float zDepth = alp * p0.z + bet * p1.z + gam * p2.z;
+        float zDepth = bary.x * p0.z + bary.y * p1.z + bary.z * p2.z;
 
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
             buffFaceId[bIdx] = i;
-            buffBary[bIdx] = Vec3f(alp, bet, gam);
+            buffBary[bIdx] = bary;
         }
     }
 }

@@ -183,7 +183,7 @@ int main() {
 
         // Clear buffer
         RENDER.buffer.clearBuffer();
-        RENDER.vertexProjection();
+        RENDER.cameraProjection();
 
         // Turn faces into lines for wireframe
         toLines<<<RENDER.mesh.blockNumFs, RENDER.mesh.blockSize>>>(

@@ -13,7 +13,8 @@ int main() {
     RENDER.setResolution(1600, 900);
 
     Camera3D &CAMERA = RENDER.camera;
-    CAMERA.pos = Vec3f(0, 0, 15);
+    CAMERA.pos = Vec3f(0, 0, 24);
+    CAMERA.rot = Vec3f(0, M_PI, 0);
 
     SFMLTexture SFTex = SFMLTexture(1600, 900);
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
@@ -55,7 +56,7 @@ int main() {
     cube.scale(0, Vec3f(), Vec3f(4));
 
     // Create a white wall behind the cube
-    float wallSize = 12;
+    float wallSize = 10;
     Vecs3f wallWorld = {
         Vec3f(-wallSize, -wallSize, -wallSize), Vec3f(wallSize, -wallSize, -wallSize),
         Vec3f(wallSize, wallSize, -wallSize), Vec3f(-wallSize, wallSize, -wallSize)
@@ -77,14 +78,39 @@ int main() {
     };
     Mesh3D wall(1, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
 
+    // Create an equallateral triangle
+    // This is 
+    Mesh equTri(2,
+        Vecs3f{
+            Vec3f(-0.5, -sqrt(3) / 4, 0), Vec3f(0.5, - sqrt(3) / 4, 0), Vec3f(0, sqrt(3) / 4, 0)
+        },
+        Vecs3f{
+            Vec3f(0, 0, 1), Vec3f(0, 0, 1), Vec3f(0, 0, 1)
+        },
+        Vecs2f{
+            Vec2f(0, 0), Vec2f(1, 0), Vec2f(0.5, 1)
+        },
+        Vecs4f{
+            Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255), Vec4f(0, 0, 255, 255)
+        },
+        Vecs3uli{
+            Vec3uli(0, 1, 2)
+        }
+    );
+    Mesh3D tri(equTri);
+
     RENDER.mesh += cube;
     RENDER.mesh += wall;
+    // RENDER.mesh += tri;
     RENDER.allocateProjection();
 
     // Free memory
     cube.freeMemory();
+    wall.freeMemory();
 
     Lighting3D &LIGHT = Lighting3D::instance();
+    LIGHT.allocateShadowMap(400, 400);
+    LIGHT.allocateLightProj();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
@@ -168,16 +194,20 @@ int main() {
         // Rotate the cube
         float rot1 = M_PI / 6 * FPS.dTimeSec;
         float rot2 = M_PI / 3 * FPS.dTimeSec;
-        RENDER.mesh.rotate(0, Vec3f(), Vec3f(0, rot2, 0));
+        RENDER.mesh.rotate(0, Vec3f(), Vec3f(rot1, 0, rot2));
 
         // ========== Render Pipeline ==========
 
-        RENDER.vertexProjection();
+        RENDER.cameraProjection();
         RENDER.createDepthMap();
         RENDER.rasterization();
 
         // Beta feature
         LIGHT.phongShading();
+        // LIGHT.lightProjection();
+        // LIGHT.resetShadowMap();
+        // LIGHT.createShadowMap();
+        // LIGHT.applyShadowMap();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
