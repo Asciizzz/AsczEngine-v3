@@ -100,17 +100,17 @@ int main() {
             Vec2f(1, 1), Vec2f(0, 1)
         }),
         Vecs4f({ 
-            // // Red Green Blue Yellow Cyan Magenta Orange Purple 
-            // Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
-            // Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
-            // Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-            // Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
+            // Red Green Blue Yellow Cyan Magenta Orange Purple 
+            Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
+            Vec4f(0, 0, 255, 255), Vec4f(255, 255, 0, 255),
+            Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
+            Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
 
-            // Top side cyan, bottom side yellow
-            Vec4f(0, 255, 255, 255), Vec4f(0, 255, 255, 255),
-            Vec4f(255, 255, 0, 255), Vec4f(255, 255, 0, 255),
-            Vec4f(0, 255, 255, 255), Vec4f(0, 255, 255, 255),
-            Vec4f(255, 255, 0, 255), Vec4f(255, 255, 0, 255)
+            // // Top side cyan, bottom side yellow
+            // Vec4f(0, 255, 255, 255), Vec4f(0, 255, 255, 255),
+            // Vec4f(255, 255, 0, 255), Vec4f(255, 255, 0, 255),
+            // Vec4f(0, 255, 255, 255), Vec4f(0, 255, 255, 255),
+            // Vec4f(255, 255, 0, 255), Vec4f(255, 255, 0, 255)
         }),
         Vecs3uli({
             Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
