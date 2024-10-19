@@ -19,6 +19,9 @@ int main() {
     SFMLTexture SFTex = SFMLTexture(1600, 900);
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
+    sf::Mouse::setPosition(sf::Vector2i(
+        RENDER.res_half.x, RENDER.res_half.y
+    ), window);
 
     Vecs3f cubeWorld = {
         Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
