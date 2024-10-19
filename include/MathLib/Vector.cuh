@@ -89,6 +89,7 @@ struct Vec4f {
     __host__ __device__ Vec4f operator+(const Vec4f &vec);
     __host__ __device__ Vec4f operator-(const Vec4f &vec);
     __host__ __device__ Vec4f operator*(const float scl);
+    __host__ __device__ Vec4f operator/(const float scl);
 };
 
 #endif

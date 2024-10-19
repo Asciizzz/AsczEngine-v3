@@ -164,3 +164,6 @@ Vec4f Vec4f::operator-(const Vec4f& v) {
 Vec4f Vec4f::operator*(const float scl) {
     return Vec4f(x * scl, y * scl, z * scl, w * scl);
 }
+Vec4f Vec4f::operator/(const float scl) {
+    return Vec4f(x / scl, y / scl, z / scl, w / scl);
+}

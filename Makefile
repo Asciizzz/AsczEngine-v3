@@ -9,6 +9,7 @@ AsczEngine:
 		-I include/Default \
 		-I include/MathLib \
 		-I include/Graphic3D \
+		-I include/Shader3D \
 		\
 		-I libraries/SFML/include \
 		-L libraries/SFML/lib \
@@ -20,8 +21,9 @@ AsczEngine:
 		src/Graphic3D/Mesh3D.cu \
 		src/Graphic3D/Camera3D.cu \
 		src/Graphic3D/Buffer3D.cu \
-		src/Graphic3D/Render3D.cu \
-		src\Graphic3D\SFMLTexture.cu \
+		src/Graphic3D/SFMLTexture.cu \
+		src/Shader3D/Render3D.cu \
+		src/Shader3D/Lighting3D.cu \
 		src/Default/FpsHandler.cu \
 		src/Default/CsLogHandler.cu \
 		\

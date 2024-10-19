@@ -1,6 +1,6 @@
 #include <FpsHandler.cuh>
 #include <CsLogHandler.cuh>
-#include <Render3D.cuh>
+#include <Lighting3D.cuh>
 
 #include <SFMLTexture.cuh>
 
@@ -12,8 +12,10 @@ int main() {
     Render3D &RENDER = Render3D::instance();
     RENDER.setResolution(1600, 900);
 
-    SFMLTexture SFTex = SFMLTexture(1600, 900);
+    Camera3D &CAMERA = RENDER.camera;
+    CAMERA.pos = Vec3f(0, 0, -15);
 
+    SFMLTexture SFTex = SFMLTexture(1600, 900);
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
 
@@ -77,12 +79,22 @@ int main() {
 
     RENDER.mesh += cube;
     RENDER.mesh += wall;
-    // RENDER.mesh += cube1;
-    // RENDER.mesh += star;
     RENDER.allocateProjection();
 
     // Free memory
     cube.freeMemory();
+
+    Lighting3D &LIGHT = Lighting3D::instance();
+
+    // To avoid floating point errors
+    // We will use a float that doesnt have a lot of precision
+    float fovDeg = 90;
+
+    // Cool rainbow effect for title
+    double rainbowR = 255;
+    double rainbowG = 0;
+    double rainbowB = 0;
+    short cycle = 0;
 
     while (window.isOpen()) {
         // Frame start
@@ -98,16 +110,28 @@ int main() {
             if (event.type == sf::Event::KeyPressed) {
                 // Press f1 to toggle focus
                 if (event.key.code == sf::Keyboard::F1) {
-                    RENDER.camera.focus = !RENDER.camera.focus;
-                    window.setMouseCursorVisible(!RENDER.camera.focus);
+                    CAMERA.focus = !CAMERA.focus;
+                    window.setMouseCursorVisible(!CAMERA.focus);
                     sf::Mouse::setPosition(sf::Vector2i(
                         RENDER.res_half.x, RENDER.res_half.y
                     ), window);
                 }
             }
+
+            // Scroll to zoom in/out
+            if (event.type == sf::Event::MouseWheelScrolled) {
+                if (event.mouseWheelScroll.delta > 0) fovDeg -= 10;
+                else                                  fovDeg += 10;
+
+                if (fovDeg < 10) fovDeg = 10;
+                if (fovDeg > 170) fovDeg = 170;
+
+                float fovRad = fovDeg * M_PI / 180;
+                CAMERA.fov = fovRad;
+            }
         }
 
-        if (RENDER.camera.focus) {
+        if (CAMERA.focus) {
             // Mouse movement handling
             sf::Vector2i mousepos = sf::Mouse::getPosition(window);
             sf::Mouse::setPosition(sf::Vector2i(
@@ -119,10 +143,10 @@ int main() {
             int dMy = mousepos.y - RENDER.res_half.y;
 
             // Camera look around
-            RENDER.camera.rot.x -= dMy * RENDER.camera.mSens * FPS.dTimeSec;
-            RENDER.camera.rot.y -= dMx * RENDER.camera.mSens * FPS.dTimeSec;
-            RENDER.camera.restrictRot();
-            RENDER.camera.updateMVP();
+            CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
+            CAMERA.rot.y -= dMx * CAMERA.mSens * FPS.dTimeSec;
+            CAMERA.restrictRot();
+            CAMERA.updateMVP();
 
             // Mouse Click = move forward
             float vel = 0;
@@ -138,19 +162,22 @@ int main() {
             if (k_ctrl && !k_shift)      vel *= 0.2;
             else if (k_shift && !k_ctrl) vel *= 4;
             // Update camera World pos
-            RENDER.camera.pos += RENDER.camera.forward * vel * FPS.dTimeSec;
+            CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
 
         // Rotate the cube
-        float rot1 = M_PI_2 / 12 * FPS.dTimeSec;
-        float rot2 = M_PI_2 / 7 * FPS.dTimeSec;
-        RENDER.mesh.rotate(0, Vec3f(), Vec3f(0, rot1 * 40, 0));
+        float rot1 = M_PI / 6 * FPS.dTimeSec;
+        float rot2 = M_PI / 3 * FPS.dTimeSec;
+        RENDER.mesh.rotate(0, Vec3f(), Vec3f(0, rot2, 0));
 
-        // Render Pipeline
+        // ========== Render Pipeline ==========
+
         RENDER.vertexProjection();
         RENDER.createDepthMap();
         RENDER.rasterization();
-        RENDER.lighting();
+
+        // Beta feature
+        LIGHT.phongShading();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
@@ -163,15 +190,32 @@ int main() {
         window.clear(sf::Color(0, 0, 0));
         window.draw(SFTex.sprite);
 
-        // Log handling
-        // FPS <= 10: Fully Red
-        // FPS >= 60: Fully Green
+        // ========== Log handling ==========
+
+        // Rainbow color
+        double step = 120 * FPS.dTimeSec;
+        if (cycle == 0) {
+            rainbowG += step; rainbowR -= step;
+            if (rainbowG >= 255) cycle = 1;
+        } else if (cycle == 1) {
+            rainbowB += step; rainbowG -= step;
+            if (rainbowB >= 255) cycle = 2;
+        } else if (cycle == 2) {
+            rainbowR += step; rainbowB -= step;
+            if (rainbowR >= 255) cycle = 0;
+        }
+        sf::Color rainbow = sf::Color(rainbowR, rainbowG, rainbowB);
+        LOG.addLog("Welcome to AsczEngine 3.0", rainbow, 1);
+
         double gRatio = double(FPS.fps - 10) / 50;
         gRatio = std::max(0.0, std::min(gRatio, 1.0));
         sf::Color fpsColor((1 - gRatio) * 255, gRatio * 255, 0);
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
-        LOG.drawLog(window);
 
+        // Camera data
+        LOG.addLog(CAMERA.data(), sf::Color::White);
+
+        LOG.drawLog(window);
         window.display();
 
         // Frame end

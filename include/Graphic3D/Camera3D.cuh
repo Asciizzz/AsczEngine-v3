@@ -2,6 +2,7 @@
 #define CAMERA3D_CUH
 
 #include <Matrix.cuh>
+#include <string>
 
 class Camera3D {
 public:
@@ -31,6 +32,9 @@ public:
 
     // Frustum culling check
     __host__ __device__ bool isInsideFrustum(Vec3f &v);
+
+    // Debug
+    std::string data();
 };
 
 #endif

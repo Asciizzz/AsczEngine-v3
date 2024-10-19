@@ -49,6 +49,19 @@ void Render3D::rasterization() {
     cudaDeviceSynchronize();
 }
 
+// Atomic functions
+__device__ bool atomicMinFloat(float* addr, float value) {
+    int* addr_as_int = (int*)addr;
+    int old = *addr_as_int, assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(addr_as_int, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
+    } while (assumed != old);
+
+    return __int_as_float(old) > value;
+}
+
 // Kernels
 __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -66,18 +79,6 @@ __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D
     p.w = camera.isInsideFrustum(world[i]);
 
     projection[i] = p;
-}
-
-__device__ bool atomicMinFloat(float* addr, float value) {
-    int* addr_as_int = (int*)addr;
-    int old = *addr_as_int, assumed;
-
-    do {
-        assumed = old;
-        old = atomicCAS(addr_as_int, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
-    } while (assumed != old);
-
-    return __int_as_float(old) > value;
 }
 
 __global__ void createDepthMapKernel(
@@ -178,34 +179,4 @@ __global__ void rasterizationKernel(
 
     // Set mesh ID
     buffMeshId[i] = meshID[vIdx0];
-}
-
-// BETA: Lighting
-void Render3D::lighting() {
-    lightingKernel<<<buffer.blockCount, buffer.blockSize>>>(
-        buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.width, buffer.height
-    );
-    cudaDeviceSynchronize();
-}
-
-__global__ void lightingKernel(
-    bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
-    int buffWidth, int buffHeight
-) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
-    
-    // We will apply simple directional lighting
-    Vec3f lightDir = Vec3f(0, 0, 1);
-    Vec3f n = buffNormal[i];
-
-    // Calculate the cosine of the angle between the normal and the light direction
-    float dot = n * lightDir;
-    
-    float cosA = dot / (n.mag() * lightDir.mag());
-
-    float diff = 0.2 + 0.8 * cosA;
-
-    // Apply the light
-    buffColor[i] = buffColor[i] * diff;
 }

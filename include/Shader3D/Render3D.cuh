@@ -32,13 +32,11 @@ public:
     void createDepthMap();
     void rasterization();
 
-    // BETA: Lighting
-    void lighting();
-
 private:
     Render3D() {}
 };
 
+__device__ bool atomicMinFloat(float* addr, float value);
 // Pipeline Kernels
 __global__ void vertexProjectionKernel(Vec4f *projection, Vec3f *world, Camera3D camera, int p_s, ULLInt numVs);
 __global__ void createDepthMapKernel(
@@ -54,12 +52,6 @@ __global__ void rasterizationKernel(
     // Buffer data
     bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
     UInt *buffMeshId, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
-);
-
-// BETA: Lighting Kernels
-__global__ void lightingKernel(
-    bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
-    int buffWidth, int buffHeight
 );
 
 #endif
