@@ -102,10 +102,8 @@ int main() {
     );
     Mesh3D tri(equTri);
 
-    cube.translate(0, Vec3f(0, 0, 4));
-
     RENDER.mesh += cube;
-    // RENDER.mesh += wall;
+    RENDER.mesh += wall;
     // RENDER.mesh += tri;
     RENDER.allocateProjection();
 
