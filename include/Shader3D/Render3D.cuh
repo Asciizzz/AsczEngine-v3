@@ -26,6 +26,11 @@ public:
     void allocateProjection();
     void freeProjection();
     void resizeProjection();
+    
+    // Render functions
+    __host__ __device__ static Vec4f toScreenSpace(
+        Camera3D &camera, Vec3f world, int buffWidth, int buffHeight
+    );
 
     // Render pipeline
     void cameraProjection();
@@ -43,7 +48,7 @@ __global__ void cameraProjectionKernel(
 );
 __global__ void createDepthMapKernel(
     // Mesh data
-    Vec4f *projection, Vec3uli *faces, ULLInt numFs,
+    Vec4f *projection, Vec3f *world, Vec3uli *faces, ULLInt numFs,
     // Buffer data
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
     int buffWidth, int buffHeight

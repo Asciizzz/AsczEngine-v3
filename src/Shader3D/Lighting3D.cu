@@ -54,7 +54,7 @@ __global__ void phongShadingKernel(
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
     
     // We will apply simple directional lighting
-    Vec3f lightDir = Vec3f(0, 0, 1);
+    Vec3f lightDir = Vec3f(0, 0, -1);
     Vec3f n = buffNormal[i];
 
     // Calculate the cosine of the angle between the normal and the light direction
@@ -97,7 +97,13 @@ __global__ void lightProjectionKernel(
     We will turn them into NDC coordinates and then into screen space.
     */
 
-    projection[i] = Vec4f(world[i].x, world[i].y, world[i].z, 1);
+    Vec3f w = world[i];
+    w.x = (w.x + 400) / 800 * smWidth;
+    w.y = (w.y + 400) / 800 * smHeight;
+    w.z = w.z / 400;
+    w.z = (w.z + 1) / 2;
+
+    projection[i] = w.toVec4f();
 }
 
 // Reset shadow map
@@ -114,7 +120,7 @@ __global__ void resetShadowMapKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= smWidth * smHeight) return;
 
-    shadowDepth[i] = 1000;
+    shadowDepth[i] = 100;
     shadowMeshID[i] = NULL;
 }
 
@@ -199,7 +205,7 @@ __global__ void applyShadowMapKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
 
-    Vec3f lightDir = Vec3f(0, 0, 1);
+    Vec3f lightDir = Vec3f(0, 0, -1);
     Vec3f n = buffNormal[i];
     n.norm();
 
@@ -210,15 +216,19 @@ __global__ void applyShadowMapKernel(
     // Perform the same projection as in lightProjectionKernel
     // To get the pixel in the shadow map
 
-    int x = buffWorld[i].x;
-    int y = buffWorld[i].y;
-    int sIdx = x + y * smWidth;
+    Vec3f w = buffWorld[i];
+    w.x = (w.x + 400) / 800 * smWidth;
+    w.y = (w.y + 400) / 800 * smHeight;
+    w.z = w.z / 400;
+    w.z = (w.z + 1) / 2;
+
+    int sIdx = w.x + w.y * smWidth;
 
     // buffColor[i] = Vec4f(255, 255, 255, 255); // Debug
 
-    if (shadowDepth[sIdx] + slope < buffWorld[i].z) {
-        buffColor[i].x *= 0.5;
-        buffColor[i].y *= 0.5;
-        buffColor[i].z *= 0.5;
+    if (shadowDepth[sIdx] < buffWorld[i].z) {
+        buffColor[i].x *= 0.1;
+        buffColor[i].y *= 0.1;
+        buffColor[i].z *= 0.1;
     }
 }

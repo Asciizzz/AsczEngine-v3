@@ -13,8 +13,8 @@ int main() {
     RENDER.setResolution(1600, 900);
 
     Camera3D &CAMERA = RENDER.camera;
-    CAMERA.pos = Vec3f(0, 0, 24);
-    CAMERA.rot = Vec3f(0, M_PI, 0);
+    CAMERA.pos = Vec3f(0, 0, -24);
+    CAMERA.rot = Vec3f(0, 0, 0);
 
     SFMLTexture SFTex = SFMLTexture(1600, 900);
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
@@ -59,14 +59,14 @@ int main() {
     cube.scale(0, Vec3f(), Vec3f(4));
 
     // Create a white wall behind the cube
-    float wallSize = 10;
+    float wallSize = 12;
     Vecs3f wallWorld = {
-        Vec3f(-wallSize, -wallSize, -wallSize), Vec3f(wallSize, -wallSize, -wallSize),
-        Vec3f(wallSize, wallSize, -wallSize), Vec3f(-wallSize, wallSize, -wallSize)
+        Vec3f(-wallSize, -wallSize, wallSize), Vec3f(wallSize, -wallSize, wallSize),
+        Vec3f(wallSize, wallSize, wallSize), Vec3f(-wallSize, wallSize, wallSize)
     };
     Vecs3f wallNormal = { // Facing towards the cube
-        Vec3f(0, 0, 1), Vec3f(0, 0, 1),
-        Vec3f(0, 0, 1), Vec3f(0, 0, 1)
+        Vec3f(0, 0, -1), Vec3f(0, 0, -1),
+        Vec3f(0, 0, -1), Vec3f(0, 0, -1)
     };
     Vecs2f wallTexture = {
         Vec2f(0, 0), Vec2f(1, 0),
@@ -102,8 +102,10 @@ int main() {
     );
     Mesh3D tri(equTri);
 
+    cube.translate(0, Vec3f(0, 0, 4));
+
     RENDER.mesh += cube;
-    RENDER.mesh += wall;
+    // RENDER.mesh += wall;
     // RENDER.mesh += tri;
     RENDER.allocateProjection();
 
@@ -112,7 +114,7 @@ int main() {
     wall.freeMemory();
 
     Lighting3D &LIGHT = Lighting3D::instance();
-    LIGHT.allocateShadowMap(400, 400);
+    LIGHT.allocateShadowMap(800, 800);
     LIGHT.allocateLightProj();
 
     // To avoid floating point errors
@@ -206,8 +208,8 @@ int main() {
         RENDER.rasterization();
 
         // Beta feature
-        LIGHT.phongShading();
-        // LIGHT.lightProjection();
+        // LIGHT.phongShading();
+        LIGHT.lightProjection();
         // LIGHT.resetShadowMap();
         // LIGHT.createShadowMap();
         // LIGHT.applyShadowMap();

@@ -18,7 +18,19 @@ void Render3D::resizeProjection() {
     allocateProjection();
 }
 
-// Pipeline
+// Render functions
+
+Vec4f Render3D::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, int buffHeight) {
+    Vec4f v4 = world.toVec4f();
+    Vec4f t4 = camera.mvp * v4;
+    Vec3f t3 = t4.toVec3f(); // Convert to NDC [-1, 1]
+    Vec4f p = t3.toVec4f();
+    p.w = camera.isInsideFrustum(world);
+
+    return p;
+}
+
+// Render pipeline
 
 void Render3D::cameraProjection() {
     cameraProjectionKernel<<<mesh.blockNumVs, mesh.blockSize>>>(
@@ -33,7 +45,7 @@ void Render3D::createDepthMap() {
 
     for (int i = 0; i < 2; i++)
         createDepthMapKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-            projection, mesh.faces, mesh.numFs,
+            projection, mesh.world, mesh.faces, mesh.numFs,
             buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height
         );
     cudaDeviceSynchronize();
@@ -68,22 +80,12 @@ __global__ void cameraProjectionKernel(
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numVs) return;
 
-    Vec4f v4 = world[i].toVec4f();
-    Vec4f t4 = camera.mvp * v4;
-    Vec3f t3 = t4.toVec3f(); // Convert to NDC [-1, 1]
-
-    // Convert to screen space
-    t3.x = (t3.x + 1) * buffWidth / 2;
-    t3.y = (1 - t3.y) * buffHeight / 2;
-
-    Vec4f p = t3.toVec4f();
-    p.w = camera.isInsideFrustum(world[i]);
-
+    Vec4f p = Render3D::toScreenSpace(camera, world[i], buffWidth, buffHeight);
     projection[i] = p;
 }
 
 __global__ void createDepthMapKernel(
-    Vec4f *projection, Vec3uli *faces, ULLInt numFs,
+    Vec4f *projection, Vec3f *world, Vec3uli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
     int buffWidth, int buffHeight
 ) {
@@ -94,9 +96,37 @@ __global__ void createDepthMapKernel(
     Vec4f p0 = projection[f.x];
     Vec4f p1 = projection[f.y];
     Vec4f p2 = projection[f.z];
+    Vec4f p3 = p0; // In case
 
-    // Face outside the frustum
-    if (p0.w <= 0 || p1.w <= 0 || p2.w <= 0) return;
+    // Entirely outside the frustum
+    if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
+
+    // NOTE: We will perform frustum culling on the fly
+    int oob = (p0.w <= 0) + (p1.w <= 0) + (p2.w <= 0);
+
+    // If exactly 2 points are outside the frustum
+    // We just need to shift the oob points to the intersection of the frustum
+    if (oob == 2) {
+        short planeIntersect = 0;
+        // Left plane: x = -1, planeIntersect = 0
+        // Right plane: x = 1, planeIntersect = 1
+        // Bottom plane: y = -1, planeIntersect = 2
+        // Top plane: y = 1, planeIntersect = 3
+        // Near plane: z = -1, planeIntersect = 4
+        // Far plane: z = 1, planeIntersect = 5
+
+        if (p0.w > 0) {
+        }
+    }
+
+    p0.x = (p0.x + 1) * buffWidth / 2;
+    p0.y = (1 - p0.y) * buffHeight / 2;
+    p1.x = (p1.x + 1) * buffWidth / 2;
+    p1.y = (1 - p1.y) * buffHeight / 2;
+    p2.x = (p2.x + 1) * buffWidth / 2;
+    p2.y = (1 - p2.y) * buffHeight / 2;
+    p3.x = (p3.x + 1) * buffWidth / 2;
+    p3.y = (1 - p3.y) * buffHeight / 2;
 
     // Bounding box
     int minX = min(min(p0.x, p1.x), p2.x);
