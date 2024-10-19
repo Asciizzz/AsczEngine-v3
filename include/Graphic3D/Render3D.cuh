@@ -15,7 +15,7 @@ public:
 
     Vec2f res = {800, 600};
     Vec2f res_half = {400, 300};
-    int pixelSize = 2;
+    int pixelSize = 4;
     void setResolution(float w, float h);
 
     Mesh3D mesh;
