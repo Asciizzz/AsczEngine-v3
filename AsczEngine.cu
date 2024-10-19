@@ -164,8 +164,9 @@ int main() {
 
     Mesh3D star(2, starWorld, starNormal, starTexture, starColor, starFaces);
 
-    RENDER.mesh += star;
     RENDER.mesh += graph;
+    RENDER.mesh += cube;
+    RENDER.mesh += star;
     RENDER.allocateProjection();
 
     while (window.isOpen()) {
