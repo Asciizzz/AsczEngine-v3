@@ -106,9 +106,9 @@ int main() {
 
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(
-        "assets/Models/sukuna.obj", 3
+        3, "assets/Models/sukuna.obj", true
     );
-    obj.scale(Vec3f(0, 0, 0), Vec3f(20, 20, 20));
+    obj.scale(Vec3f(), Vec3f(1));
 
     // GRAPHIC.mesh += cube;
     // GRAPHIC.mesh += wall;

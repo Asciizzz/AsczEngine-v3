@@ -11,7 +11,7 @@
 
 class Playground {
 public:
-    static Mesh3D readObjFile(std::string path, UInt meshID) {
+    static Mesh3D readObjFile(UInt meshID, std::string path, bool rainbow=false) {
         std::ifstream file(path);
         if (!file.is_open()) {
             std::cerr << "Error: Could not open file " << path << std::endl;
@@ -47,9 +47,6 @@ public:
                 maxZ = std::max(maxZ, v.z);
 
                 world.push_back(v);
-
-                // Since obj files don't have color data, we'll just use white
-                color.push_back(Vec4f(255, 255, 255, 255));
             } else if (type == "vn") {
                 Vec3f n;
                 ss >> n.x >> n.y >> n.z;
@@ -79,6 +76,21 @@ public:
                 v -= 1; t -= 1; n -= 1;
 
                 faces.push_back(Vec3x3uli(v, t, n));
+            }
+        }
+        
+        
+        for (Vec3f &v : world) {
+
+            if (rainbow) {
+                // Set the color based on the ratio of x, y, and z
+                float r = (v.x - minX) / (maxX - minX);
+                float g = (v.y - minY) / (maxY - minY);
+                float b = (v.z - minZ) / (maxZ - minZ);
+                color.push_back(Vec4f(255 - r * 255, g * 255, b * 255, 255));
+            } else {
+                // Just set it to white
+                color.push_back(Vec4f(255, 255, 255, 255));
             }
         }
 
