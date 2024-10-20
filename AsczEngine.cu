@@ -16,7 +16,7 @@ int main() {
     GRAPHIC.setResolution(1600, 900);
 
     Camera3D &CAMERA = GRAPHIC.camera;
-    CAMERA.pos = Vec3f(0, 0, -24);
+    CAMERA.pos = Vec3f(0, 0, -40);
     CAMERA.rot = Vec3f(0, 0, 0);
 
     SFMLTexture SFTex = SFMLTexture(1600, 900);
@@ -28,9 +28,9 @@ int main() {
 
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(
-        0, "assets/Models/malevolent_shrine.obj", true
+        0, "assets/Models/Pool.obj", true
     );
-    obj.scale(Vec3f(), Vec3f(5));
+    obj.scale(Vec3f(), Vec3f(1));
 
     GRAPHIC.mesh += obj;
     GRAPHIC.allocateProjection();
@@ -117,10 +117,11 @@ int main() {
             CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
 
-        // Rotate the model
-        float rot1 = M_PI / 6 * FPS.dTimeSec;
-        float rot2 = M_PI / 3 * FPS.dTimeSec;
-        GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot1, 0));
+        // Press R to rotate the model
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
+            float rot = M_PI / 3 * FPS.dTimeSec;
+            GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot, 0));
+        }
 
         // ========== Render Pipeline ==========
 

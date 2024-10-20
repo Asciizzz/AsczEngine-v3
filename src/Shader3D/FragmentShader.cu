@@ -21,7 +21,7 @@ __global__ void phongShadingKernel(
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
     
     // We will apply simple directional lighting
-    Vec3f lightDir = Vec3f(0, 0, -1);
+    Vec3f lightDir = Vec3f(1, 1, 1);
     Vec3f n = buffNormal[i];
 
     // Calculate the cosine of the angle between the normal and the light direction
