@@ -61,8 +61,8 @@ public:
                 Faces format: f v1/t1/n1 v2/t2/n2 v3/t3/n3
                 */
 
-                std::string vtn1, vtn2, vtn3;
-                ss >> vtn1 >> vtn2 >> vtn3;
+                std::string vtn1, vtn2, vtn3, vtn4 = "";
+                ss >> vtn1 >> vtn2 >> vtn3 >> vtn4;
 
                 Vec3uli v, t, n;
                 std::stringstream ss1(vtn1), ss2(vtn2), ss3(vtn3);
@@ -71,6 +71,20 @@ public:
                 ss3 >> v.z; ss3.ignore(1); ss3 >> t.z; ss3.ignore(1); ss3 >> n.z;
 
                 v -= 1; t -= 1; n -= 1;
+
+                if (vtn4 != "") {
+                    ULInt v4, t4, n4;
+                    std::stringstream ss4(vtn4);
+                    ss4 >> v4; ss4.ignore(1); ss4 >> t4; ss4.ignore(1); ss4 >> n4;
+                    v4 -= 1; t4 -= 1; n4 -= 1;
+
+                    // Create an additional face to triangulate the quad
+                    faces.push_back(Vec3x3uli(
+                        Vec3uli(v.x, v.z, v4),
+                        Vec3uli(t.x, t.z, t4),
+                        Vec3uli(n.x, n.z, n4)
+                    ));
+                }
 
                 faces.push_back(Vec3x3uli(v, t, n));
             }
