@@ -1,1 +1,1 @@
-assets/Models/Statue.obj 15
+assets/Heavy/Statue.obj 15
