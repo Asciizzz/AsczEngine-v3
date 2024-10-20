@@ -17,6 +17,7 @@ int main() {
 
     Camera3D &CAMERA = GRAPHIC.camera;
     std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
+    std::ifstream("cfg/cameraSpd.txt") >> CAMERA.slowFactor >> CAMERA.fastFactor;
 
     SFMLTexture SFTex = SFMLTexture(1600, 900);
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
@@ -125,8 +126,8 @@ int main() {
             else if (m_right && !m_left) vel = -20;
             else                         vel = 0;
             // Move slower/faster
-            if (k_ctrl && !k_shift)      vel *= 0.2;
-            else if (k_shift && !k_ctrl) vel *= 4;
+            if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
+            else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
             // Update camera World pos
             CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }

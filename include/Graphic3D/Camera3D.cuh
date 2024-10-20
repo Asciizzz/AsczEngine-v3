@@ -8,8 +8,11 @@ class Camera3D {
 public:
     Camera3D();
 
+    // Some camera settings
     float mSens = 0.1f;
     bool focus = true;
+    float slowFactor = 0.2f;
+    float fastFactor = 5.0f;
 
     Vec3f pos, rot; // Pitch, Yaw, Roll (roll rarely used)
     void restrictRot();
