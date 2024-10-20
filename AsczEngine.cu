@@ -106,7 +106,7 @@ int main() {
 
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(
-        "assets/Models/City/Residential Buildings 001.obj", 3
+        "assets/Models/sukuna.obj", 3
     );
     obj.scale(Vec3f(0, 0, 0), Vec3f(20, 20, 20));
 
@@ -205,6 +205,9 @@ int main() {
         float rot1 = M_PI / 6 * FPS.dTimeSec;
         float rot2 = M_PI / 3 * FPS.dTimeSec;
         GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(rot1, 0, rot2));
+
+        // Rotate the model
+        GRAPHIC.mesh.rotate(3, Vec3f(), Vec3f(0, rot1, 0));
 
         // ========== Render Pipeline ==========
 
