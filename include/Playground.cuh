@@ -11,7 +11,7 @@
 
 class Playground {
 public:
-    static Mesh3D readObjFile(UInt meshID, std::string path, bool rainbow=false) {
+    static Mesh3D readObjFile(UInt meshId, std::string path, bool rainbow=false) {
         std::ifstream file(path);
         if (!file.is_open()) {
             std::cerr << "Error: Could not open file " << path << std::endl;
@@ -94,11 +94,11 @@ public:
             }
         }
 
-        Mesh3D mesh = Mesh3D(meshID, world, normal, texture, color, faces);
+        Mesh3D mesh = Mesh3D(meshId, world, normal, texture, color, faces);
 
         // Shift the mesh to the origin
         Vec3f shift = Vec3f(-(minX + maxX) / 2, -(minY + maxY) / 2, -(minZ + maxZ) / 2);
-        mesh.translate(meshID, shift);
+        mesh.translate(meshId, shift);
 
         return mesh;
     }

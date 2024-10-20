@@ -10,18 +10,17 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
 
     free(); // Free the previous buffer
 
-    // For active pixels
     cudaMalloc(&active, size * sizeof(bool));
-    // For depth checking
     cudaMalloc(&depth, size * sizeof(float));
-    // For lighting
     cudaMalloc(&color, size * sizeof(Vec4f));
+
     cudaMalloc(&world, size * sizeof(Vec3f));
     cudaMalloc(&normal, size * sizeof(Vec3f));
-    // For texture mapping
     cudaMalloc(&texture, size * sizeof(Vec2f));
-    cudaMalloc(&meshID, size * sizeof(UInt));
-    // Other
+    cudaMalloc(&wMeshId, size * sizeof(UInt));
+    cudaMalloc(&nMeshId, size * sizeof(UInt));
+    cudaMalloc(&tMeshId, size * sizeof(UInt));
+
     cudaMalloc(&faceID, size * sizeof(ULLInt));
     cudaMalloc(&bary, size * sizeof(Vec3f));
 }
@@ -33,30 +32,29 @@ void Buffer3D::free() {
     if (world) cudaFree(world);
     if (normal) cudaFree(normal);
     if (texture) cudaFree(texture);
-    if (meshID) cudaFree(meshID);
+    if (wMeshId) cudaFree(wMeshId);
+    if (nMeshId) cudaFree(nMeshId);
+    if (tMeshId) cudaFree(tMeshId);
     if (faceID) cudaFree(faceID);
     if (bary) cudaFree(bary);
 }
 
 void Buffer3D::clearBuffer() {
     clearBufferKernel<<<blockCount, blockSize>>>(
-        active, depth, color, world, normal, texture, meshID, faceID, bary, size
+        active, depth, color,
+        world, normal, texture,
+        wMeshId, nMeshId, tMeshId,
+        faceID, bary, size
     );
     cudaDeviceSynchronize();
 }
 
 // Kernel for clearing the buffer
 __global__ void clearBufferKernel(
-    bool *active,
-    float *depth,
-    Vec4f *color,
-    Vec3f *world,
-    Vec3f *normal,
-    Vec2f *texture,
-    UInt *meshID,
-    ULLInt *faceID,
-    Vec3f *bary,
-    int size
+    bool *active, float *depth, Vec4f *color,
+    Vec3f *world, Vec3f *normal, Vec2f *texture,
+    UInt *wMeshId, UInt *nMeshId, UInt *tMeshId,
+    ULLInt *faceID, Vec3f *bary, int size
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= size) return;
@@ -64,10 +62,14 @@ __global__ void clearBufferKernel(
     active[i] = false; // Inactive
     depth[i] = 1; // Furthest depth
     color[i] = Vec4f(); // Black
+
     world[i] = Vec3f(); // Limbo
     normal[i] = Vec3f(); // Limbo
     texture[i] = Vec2f(); // Limbo
-    meshID[i] = NULL; // No mesh
+    wMeshId[i] = NULL; // No mesh
+    nMeshId[i] = NULL; // No mesh
+    tMeshId[i] = NULL; // No mesh
+
     faceID[i] = NULL; // No face
     bary[i] = Vec3f(); // Limbo
 }

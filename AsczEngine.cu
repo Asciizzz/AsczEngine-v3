@@ -106,7 +106,7 @@ int main() {
 
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(
-        3, "assets/Models/sukuna.obj", true
+        3, "assets/Models/anime.obj", true
     );
     obj.scale(Vec3f(), Vec3f(1));
 

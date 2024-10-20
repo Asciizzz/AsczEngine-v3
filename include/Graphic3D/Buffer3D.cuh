@@ -14,10 +14,14 @@ public:
     bool *active;
     float *depth;
     Vec4f *color;
+
     Vec3f *world;
     Vec3f *normal;
     Vec2f *texture;
-    UInt *meshID;
+    UInt *wMeshId;
+    UInt *nMeshId;
+    UInt *tMeshId;
+
     ULLInt *faceID;
     Vec3f *bary;
 
@@ -32,16 +36,10 @@ public:
 };
 
 __global__ void clearBufferKernel(
-    bool *active,
-    float *depth,
-    Vec4f *color,
-    Vec3f *world,
-    Vec3f *normal,
-    Vec2f *texture,
-    UInt *meshID,
-    ULLInt *faceID,
-    Vec3f *bary,
-    int size
+    bool *active, float *depth, Vec4f *color,
+    Vec3f *world, Vec3f *normal, Vec2f *texture,
+    UInt *wMeshId, UInt *nMeshId, UInt *tMeshId,
+    ULLInt *faceID, Vec3f *bary, int size
 );
 
 // FUN BUFFER FUNCTIONS

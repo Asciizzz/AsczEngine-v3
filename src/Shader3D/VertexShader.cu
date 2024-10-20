@@ -21,8 +21,8 @@ void VertexShader::cameraProjection() {
     Buffer3D &buffer = graphic.buffer;
     Vec4f *projection = graphic.projection;
 
-    cameraProjectionKernel<<<mesh.blockNumVs, mesh.blockSize>>>(
-        projection, mesh.world, camera, buffer.width, buffer.height, mesh.numVs
+    cameraProjectionKernel<<<mesh.blockNumWs, mesh.blockSize>>>(
+        projection, mesh.world, camera, buffer.width, buffer.height, mesh.numWs
     );
     cudaDeviceSynchronize();
 }
@@ -50,19 +50,22 @@ void VertexShader::rasterization() {
     Buffer3D &buffer = graphic.buffer;
 
     rasterizationKernel<<<buffer.blockCount, buffer.blockSize>>>(
-        mesh.color, mesh.world, mesh.normal, mesh.texture, mesh.meshID, mesh.faces,
-        buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.meshID,
-        buffer.faceID, buffer.bary, buffer.width, buffer.height
+        mesh.world, buffer.world, mesh.wMeshId, buffer.wMeshId,
+        mesh.normal, buffer.normal, mesh.nMeshId, buffer.nMeshId,
+        mesh.texture, buffer.texture, mesh.tMeshId, buffer.tMeshId,
+        mesh.color, buffer.color,
+        mesh.faces, buffer.faceID, buffer.bary, buffer.bary,
+        buffer.active, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
 }
 
 // Kernels
 __global__ void cameraProjectionKernel(
-    Vec4f *projection, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numVs
+    Vec4f *projection, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numVs) return;
+    if (i >= numWs) return;
 
     Vec4f p = VertexShader::toScreenSpace(camera, world[i], buffWidth, buffHeight);
     projection[i] = p;
@@ -80,7 +83,6 @@ __global__ void createDepthMapKernel(
     Vec4f p0 = projection[f.x];
     Vec4f p1 = projection[f.y];
     Vec4f p2 = projection[f.z];
-    Vec4f p3 = p0; // In case
 
     // Entirely outside the frustum
     if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
@@ -91,8 +93,6 @@ __global__ void createDepthMapKernel(
     p1.y = (1 - p1.y) * buffHeight / 2;
     p2.x = (p2.x + 1) * buffWidth / 2;
     p2.y = (1 - p2.y) * buffHeight / 2;
-    p3.x = (p3.x + 1) * buffWidth / 2;
-    p3.y = (1 - p3.y) * buffHeight / 2;
 
     // Bounding box
     int minX = min(min(p0.x, p1.x), p2.x);
@@ -128,9 +128,12 @@ __global__ void createDepthMapKernel(
 }
 
 __global__ void rasterizationKernel(
-    Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, UInt *meshID, Vec3x3uli *faces,
-    bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
-    UInt *buffMeshId, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
+    Vec3f *world, Vec3f *buffWorld, UInt *wMeshId, UInt *buffWMeshId,
+    Vec3f *normal, Vec3f *buffNormal, UInt *nMeshId, UInt *buffNMeshId,
+    Vec2f *texture, Vec2f *buffTexture, UInt *tMeshId, UInt *buffTMeshId,
+    Vec4f *color, Vec4f *buffColor,
+    Vec3x3uli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
+    bool *buffActive, int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
@@ -173,5 +176,7 @@ __global__ void rasterizationKernel(
     buffTexture[i] = t0 * alp + t1 * bet + t2 * gam;
 
     // Set mesh ID
-    buffMeshId[i] = meshID[vIdx.x];
+    buffWMeshId[i] = wMeshId[vIdx.x];
+    buffNMeshId[i] = nMeshId[nIdx.x];
+    buffTMeshId[i] = tMeshId[tIdx.x];
 }

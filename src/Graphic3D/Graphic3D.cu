@@ -8,7 +8,7 @@ void Graphic3D::setResolution(float w, float h) {
 }
 
 void Graphic3D::allocateProjection() {
-    cudaMalloc(&projection, mesh.numVs * sizeof(Vec4f));
+    cudaMalloc(&projection, mesh.numWs * sizeof(Vec4f));
 }
 void Graphic3D::freeProjection() {
     if (projection) cudaFree(projection);

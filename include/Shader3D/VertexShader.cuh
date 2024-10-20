@@ -18,7 +18,7 @@ public:
 
 // Pipeline Kernels
 __global__ void cameraProjectionKernel(
-    Vec4f *projection, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numVs
+    Vec4f *projection, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
 );
 __global__ void createDepthMapKernel(
     // Mesh data
@@ -28,11 +28,18 @@ __global__ void createDepthMapKernel(
     int buffWidth, int buffHeight
 );
 __global__ void rasterizationKernel(
-    // Mesh data
-    Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, UInt *meshID, Vec3x3uli *faces,
-    // Buffer data
-    bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
-    UInt *buffMeshId, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
+    // World data
+    Vec3f *world, Vec3f *buffWorld, UInt *wMeshId, UInt *buffWMeshId,
+    // Normal data
+    Vec3f *normal, Vec3f *buffNormal, UInt *nMeshId, UInt *buffNMeshId,
+    // Texture data
+    Vec2f *texture, Vec2f *buffTexture, UInt *tMeshId, UInt *buffTMeshId,
+    // Color data (share with world)
+    Vec4f *color, Vec4f *buffColor,
+    // Face data
+    Vec3x3uli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
+    // Other data
+    bool *buffActive, int buffWidth, int buffHeight
 );
 
 #endif
