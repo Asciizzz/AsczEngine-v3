@@ -28,9 +28,9 @@ int main() {
 
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(
-        3, "assets/Models/anime.obj", true
+        0, "assets/Models/malevolent_shrine.obj", true
     );
-    obj.scale(Vec3f(), Vec3f(1));
+    obj.scale(Vec3f(), Vec3f(5));
 
     GRAPHIC.mesh += obj;
     GRAPHIC.allocateProjection();
@@ -117,13 +117,10 @@ int main() {
             CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
 
-        // Rotate the cube
+        // Rotate the model
         float rot1 = M_PI / 6 * FPS.dTimeSec;
         float rot2 = M_PI / 3 * FPS.dTimeSec;
-        GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(rot1, 0, rot2));
-
-        // Rotate the model
-        GRAPHIC.mesh.rotate(3, Vec3f(), Vec3f(0, rot1, 0));
+        GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot1, 0));
 
         // ========== Render Pipeline ==========
 

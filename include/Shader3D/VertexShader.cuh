@@ -34,7 +34,7 @@ __global__ void rasterizationKernel(
     Vec3f *normal, Vec3f *buffNormal, UInt *nMeshId, UInt *buffNMeshId,
     // Texture data
     Vec2f *texture, Vec2f *buffTexture, UInt *tMeshId, UInt *buffTMeshId,
-    // Color data (share with world)
+    // Color data (shared with world for now)
     Vec4f *color, Vec4f *buffColor,
     // Face data
     Vec3x3uli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
