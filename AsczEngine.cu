@@ -26,100 +26,16 @@ int main() {
         GRAPHIC.res_half.x, GRAPHIC.res_half.y
     ), window);
 
-    Vecs3f cubeWorld = {
-        Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
-        Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
-        Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
-        Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
-    };
-    Vecs3f cubeNormal = {
-        Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
-        Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
-        Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
-        Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
-    };
-    Vecs2f cubeTexture = {
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1),
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1)
-    };
-    Vecs4f cubeColor = {
-        Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
-        Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
-        Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-        Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
-    };
-    Vecs3x3uli cubeFaces = {
-        Vec3x3uli(0, 1, 2), Vec3x3uli(0, 2, 3),
-        Vec3x3uli(4, 5, 6), Vec3x3uli(4, 6, 7),
-        Vec3x3uli(0, 4, 7), Vec3x3uli(0, 7, 3),
-        Vec3x3uli(1, 5, 6), Vec3x3uli(1, 6, 2),
-        Vec3x3uli(0, 1, 5), Vec3x3uli(0, 5, 4),
-        Vec3x3uli(3, 2, 6), Vec3x3uli(3, 6, 7)
-    };
-    Mesh3D cube(0, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
-    cube.scale(Vec3f(), Vec3f(4));
-
-    // Create a white wall behind the cube
-    float wallSize = 10;
-    Vecs3f wallWorld = {
-        Vec3f(-wallSize, -wallSize, wallSize), Vec3f(wallSize, -wallSize, wallSize),
-        Vec3f(wallSize, wallSize, wallSize), Vec3f(-wallSize, wallSize, wallSize)
-    };
-    Vecs3f wallNormal = { // Facing towards the cube
-        Vec3f(0, 0, -1), Vec3f(0, 0, -1),
-        Vec3f(0, 0, -1), Vec3f(0, 0, -1)
-    };
-    Vecs2f wallTexture = {
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1)
-    };
-    Vecs4f wallColor = {
-        Vec4f(255, 125, 125, 255), Vec4f(125, 255, 125, 255),
-        Vec4f(125, 125, 255, 255), Vec4f(255, 255, 125, 255)
-    };
-    Vecs3x3uli wallFaces = {
-        Vec3x3uli(0, 1, 2), Vec3x3uli(0, 2, 3)
-    };
-    Mesh3D wall(1, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
-
-    // Create an equallateral triangle
-    Mesh equTri(2,
-        Vecs3f{
-            Vec3f(-0.5, -sqrt(3) / 4, 0), Vec3f(0.5, - sqrt(3) / 4, 0), Vec3f(0, sqrt(3) / 4, 0)
-        },
-        Vecs3f{
-            Vec3f(0, 0, 1), Vec3f(0, 0, 1), Vec3f(0, 0, 1)
-        },
-        Vecs2f{
-            Vec2f(0, 0), Vec2f(1, 0), Vec2f(0.5, 1)
-        },
-        Vecs4f{
-            Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255), Vec4f(0, 0, 255, 255)
-        },
-        Vecs3x3uli{
-            Vec3x3uli(0, 1, 2)
-        }
-    );
-    Mesh3D tri(equTri);
-
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(
         3, "assets/Models/anime.obj", true
     );
     obj.scale(Vec3f(), Vec3f(1));
 
-    // GRAPHIC.mesh += cube;
-    // GRAPHIC.mesh += wall;
-    // GRAPHIC.mesh += tri;
     GRAPHIC.mesh += obj;
     GRAPHIC.allocateProjection();
 
     // Free memory
-    cube.freeMemory();
-    wall.freeMemory();
-    tri.freeMemory();
     obj.freeMemory();
 
     // To avoid floating point errors
