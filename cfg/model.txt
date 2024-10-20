@@ -1,1 +1,1 @@
-assets/Heavy/Anime.obj 4
+assets/Models/Sukuna.obj 100
