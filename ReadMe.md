@@ -26,6 +26,6 @@
 - Shadow Map
 - Physic Engine (very ambitious)
 
-### Goal:
+### Personal Goal
 
-- I want to get a bit personal here - this 3D engine is a personal project aimed at creating an abstract, liminal-space-like experience. I've always been drawn to those eerie, empty, and strangely nostalgic places. More than just experiencing them, I’ve always wanted to become a creator of such spaces. It’s ironic, isn’t it? A low-level project, built with minimal abstraction, yet aimed at evoking a sense of maximum abstraction and surrealism.
+- I want to get a bit personal here, this 3D engine is a project aimed at creating an abstract, liminal-space-like experience. I've always been drawn to those eerie, empty, and strangely nostalgic places. More than just experiencing them, I’ve always wanted to create such spaces. It’s ironic, isn’t it? A low-level project, built with minimal abstraction, yet aimed at evoking a sense of maximum abstraction and surrealism.
