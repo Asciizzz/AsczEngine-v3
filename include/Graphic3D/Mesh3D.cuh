@@ -27,9 +27,9 @@ struct Mesh {
     Vecs4f color;
     UInts meshID;
 
-    Vecs3uli faces;
+    Vecs3x3uli faces;
 
-    Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
+    Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces);
     Mesh(Mesh &mesh, UInt id);
     Mesh() {}
 
@@ -54,10 +54,10 @@ public:
     Vec4f *color;
 
     // Faces (triangles)
-    Vec3uli *faces;
+    Vec3x3uli *faces;
 
     Mesh3D(ULLInt numVs=0, ULLInt numFs=0);
-    Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
+    Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces);
     Mesh3D(Mesh &mesh);
 
     // Memory management
@@ -72,7 +72,7 @@ public:
     void freeMemory();
 
     // Upload host data to device
-    void uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces);
+    void uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces);
 
     // Mesh operators
     void operator+=(Mesh3D &mesh);
@@ -84,11 +84,10 @@ public:
 
     // DEBUG
     void printVertices(bool world=true, bool normal=true, bool texture=true, bool color=true, bool meshID=true);
-    void printFaces();
 };
 
 // Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs);
+__global__ void incrementFaceIdxKernel(Vec3x3uli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs);
 __global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id);
 
 // Kernel for transforming vertices

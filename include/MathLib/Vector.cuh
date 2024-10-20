@@ -48,19 +48,20 @@ struct Vec3x3uli { // Also for faces indices (but way more complex)
     /* Explanation:
 
     .obj files store faces in the format of v/t/n v/t/n v/t/n
-    where v is the vertex index, t is the texture index, and n is the normal index
-
-    v: vertex index
-    t: texture index
-    n: normal index
+    where:
+        v: vertex index
+        t: texture index
+        n: normal index
     */
 
     Vec3uli v, t, n;
     __host__ __device__ Vec3x3uli();
-    __host__ __device__ Vec3x3uli(Vec3uli a, Vec3uli b, Vec3uli c);
+    __host__ __device__ Vec3x3uli(Vec3uli v, Vec3uli t, Vec3uli n);
     // Some .obj have organized faces (a/a/a b/b/b c/c/c)
     __host__ __device__ Vec3x3uli(Vec3uli vtn);
-    __host__ __device__ Vec3x3uli(ULInt v, ULInt t, ULInt n);
+    __host__ __device__ Vec3x3uli(ULInt i1, ULInt i2, ULInt i3);
+
+    __host__ __device__ void operator+=(ULInt d);
 };
 
 struct Vec4f; // Forward declaration

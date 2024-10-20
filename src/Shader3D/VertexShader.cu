@@ -69,14 +69,14 @@ __global__ void cameraProjectionKernel(
 }
 
 __global__ void createDepthMapKernel(
-    Vec4f *projection, Vec3f *world, Vec3uli *faces, ULLInt numFs,
+    Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
     int buffWidth, int buffHeight
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
 
-    Vec3uli f = faces[i];
+    Vec3uli f = faces[i].v;
     Vec4f p0 = projection[f.x];
     Vec4f p1 = projection[f.y];
     Vec4f p2 = projection[f.z];
@@ -128,7 +128,7 @@ __global__ void createDepthMapKernel(
 }
 
 __global__ void rasterizationKernel(
-    Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, UInt *meshID, Vec3uli *faces,
+    Vec4f *color, Vec3f *world, Vec3f *normal, Vec2f *texture, UInt *meshID, Vec3x3uli *faces,
     bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
     UInt *buffMeshId, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight
 ) {
@@ -137,10 +137,10 @@ __global__ void rasterizationKernel(
 
     ULLInt fIdx = buffFaceId[i];
 
-    // Set vertex index
-    ULLInt vIdx0 = faces[fIdx].x;
-    ULLInt vIdx1 = faces[fIdx].y;
-    ULLInt vIdx2 = faces[fIdx].z;
+    // Set vertex, texture, and normal indices
+    Vec3uli vIdx = faces[fIdx].v;
+    Vec3uli tIdx = faces[fIdx].t;
+    Vec3uli nIdx = faces[fIdx].n;
 
     // Get barycentric coordinates
     float alp = buffBary[i].x;
@@ -148,30 +148,30 @@ __global__ void rasterizationKernel(
     float gam = buffBary[i].z;
 
     // Set color
-    Vec4f c0 = color[vIdx0];
-    Vec4f c1 = color[vIdx1];
-    Vec4f c2 = color[vIdx2];
+    Vec4f c0 = color[vIdx.x];
+    Vec4f c1 = color[vIdx.y];
+    Vec4f c2 = color[vIdx.z];
     buffColor[i] = c0 * alp + c1 * bet + c2 * gam;
 
     // Set world position
-    Vec3f w0 = world[vIdx0];
-    Vec3f w1 = world[vIdx1];
-    Vec3f w2 = world[vIdx2];
+    Vec3f w0 = world[vIdx.x];
+    Vec3f w1 = world[vIdx.y];
+    Vec3f w2 = world[vIdx.z];
     buffWorld[i] = w0 * alp + w1 * bet + w2 * gam;
 
     // Set normal
-    Vec3f n0 = normal[vIdx0];
-    Vec3f n1 = normal[vIdx1];
-    Vec3f n2 = normal[vIdx2];
+    Vec3f n0 = normal[nIdx.x];
+    Vec3f n1 = normal[nIdx.y];
+    Vec3f n2 = normal[nIdx.z];
     n0.norm(); n1.norm(); n2.norm();
     buffNormal[i] = n0 * alp + n1 * bet + n2 * gam;
 
     // Set texture
-    Vec2f t0 = texture[vIdx0];
-    Vec2f t1 = texture[vIdx1];
-    Vec2f t2 = texture[vIdx2];
+    Vec2f t0 = texture[tIdx.x];
+    Vec2f t1 = texture[tIdx.y];
+    Vec2f t2 = texture[tIdx.z];
     buffTexture[i] = t0 * alp + t1 * bet + t2 * gam;
 
     // Set mesh ID
-    buffMeshId[i] = meshID[vIdx0];
+    buffMeshId[i] = meshID[vIdx.x];
 }

@@ -50,13 +50,13 @@ int main() {
         Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
         Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
     };
-    Vecs3uli cubeFaces = {
-        Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
-        Vec3uli(4, 5, 6), Vec3uli(4, 6, 7),
-        Vec3uli(0, 4, 7), Vec3uli(0, 7, 3),
-        Vec3uli(1, 5, 6), Vec3uli(1, 6, 2),
-        Vec3uli(0, 1, 5), Vec3uli(0, 5, 4),
-        Vec3uli(3, 2, 6), Vec3uli(3, 6, 7)
+    Vecs3x3uli cubeFaces = {
+        Vec3x3uli(0, 1, 2), Vec3x3uli(0, 2, 3),
+        Vec3x3uli(4, 5, 6), Vec3x3uli(4, 6, 7),
+        Vec3x3uli(0, 4, 7), Vec3x3uli(0, 7, 3),
+        Vec3x3uli(1, 5, 6), Vec3x3uli(1, 6, 2),
+        Vec3x3uli(0, 1, 5), Vec3x3uli(0, 5, 4),
+        Vec3x3uli(3, 2, 6), Vec3x3uli(3, 6, 7)
     };
     Mesh3D cube(0, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
     cube.scale(0, Vec3f(), Vec3f(4));
@@ -79,8 +79,8 @@ int main() {
         Vec4f(255, 125, 125, 255), Vec4f(125, 255, 125, 255),
         Vec4f(125, 125, 255, 255), Vec4f(255, 255, 125, 255)
     };
-    Vecs3uli wallFaces = {
-        Vec3uli(0, 1, 2), Vec3uli(0, 2, 3)
+    Vecs3x3uli wallFaces = {
+        Vec3x3uli(0, 1, 2), Vec3x3uli(0, 2, 3)
     };
     Mesh3D wall(1, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
 
@@ -99,8 +99,8 @@ int main() {
         Vecs4f{
             Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255), Vec4f(0, 0, 255, 255)
         },
-        Vecs3uli{
-            Vec3uli(0, 1, 2)
+        Vecs3x3uli{
+            Vec3x3uli(0, 1, 2)
         }
     );
     Mesh3D tri(equTri);
@@ -204,8 +204,7 @@ int main() {
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
-        // Beta feature
-        FragmentShader::phongShading();
+        // FragmentShader::phongShading();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)

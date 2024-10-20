@@ -2,7 +2,7 @@
 
 // Mesh struct
 
-Mesh::Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces) :
+Mesh::Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces) :
     meshID(world.size(), id), world(world), normal(normal),
     texture(texture), color(color), faces(faces)
 {}
@@ -24,7 +24,9 @@ Mesh Mesh::operator+=(Mesh &mesh) {
 
     // Shift the faces indices
     for (ULLInt i = oldSize; i < faces.size(); i++) {
-        faces[i] += oldSize;
+        faces[i].v += oldSize;
+        faces[i].t += oldSize;
+        faces[i].n += oldSize;
     }
     return *this;
 }
@@ -44,7 +46,7 @@ Mesh3D::Mesh3D(ULLInt numVs, ULLInt numFs) :
     mallocFaces();
 }
 
-Mesh3D::Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces) :
+Mesh3D::Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces) :
     numVs(world.size()), numFs(faces.size())
 {
     mallocVertices();
@@ -87,7 +89,7 @@ void Mesh3D::freeVertices() {
 
 void Mesh3D::mallocFaces() {
     blockNumFs = (numFs + blockSize - 1) / blockSize;
-    cudaMalloc(&faces, numFs * sizeof(Vec3uli));
+    cudaMalloc(&faces, numFs * sizeof(Vec3x3uli));
 }
 
 void Mesh3D::resizeFaces(ULLInt numFs) {
@@ -107,7 +109,7 @@ void Mesh3D::freeMemory() {
 
 // Upload host data to device
 
-void Mesh3D::uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3uli &faces) {
+void Mesh3D::uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces) {
     // Vertices
     setMeshIDKernel<<<blockNumVs, blockSize>>>(this->meshID, numVs, id);
     cudaMemcpy(this->world, world.data(), world.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
@@ -115,7 +117,7 @@ void Mesh3D::uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture,
     cudaMemcpy(this->texture, texture.data(), texture.size() * sizeof(Vec2f), cudaMemcpyHostToDevice);
     cudaMemcpy(this->color, color.data(), color.size() * sizeof(Vec4f), cudaMemcpyHostToDevice);
     // Faces indices
-    cudaMemcpy(this->faces, faces.data(), faces.size() * sizeof(Vec3uli), cudaMemcpyHostToDevice);
+    cudaMemcpy(this->faces, faces.data(), faces.size() * sizeof(Vec3x3uli), cudaMemcpyHostToDevice);
 }
 
 // Mesh operators
@@ -157,10 +159,10 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     // Resize faces (with offset for the added vertices)
     ULLInt newNumFs = numFs + mesh.numFs;
     ULLInt newBlockNumFs = (newNumFs + blockSize - 1) / blockSize;
-    Vec3uli *newFaces;
-    cudaMalloc(&newFaces, newNumFs * sizeof(Vec3uli));
-    cudaMemcpy(newFaces, faces, numFs * sizeof(Vec3uli), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newFaces + numFs, mesh.faces, mesh.numFs * sizeof(Vec3uli), cudaMemcpyDeviceToDevice);
+    Vec3x3uli *newFaces;
+    cudaMalloc(&newFaces, newNumFs * sizeof(Vec3x3uli));
+    cudaMemcpy(newFaces, faces, numFs * sizeof(Vec3x3uli), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newFaces + numFs, mesh.faces, mesh.numFs * sizeof(Vec3x3uli), cudaMemcpyDeviceToDevice);
     incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaces, numVs, numFs, newNumFs);
 
     cudaFree(faces);
@@ -212,21 +214,14 @@ void Mesh3D::printVertices(bool p_world, bool p_normal, bool p_tex, bool p_color
     delete[] hMeshID, hworld, hNormal, hTexture, hColor;
 }
 
-void Mesh3D::printFaces() {
-    Vec3uli *hFaces = new Vec3uli[numFs];
-    cudaMemcpy(hFaces, faces, numFs * sizeof(Vec3uli), cudaMemcpyDeviceToHost);
-
-    for (ULLInt i = 0; i < numFs; i++) {
-        printf("Face %llu: (%lu, %lu, %lu)\n", i, hFaces[i].x, hFaces[i].y, hFaces[i].z);
-    }
-
-    delete[] hFaces;
-}
-
 // Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs) {
+__global__ void incrementFaceIdxKernel(Vec3x3uli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < newNumFs && idx >= numFs) faces[idx] += offset;
+    if (idx < newNumFs && idx >= numFs) {
+        faces[idx].v += offset;
+        faces[idx].t += offset;
+        faces[idx].n += offset;
+    }
 }
 
 __global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id) {
