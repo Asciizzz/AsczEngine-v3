@@ -19,7 +19,7 @@
   - *Vertices Projection*: uses `Camera3D`'s `mat4 MVP` to project `vertices` world coord into screen coord
   - *Frustum Clipping*: WIP!
   - *Rasterization*: uses the projected `faces` to interpolate and fill in `buffers`: `color`, `depth`, `world`, `normal`, `texture`, etc.
-  - *Phong Shading*: uses the `buffers`' datas to apply Phong Shading to each pixel
+  - *Phong Shading*: uses the `buffers`' datas to apply Phong Shading to each pixel.
 
 ### Future Addition:
 

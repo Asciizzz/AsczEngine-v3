@@ -1,6 +1,6 @@
 #include <FpsHandler.cuh>
 #include <CsLogHandler.cuh>
-#include <Lighting3D.cuh>
+#include <FragmentShader.cuh>
 
 #include <SFMLTexture.cuh>
 
@@ -9,10 +9,10 @@ int main() {
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
-    Render3D &RENDER = Render3D::instance();
-    RENDER.setResolution(1600, 900);
+    VertexShader &VERTEX = VertexShader::instance();
+    VERTEX.setResolution(1600, 900);
 
-    Camera3D &CAMERA = RENDER.camera;
+    Camera3D &CAMERA = VERTEX.camera;
     CAMERA.pos = Vec3f(0, 0, -24);
     CAMERA.rot = Vec3f(0, 0, 0);
 
@@ -20,7 +20,7 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
     sf::Mouse::setPosition(sf::Vector2i(
-        RENDER.res_half.x, RENDER.res_half.y
+        VERTEX.res_half.x, VERTEX.res_half.y
     ), window);
 
     Vecs3f cubeWorld = {
@@ -102,18 +102,16 @@ int main() {
     );
     Mesh3D tri(equTri);
 
-    RENDER.mesh += cube;
-    RENDER.mesh += wall;
-    // RENDER.mesh += tri;
-    RENDER.allocateProjection();
+    VERTEX.mesh += cube;
+    VERTEX.mesh += wall;
+    // VERTEX.mesh += tri;
+    VERTEX.allocateProjection();
 
     // Free memory
     cube.freeMemory();
     wall.freeMemory();
 
-    Lighting3D &LIGHT = Lighting3D::instance();
-    LIGHT.allocateShadowMap(800, 800);
-    LIGHT.allocateLightProj();
+    FragmentShader &FRAGMENT = FragmentShader::instance();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
@@ -142,7 +140,7 @@ int main() {
                     CAMERA.focus = !CAMERA.focus;
                     window.setMouseCursorVisible(!CAMERA.focus);
                     sf::Mouse::setPosition(sf::Vector2i(
-                        RENDER.res_half.x, RENDER.res_half.y
+                        VERTEX.res_half.x, VERTEX.res_half.y
                     ), window);
                 }
             }
@@ -164,12 +162,12 @@ int main() {
             // Mouse movement handling
             sf::Vector2i mousepos = sf::Mouse::getPosition(window);
             sf::Mouse::setPosition(sf::Vector2i(
-                RENDER.res_half.x, RENDER.res_half.y
+                VERTEX.res_half.x, VERTEX.res_half.y
             ), window);
 
             // Move from center
-            int dMx = mousepos.x - RENDER.res_half.x;
-            int dMy = mousepos.y - RENDER.res_half.y;
+            int dMx = mousepos.x - VERTEX.res_half.x;
+            int dMy = mousepos.y - VERTEX.res_half.y;
 
             // Camera look around
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
@@ -197,24 +195,24 @@ int main() {
         // Rotate the cube
         float rot1 = M_PI / 6 * FPS.dTimeSec;
         float rot2 = M_PI / 3 * FPS.dTimeSec;
-        RENDER.mesh.rotate(0, Vec3f(), Vec3f(rot1, 0, rot2));
+        VERTEX.mesh.rotate(0, Vec3f(), Vec3f(rot1, 0, rot2));
 
         // ========== Render Pipeline ==========
 
-        RENDER.cameraProjection();
-        RENDER.createDepthMap();
-        RENDER.rasterization();
+        VERTEX.cameraProjection();
+        VERTEX.createDepthMap();
+        VERTEX.rasterization();
 
         // Beta feature
-        LIGHT.phongShading();
+        FRAGMENT.phongShading();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
         SFTex.updateTexture(
-            RENDER.buffer.color,
-            RENDER.buffer.width,
-            RENDER.buffer.height,
-            RENDER.pixelSize
+            VERTEX.buffer.color,
+            VERTEX.buffer.width,
+            VERTEX.buffer.height,
+            VERTEX.pixelSize
         );
         window.clear(sf::Color(0, 0, 0));
         window.draw(SFTex.sprite);
@@ -252,9 +250,9 @@ int main() {
     }
 
     // Clean up
-    RENDER.freeProjection();
-    RENDER.mesh.freeMemory();
-    RENDER.buffer.free();
+    VERTEX.freeProjection();
+    VERTEX.mesh.freeMemory();
+    VERTEX.buffer.free();
 
     return 0;
 }

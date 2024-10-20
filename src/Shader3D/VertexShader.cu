@@ -1,26 +1,26 @@
-#include <Render3D.cuh>
+#include <VertexShader.cuh>
 
-void Render3D::setResolution(float w, float h) {
+void VertexShader::setResolution(float w, float h) {
     res = {w, h};
     res_half = {w / 2, h / 2};
     camera.setResolution(w, h);
     buffer.resize(w, h, pixelSize);
 }
 
-void Render3D::allocateProjection() {
+void VertexShader::allocateProjection() {
     cudaMalloc(&projection, mesh.numVs * sizeof(Vec4f));
 }
-void Render3D::freeProjection() {
+void VertexShader::freeProjection() {
     if (projection) cudaFree(projection);
 }
-void Render3D::resizeProjection() {
+void VertexShader::resizeProjection() {
     freeProjection();
     allocateProjection();
 }
 
 // Render functions
 
-Vec4f Render3D::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, int buffHeight) {
+Vec4f VertexShader::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, int buffHeight) {
     Vec4f v4 = world.toVec4f();
     Vec4f t4 = camera.mvp * v4;
     Vec3f t3 = t4.toVec3f(); // Convert to NDC [-1, 1]
@@ -32,14 +32,14 @@ Vec4f Render3D::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, int 
 
 // Render pipeline
 
-void Render3D::cameraProjection() {
+void VertexShader::cameraProjection() {
     cameraProjectionKernel<<<mesh.blockNumVs, mesh.blockSize>>>(
         projection, mesh.world, camera, buffer.width, buffer.height, mesh.numVs
     );
     cudaDeviceSynchronize();
 }
 
-void Render3D::createDepthMap() {
+void VertexShader::createDepthMap() {
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
@@ -51,7 +51,7 @@ void Render3D::createDepthMap() {
     cudaDeviceSynchronize();
 }
 
-void Render3D::rasterization() {
+void VertexShader::rasterization() {
     rasterizationKernel<<<buffer.blockCount, buffer.blockSize>>>(
         mesh.color, mesh.world, mesh.normal, mesh.texture, mesh.meshID, mesh.faces,
         buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.meshID,
@@ -80,7 +80,7 @@ __global__ void cameraProjectionKernel(
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numVs) return;
 
-    Vec4f p = Render3D::toScreenSpace(camera, world[i], buffWidth, buffHeight);
+    Vec4f p = VertexShader::toScreenSpace(camera, world[i], buffWidth, buffHeight);
     projection[i] = p;
 }
 

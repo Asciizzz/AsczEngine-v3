@@ -22,7 +22,6 @@ public:
     Vec3f *bary;
 
     Buffer3D();
-    ~Buffer3D();
     void resize(int width, int height, int pixelSize=1);
     void free();
 

@@ -1,7 +1,6 @@
 #include <Buffer3D.cuh>
 
 Buffer3D::Buffer3D() {}
-Buffer3D::~Buffer3D() { free(); }
 
 void Buffer3D::resize(int width, int height, int pixelSize) {
     this->width = width / pixelSize;

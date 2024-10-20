@@ -1,17 +1,17 @@
-#ifndef RENDER3D_CUH
-#define RENDER3D_CUH
+#ifndef VERTEXSHADER_CUH
+#define VERTEXSHADER_CUH
 
 #include <Buffer3D.cuh>
 
-class Render3D {
+class VertexShader {
 public:
     // Singleton
-    static Render3D& instance() {
-        static Render3D instance;
+    static VertexShader& instance() {
+        static VertexShader instance;
         return instance;
     }
-    Render3D(const Render3D&) = delete;
-    Render3D &operator=(const Render3D&) = delete;
+    VertexShader(const VertexShader&) = delete;
+    VertexShader &operator=(const VertexShader&) = delete;
 
     Vec2f res = {800, 600};
     Vec2f res_half = {400, 300};
@@ -38,7 +38,7 @@ public:
     void rasterization();
 
 private:
-    Render3D() {}
+    VertexShader() {}
 };
 
 __device__ bool atomicMinFloat(float* addr, float value);
