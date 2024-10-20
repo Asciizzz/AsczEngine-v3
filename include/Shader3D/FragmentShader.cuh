@@ -3,6 +3,8 @@
 
 #include <Graphic3D.cuh>
 
+
+
 class FragmentShader {
 public:
     static void phongShading();
@@ -10,6 +12,7 @@ public:
 
 // Phong Shading
 __global__ void phongShadingKernel(
+    LightSrc light,
     bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
     int buffWidth, int buffHeight
 );

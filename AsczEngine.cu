@@ -16,8 +16,8 @@ int main() {
     GRAPHIC.setResolution(1600, 900);
 
     Camera3D &CAMERA = GRAPHIC.camera;
-    CAMERA.pos = Vec3f(0, 0, -40);
-    CAMERA.rot = Vec3f(0, 0, 0);
+    CAMERA.pos = Vec3f(0, 0, 40);
+    CAMERA.rot = Vec3f(0, M_PI, 0);
 
     SFMLTexture SFTex = SFMLTexture(1600, 900);
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
@@ -26,11 +26,15 @@ int main() {
         GRAPHIC.res_half.x, GRAPHIC.res_half.y
     ), window);
 
+    std::string objPath = "";
+    float objScale = 1;
+    // File: <path> <scale>
+    std::ifstream file("cfg/model.txt");
+    file >> objPath >> objScale;
+
     // Create a .obj mesh (Work in progress)
-    Mesh3D obj = Playground::readObjFile(
-        0, "assets/Models/Pool.obj", true
-    );
-    obj.scale(Vec3f(), Vec3f(1));
+    Mesh3D obj = Playground::readObjFile(0, objPath, true);
+    obj.scale(Vec3f(), Vec3f(objScale));
 
     GRAPHIC.mesh += obj;
     GRAPHIC.allocateProjection();
@@ -68,6 +72,15 @@ int main() {
                         GRAPHIC.res_half.x, GRAPHIC.res_half.y
                     ), window);
                 }
+
+                // Press L to read light.txt file and set its prop
+                if (event.key.code == sf::Keyboard::L) {
+                    std::ifstream dir("cfg/lightDir.txt");
+                    dir >> GRAPHIC.light.dir.x >> GRAPHIC.light.dir.y >> GRAPHIC.light.dir.z;
+
+                    std::ifstream color("cfg/lightColor.txt");
+                    color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
+                }
             }
 
             // Scroll to zoom in/out
@@ -82,6 +95,12 @@ int main() {
                 CAMERA.fov = fovRad;
             }
         }
+
+        bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+        bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
+        bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
+        bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
+        bool k_r = sf::Keyboard::isKeyPressed(sf::Keyboard::R);
 
         if (CAMERA.focus) {
             // Mouse movement handling
@@ -102,10 +121,6 @@ int main() {
 
             // Mouse Click = move forward
             float vel = 0;
-            bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-            bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
-            bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
-            bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
             // Move forward/backward
             if (m_left && !m_right)      vel = 20;
             else if (m_right && !m_left) vel = -20;
@@ -117,9 +132,11 @@ int main() {
             CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
 
-        // Press R to rotate the model
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::R)) {
+        // Press R to rotate the object
+        if (k_r) {
             float rot = M_PI / 3 * FPS.dTimeSec;
+            if (k_ctrl) rot *= -1;
+            if (k_shift) rot *= 3;
             GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot, 0));
         }
 

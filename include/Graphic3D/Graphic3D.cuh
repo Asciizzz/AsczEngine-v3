@@ -16,6 +16,14 @@ We will not put any data into the Shader classes
 #include <Camera3D.cuh>
 #include <Buffer3D.cuh>
 
+// BETA: LightSrc
+struct LightSrc {
+    Vec3f dir = {-1, -1, -1};
+    float ambient = 0.1;
+    float specular = 1.2;
+    Vec3f color = {1, 1, 1};
+};
+
 class Graphic3D {
 public:
     // Singleton
@@ -40,6 +48,9 @@ public:
     void allocateProjection();
     void freeProjection();
     void resizeProjection();
+
+    // BETA: LightSrc
+    LightSrc light;
 
 private:
     Graphic3D() {}

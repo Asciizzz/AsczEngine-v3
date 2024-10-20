@@ -7,6 +7,7 @@ void FragmentShader::phongShading() {
     Buffer3D &buffer = graphic.buffer;
 
     phongShadingKernel<<<buffer.blockCount, buffer.blockSize>>>(
+        graphic.light,
         buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture,
         buffer.width, buffer.height
     );
@@ -14,14 +15,21 @@ void FragmentShader::phongShading() {
 }
 
 __global__ void phongShadingKernel(
+    LightSrc light,
     bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
     int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
-    
-    // We will apply simple directional lighting
-    Vec3f lightDir = Vec3f(1, 1, 1);
+
+    // Apply colored light
+    buffColor[i].x *= light.color.x;
+    buffColor[i].y *= light.color.y;
+    buffColor[i].z *= light.color.z;
+    buffColor[i].limit(0, 255);
+
+    // Find the light direction
+    Vec3f lightDir = light.dir * -1;
     Vec3f n = buffNormal[i];
 
     // Calculate the cosine of the angle between the normal and the light direction
@@ -30,9 +38,11 @@ __global__ void phongShadingKernel(
     float cosA = dot / (n.mag() * lightDir.mag());
     if (cosA < 0) cosA = 0;
 
-    float diff = 0.1 + 1.1 * cosA;
+    float diff = light.ambient * (1 - cosA) + light.specular * cosA;
 
     // Apply the light
-    buffColor[i] = buffColor[i] * diff;
+    buffColor[i].x *= diff;
+    buffColor[i].y *= diff;
+    buffColor[i].z *= diff;
     buffColor[i].limit(0, 255);
 }
