@@ -30,6 +30,9 @@ Vec3uli::Vec3uli(ULInt a) : x(a), y(a), z(a) {}
 void Vec3uli::operator+=(ULInt d) {
     x += d; y += d; z += d;
 }
+void Vec3uli::operator-=(ULInt d) {
+    x -= d; y -= d; z -= d;
+}
 
 // VEC3x3uli
 Vec3x3uli::Vec3x3uli() {}
@@ -40,6 +43,9 @@ Vec3x3uli::Vec3x3uli(ULInt i1, ULInt i2, ULInt i3) :
 {}
 void Vec3x3uli::operator+=(ULInt d) {
     v += d; t += d; n += d;
+}
+void Vec3x3uli::operator-=(ULInt d) {
+    v -= d; t -= d; n -= d;
 }
 
 // VEC3f

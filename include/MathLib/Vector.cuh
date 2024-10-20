@@ -42,6 +42,7 @@ struct Vec3uli { // For faces indices
     __host__ __device__ Vec3uli(ULInt a);
 
     __host__ __device__ void operator+=(ULInt d);
+    __host__ __device__ void operator-=(ULInt d);
 };
 
 struct Vec3x3uli { // Also for faces indices (but way more complex)
@@ -62,6 +63,7 @@ struct Vec3x3uli { // Also for faces indices (but way more complex)
     __host__ __device__ Vec3x3uli(ULInt i1, ULInt i2, ULInt i3);
 
     __host__ __device__ void operator+=(ULInt d);
+    __host__ __device__ void operator-=(ULInt d);
 };
 
 struct Vec4f; // Forward declaration

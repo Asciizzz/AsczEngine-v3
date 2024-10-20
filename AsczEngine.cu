@@ -59,7 +59,7 @@ int main() {
         Vec3x3uli(3, 2, 6), Vec3x3uli(3, 6, 7)
     };
     Mesh3D cube(0, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
-    cube.scale(0, Vec3f(), Vec3f(4));
+    cube.scale(Vec3f(), Vec3f(4));
 
     // Create a white wall behind the cube
     float wallSize = 12;
@@ -85,7 +85,6 @@ int main() {
     Mesh3D wall(1, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
 
     // Create an equallateral triangle
-    // This is 
     Mesh equTri(2,
         Vecs3f{
             Vec3f(-0.5, -sqrt(3) / 4, 0), Vec3f(0.5, - sqrt(3) / 4, 0), Vec3f(0, sqrt(3) / 4, 0)
@@ -105,14 +104,23 @@ int main() {
     );
     Mesh3D tri(equTri);
 
-    GRAPHIC.mesh += cube;
-    GRAPHIC.mesh += wall;
+    // Create a .obj mesh (Work in progress)
+    Mesh3D obj = Playground::readObjFile(
+        "assets/Models/City/Residential Buildings 001.obj", 3
+    );
+    obj.scale(Vec3f(0, 0, 0), Vec3f(20, 20, 20));
+
+    // GRAPHIC.mesh += cube;
+    // GRAPHIC.mesh += wall;
     // GRAPHIC.mesh += tri;
+    GRAPHIC.mesh += obj;
     GRAPHIC.allocateProjection();
 
     // Free memory
     cube.freeMemory();
     wall.freeMemory();
+    tri.freeMemory();
+    obj.freeMemory();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
@@ -204,7 +212,7 @@ int main() {
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
-        // FragmentShader::phongShading();
+        FragmentShader::phongShading();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)

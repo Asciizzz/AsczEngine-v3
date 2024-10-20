@@ -175,16 +175,28 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     blockNumFs = (numFs + blockSize - 1) / blockSize;
 }
 
-// Transformations
+// Transformations (with mesh ID)
 
 void Mesh3D::translate(UInt mID, Vec3f t) {
-    translateVertexKernel<<<blockNumVs, blockSize>>>(world, meshID, numVs, mID, t);
+    translateVertexKernel<<<blockNumVs, blockSize>>>(world, meshID, false, numVs, mID, t);
 }
 void Mesh3D::rotate(UInt mID, Vec3f origin, Vec3f rot) {
-    rotateVertexKernel<<<blockNumVs, blockSize>>>(world, normal, meshID, numVs, mID, origin, rot);
+    rotateVertexKernel<<<blockNumVs, blockSize>>>(world, normal, meshID, false, numVs, mID, origin, rot);
 }
 void Mesh3D::scale(UInt mID, Vec3f origin, Vec3f scl) {
-    scaleVertexKernel<<<blockNumVs, blockSize>>>(world, normal, meshID, numVs, mID, origin, scl);
+    scaleVertexKernel<<<blockNumVs, blockSize>>>(world, normal, meshID, false, numVs, mID, origin, scl);
+}
+
+// Transformations (all mesh IDs)
+
+void Mesh3D::translate(Vec3f t) {
+    translateVertexKernel<<<blockNumVs, blockSize>>>(world, meshID, true, numVs, 0, t);
+}
+void Mesh3D::rotate(Vec3f origin, Vec3f rot) {
+    rotateVertexKernel<<<blockNumVs, blockSize>>>(world, normal, meshID, true, numVs, 0, origin, rot);
+}
+void Mesh3D::scale(Vec3f origin, Vec3f scl) {
+    scaleVertexKernel<<<blockNumVs, blockSize>>>(world, normal, meshID, true, numVs, 0, origin, scl);
 }
 
 // DEBUG
@@ -217,11 +229,7 @@ void Mesh3D::printVertices(bool p_world, bool p_normal, bool p_tex, bool p_color
 // Kernel for preparing vertices
 __global__ void incrementFaceIdxKernel(Vec3x3uli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < newNumFs && idx >= numFs) {
-        faces[idx].v += offset;
-        faces[idx].t += offset;
-        faces[idx].n += offset;
-    }
+    if (idx < newNumFs && idx >= numFs) faces[idx] += offset;
 }
 
 __global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id) {
@@ -230,23 +238,23 @@ __global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id) {
 }
 
 // Kernel for transforming vertices
-__global__ void translateVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f t) {
+__global__ void translateVertexKernel(Vec3f *world, UInt *meshID, bool allId, ULLInt numVs, UInt mID, Vec3f t) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numVs || meshID[idx] != mID) return;
+    if (idx >= numVs || (!allId && meshID[idx] != mID)) return;
 
     world[idx].translate(t);
 }
-__global__ void rotateVertexKernel(Vec3f *world, Vec3f *normal, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot) {
+__global__ void rotateVertexKernel(Vec3f *world, Vec3f *normal, UInt *meshID, bool allId, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numVs || meshID[idx] != mID) return;
+    if (idx >= numVs || (!allId && meshID[idx] != mID)) return;
 
     world[idx].rotate(origin, rot);
     normal[idx].rotate(Vec3f(), rot);
     normal[idx].norm();
 }
-__global__ void scaleVertexKernel(Vec3f *world, Vec3f *normal, UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl) {
+__global__ void scaleVertexKernel(Vec3f *world, Vec3f *normal, UInt *meshID, bool allId, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numVs || meshID[idx] != mID) return;
+    if (idx >= numVs || (!allId && meshID[idx] != mID)) return;
 
     world[idx].scale(origin, scl);
     normal[idx].scale(origin, scl);

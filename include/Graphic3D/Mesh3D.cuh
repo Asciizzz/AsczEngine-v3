@@ -77,10 +77,14 @@ public:
     // Mesh operators
     void operator+=(Mesh3D &mesh);
 
-    // Transformations
+    // Transformations (with mesh ID)
     void translate(UInt mID, Vec3f t);
     void rotate(UInt mID, Vec3f origin, Vec3f rot);
     void scale(UInt mID, Vec3f origin, Vec3f scl);
+    // Transformations (all mesh IDs)
+    void translate(Vec3f t);
+    void rotate(Vec3f origin, Vec3f rot);
+    void scale(Vec3f origin, Vec3f scl);
 
     // DEBUG
     void printVertices(bool world=true, bool normal=true, bool texture=true, bool color=true, bool meshID=true);
@@ -91,8 +95,9 @@ __global__ void incrementFaceIdxKernel(Vec3x3uli *faces, ULLInt offset, ULLInt n
 __global__ void setMeshIDKernel(UInt *meshID, ULLInt numVs, UInt id);
 
 // Kernel for transforming vertices
-__global__ void translateVertexKernel(Vec3f *world, UInt *meshID, ULLInt numVs, UInt mID, Vec3f t);
-__global__ void rotateVertexKernel(Vec3f *world, Vec3f *normal,  UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot);
-__global__ void scaleVertexKernel(Vec3f *world, Vec3f *normal,  UInt *meshID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl);
+// Note: the reason bool allID is used is because we can't overload kernels
+__global__ void translateVertexKernel(Vec3f *world, UInt *meshID, bool allID, ULLInt numVs, UInt mID, Vec3f t);
+__global__ void rotateVertexKernel(Vec3f *world, Vec3f *normal, UInt *meshID, bool allID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f rot);
+__global__ void scaleVertexKernel(Vec3f *world, Vec3f *normal, UInt *meshID, bool allID, ULLInt numVs, UInt mID, Vec3f origin, Vec3f scl);
 
 #endif

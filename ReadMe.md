@@ -13,7 +13,10 @@
 - Created dynamic `Camera3D` with fps-like movement and `mat4 MVP`(Model-View-Projection) transformation matrix for converting vertex from 3D world $\rightarrow$ 3D view $\rightarrow$ 2D screen space.
 - Created `Mesh3D` system with `Vertices` and `Faces` data
   - *`Vertices`*: structured using a SoA-AoS hybrid approach: Vertex with 8 attributes `x`, `y`, `z`, `nx`, `ny`, `nz`, `u`, `v` are grouped into 3 groups: `position`, `normal`, `texture`.
-  - *`Faces`*: data type `Vec3uli` (`Vec3 unsigned long int`), acting as faces (or triangles) with 3 vertices.
+  - *`Faces`*: data type `Vec3x3uli` (`Vec3x3 unsigned long int`), acting as faces (or triangles) with 3 vertices. Each `face` will have 3 `Vec3uli`:
+    - `v`: 3 indices of the world coordinate
+    - `t`: 3 indices of the texture map
+    - `n`: 3 indices of the normal
   - *`operator+=`* combines datas of 2 (or more) meshes to itself, with indices offset to make sure faces access the correct vertices.
 - Created CUDA kernels for graphic pipeline:
   - *Vertices Projection*: uses `Camera3D`'s `mat4 MVP` to project `vertices` world coord into screen coord
