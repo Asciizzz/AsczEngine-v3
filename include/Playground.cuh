@@ -75,8 +75,7 @@ public:
                 faces.push_back(Vec3x3uli(v, t, n));
             }
         }
-        
-        
+
         for (Vec3f &v : world) {
 
             if (rainbow) {
