@@ -1,1 +1,1 @@
-assets/Models/Anime.obj 5
+assets/Models/Anime.obj 1
