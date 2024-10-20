@@ -63,7 +63,7 @@ __global__ void phongShadingKernel(
     float cosA = dot / (n.mag() * lightDir.mag());
     if (cosA < 0) cosA = 0;
 
-    float diff = 0.2 + 1.2 * cosA;
+    float diff = 0.4 + 0.8 * cosA;
 
     // Apply the light
     buffColor[i] = buffColor[i] * diff;
