@@ -16,8 +16,7 @@ int main() {
     GRAPHIC.setResolution(1600, 900);
 
     Camera3D &CAMERA = GRAPHIC.camera;
-    CAMERA.pos = Vec3f(0, 0, 40);
-    CAMERA.rot = Vec3f(0, M_PI, 0);
+    std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
 
     SFMLTexture SFTex = SFMLTexture(1600, 900);
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
