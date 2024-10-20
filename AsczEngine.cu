@@ -35,7 +35,7 @@ int main() {
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(0, objPath, true);
     obj.scale(Vec3f(), Vec3f(objScale));
-    obj.rotate(0, Vec3f(), Vec3f(-M_PI_2, 0, 0));
+    // obj.rotate(0, Vec3f(), Vec3f(0, 0, 0));
 
     // Graphing calculator for y = f(x, z)
     Vecs3f world;
