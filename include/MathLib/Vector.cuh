@@ -15,6 +15,7 @@
 #define Vecs3f std::vector<Vec3f>
 #define Vecs4f std::vector<Vec4f>
 #define Vecs3uli std::vector<Vec3uli>
+#define Vecs3x3uli std::vector<Vec3x3uli>
 
 #define M_PI 3.14159265358979323846 // 180 degrees
 #define M_PI_2 1.57079632679489661923 // 90 degrees
@@ -35,11 +36,31 @@ struct Vec2f {
 };
 
 struct Vec3uli { // For faces indices
-    unsigned long int x, y, z;
+    ULInt x, y, z;
     __host__ __device__ Vec3uli();
-    __host__ __device__ Vec3uli(int x, int y, int z);
+    __host__ __device__ Vec3uli(ULInt x, ULInt y, ULInt z);
+    __host__ __device__ Vec3uli(ULInt a);
 
-    __host__ __device__ void operator+=(unsigned long int d);
+    __host__ __device__ void operator+=(ULInt d);
+};
+
+struct Vec3x3uli { // Also for faces indices (but way more complex)
+    /* Explanation:
+
+    .obj files store faces in the format of v/t/n v/t/n v/t/n
+    where v is the vertex index, t is the texture index, and n is the normal index
+
+    v: vertex index
+    t: texture index
+    n: normal index
+    */
+
+    Vec3uli v, t, n;
+    __host__ __device__ Vec3x3uli();
+    __host__ __device__ Vec3x3uli(Vec3uli a, Vec3uli b, Vec3uli c);
+    // Some .obj have organized faces (a/a/a b/b/b c/c/c)
+    __host__ __device__ Vec3x3uli(Vec3uli vtn);
+    __host__ __device__ Vec3x3uli(ULInt v, ULInt t, ULInt n);
 };
 
 struct Vec4f; // Forward declaration

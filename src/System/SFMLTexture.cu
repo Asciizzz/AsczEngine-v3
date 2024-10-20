@@ -1,11 +1,10 @@
 #include <SFMLTexture.cuh>
 
 SFMLTexture::SFMLTexture(int width, int height) { resize(width, height); }
-SFMLTexture::~SFMLTexture() { free(); }
 
 void SFMLTexture::free() {
-    if (sfPixel) delete[] sfPixel;
-    if (d_sfPixel) cudaFree(d_sfPixel);
+    delete[] sfPixel;
+    cudaFree(d_sfPixel);
 }
 
 void SFMLTexture::resize(int width, int height) {

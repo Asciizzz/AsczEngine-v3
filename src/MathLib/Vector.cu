@@ -25,10 +25,17 @@ Vec2f Vec2f::operator/(const float scl) {
 
 // VEC3uli (unsigned long int)
 Vec3uli::Vec3uli() : x(0), y(0), z(0) {}
-Vec3uli::Vec3uli(int x, int y, int z) : x(x), y(y), z(z) {}
-void Vec3uli::operator+=(unsigned long int d) {
+Vec3uli::Vec3uli(ULInt x, ULInt y, ULInt z) : x(x), y(y), z(z) {}
+Vec3uli::Vec3uli(ULInt a) : x(a), y(a), z(a) {}
+void Vec3uli::operator+=(ULInt d) {
     x += d; y += d; z += d;
 }
+
+// VEC3x3uli
+Vec3x3uli::Vec3x3uli() {}
+Vec3x3uli::Vec3x3uli(Vec3uli v, Vec3uli t, Vec3uli n) : v(v), t(t), n(n) {}
+Vec3x3uli::Vec3x3uli(Vec3uli vtn) : v(vtn), t(vtn), n(vtn) {}
+Vec3x3uli::Vec3x3uli(ULInt v, ULInt t, ULInt n) : v(Vec3uli(v)), t(Vec3uli(t)), n(Vec3uli(n)) {}
 
 // VEC3f
 Vec3f::Vec3f() : x(0), y(0), z(0) {}

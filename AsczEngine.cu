@@ -3,8 +3,9 @@
 
 #include <VertexShader.cuh>
 #include <FragmentShader.cuh>
-
 #include <SFMLTexture.cuh>
+
+#include <Playground.cuh>
 
 int main() {
     // Initialize Default stuff
@@ -214,8 +215,6 @@ int main() {
             GRAPHIC.buffer.height,
             GRAPHIC.pixelSize
         );
-        window.clear(sf::Color(0, 0, 0));
-        window.draw(SFTex.sprite);
 
         // ========== Log handling ==========
 
@@ -242,6 +241,9 @@ int main() {
         // Camera data
         LOG.addLog(CAMERA.data(), sf::Color::White);
 
+        // Displays
+        window.clear(sf::Color(0, 0, 0));
+        window.draw(SFTex.sprite);
         LOG.drawLog(window);
         window.display();
 

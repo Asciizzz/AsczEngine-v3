@@ -26,7 +26,6 @@ public:
     int blockCount;
 
     SFMLTexture(int width, int height);
-    ~SFMLTexture();
     void free();
     void resize(int width, int height);
 
