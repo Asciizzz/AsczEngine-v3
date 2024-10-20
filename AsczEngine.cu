@@ -35,6 +35,7 @@ int main() {
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(0, objPath, true);
     obj.scale(Vec3f(), Vec3f(objScale));
+    obj.rotate(0, Vec3f(), Vec3f(-M_PI_2, 0, 0));
 
     // Graphing calculator for y = f(x, z)
     Vecs3f world;
@@ -105,7 +106,7 @@ int main() {
     Mesh3D graph(1, world, normal, texture, color, faces);
 
     GRAPHIC.mesh += obj;
-    GRAPHIC.mesh += graph;
+    // GRAPHIC.mesh += graph;
     GRAPHIC.allocateProjection();
 
     // Free memory

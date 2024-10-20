@@ -1,1 +1,1 @@
-assets/Heavy/Statue.obj 15
+assets/Models/Shiroko.obj 10
