@@ -1,1 +1,1 @@
-assets/Heavy/Statue.obj 10
+assets/Heavy/Anime.obj 4
