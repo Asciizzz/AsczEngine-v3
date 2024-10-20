@@ -1,23 +1,5 @@
 #include <VertexShader.cuh>
 
-void VertexShader::setResolution(float w, float h) {
-    res = {w, h};
-    res_half = {w / 2, h / 2};
-    camera.setResolution(w, h);
-    buffer.resize(w, h, pixelSize);
-}
-
-void VertexShader::allocateProjection() {
-    cudaMalloc(&projection, mesh.numVs * sizeof(Vec4f));
-}
-void VertexShader::freeProjection() {
-    if (projection) cudaFree(projection);
-}
-void VertexShader::resizeProjection() {
-    freeProjection();
-    allocateProjection();
-}
-
 // Render functions
 
 Vec4f VertexShader::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, int buffHeight) {
@@ -33,6 +15,12 @@ Vec4f VertexShader::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, 
 // Render pipeline
 
 void VertexShader::cameraProjection() {
+    Graphic3D &graphic = Graphic3D::instance();
+    Mesh3D &mesh = graphic.mesh;
+    Camera3D &camera = graphic.camera;
+    Buffer3D &buffer = graphic.buffer;
+    Vec4f *projection = graphic.projection;
+
     cameraProjectionKernel<<<mesh.blockNumVs, mesh.blockSize>>>(
         projection, mesh.world, camera, buffer.width, buffer.height, mesh.numVs
     );
@@ -40,6 +28,11 @@ void VertexShader::cameraProjection() {
 }
 
 void VertexShader::createDepthMap() {
+    Graphic3D &graphic = Graphic3D::instance();
+    Mesh3D &mesh = graphic.mesh;
+    Buffer3D &buffer = graphic.buffer;
+    Vec4f *projection = graphic.projection;
+
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
@@ -52,25 +45,16 @@ void VertexShader::createDepthMap() {
 }
 
 void VertexShader::rasterization() {
+    Graphic3D &graphic = Graphic3D::instance();
+    Mesh3D &mesh = graphic.mesh;
+    Buffer3D &buffer = graphic.buffer;
+
     rasterizationKernel<<<buffer.blockCount, buffer.blockSize>>>(
         mesh.color, mesh.world, mesh.normal, mesh.texture, mesh.meshID, mesh.faces,
         buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture, buffer.meshID,
         buffer.faceID, buffer.bary, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
-}
-
-// Atomic functions
-__device__ bool atomicMinFloat(float* addr, float value) {
-    int* addr_as_int = (int*)addr;
-    int old = *addr_as_int, assumed;
-
-    do {
-        assumed = old;
-        old = atomicCAS(addr_as_int, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
-    } while (assumed != old);
-
-    return __int_as_float(old) > value;
 }
 
 // Kernels
@@ -82,52 +66,6 @@ __global__ void cameraProjectionKernel(
 
     Vec4f p = VertexShader::toScreenSpace(camera, world[i], buffWidth, buffHeight);
     projection[i] = p;
-}
-
-__device__ short findPlaneIntersection(Vec4f p1, Vec4f p2) {
-    short planeIntersect = 0;
-    if (p1.x < -1 && p2.x >= -1) planeIntersect = 0;
-    else if (p1.x > 1 && p2.x <= 1) planeIntersect = 1;
-    else if (p1.y < -1 && p2.y >= -1) planeIntersect = 2;
-    else if (p1.y > 1 && p2.y <= 1) planeIntersect = 3;
-    else if (p1.z < -1 && p2.z >= -1) planeIntersect = 4;
-    else if (p1.z > 1 && p2.z <= 1) planeIntersect = 5;
-
-    return planeIntersect;
-}
-
-__device__ Vec4f findIntersection(Vec3f p1, Vec3f p2, short planeIntersect) {
-    // Left plane: x = -1, planeIntersect = 0
-    // Right plane: x = 1, planeIntersect = 1
-    // Bottom plane: y = -1, planeIntersect = 2
-    // Top plane: y = 1, planeIntersect = 3
-    // Near plane: z = -1, planeIntersect = 4
-    // Far plane: z = 1, planeIntersect = 5
-
-    // NOTE: WE WILL ONLY HANDLE 1 PLANE INTERSECTION
-    // ANYMORE THAN THAT AND MY BRAIN WILL EXPLODE
-
-    if (planeIntersect == 0) {
-        float t = (-1 - p1.x) / (p2.x - p1.x);
-        return Vec4f(-1, p1.y + t * (p2.y - p1.y), p1.z + t * (p2.z - p1.z), 1);
-    } else if (planeIntersect == 1) {
-        float t = (1 - p1.x) / (p2.x - p1.x);
-        return Vec4f(1, p1.y + t * (p2.y - p1.y), p1.z + t * (p2.z - p1.z), 1);
-    } else if (planeIntersect == 2) {
-        float t = (-1 - p1.y) / (p2.y - p1.y);
-        return Vec4f(p1.x + t * (p2.x - p1.x), -1, p1.z + t * (p2.z - p1.z), 1);
-    } else if (planeIntersect == 3) {
-        float t = (1 - p1.y) / (p2.y - p1.y);
-        return Vec4f(p1.x + t * (p2.x - p1.x), 1, p1.z + t * (p2.z - p1.z), 1);
-    } else if (planeIntersect == 4) {
-        float t = (-1 - p1.z) / (p2.z - p1.z);
-        return Vec4f(p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y), -1, 1);
-    } else if (planeIntersect == 5) {
-        float t = (1 - p1.z) / (p2.z - p1.z);
-        return Vec4f(p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y), 1, 1);
-    }
-
-    return Vec4f();
 }
 
 __global__ void createDepthMapKernel(

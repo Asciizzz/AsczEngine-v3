@@ -1,22 +1,11 @@
 #ifndef FRAGMENTSHADER_CUH
 #define FRAGMENTSHADER_CUH
 
-#include <VertexShader.cuh>
+#include <Graphic3D.cuh>
 
 class FragmentShader {
 public:
-    // Singleton
-    static FragmentShader& instance() {
-        static FragmentShader instance;
-        return instance;
-    }
-    FragmentShader(const FragmentShader&) = delete;
-    FragmentShader &operator=(const FragmentShader&) = delete;
-
-    void phongShading();
-
-private:
-    FragmentShader() {}
+    static void phongShading();
 };
 
 // Phong Shading

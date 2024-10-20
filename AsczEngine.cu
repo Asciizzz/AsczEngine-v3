@@ -1,5 +1,7 @@
 #include <FpsHandler.cuh>
 #include <CsLogHandler.cuh>
+
+#include <VertexShader.cuh>
 #include <FragmentShader.cuh>
 
 #include <SFMLTexture.cuh>
@@ -9,10 +11,10 @@ int main() {
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
-    VertexShader &VERTEX = VertexShader::instance();
-    VERTEX.setResolution(1600, 900);
+    Graphic3D &GRAPHIC = Graphic3D::instance();
+    GRAPHIC.setResolution(1600, 900);
 
-    Camera3D &CAMERA = VERTEX.camera;
+    Camera3D &CAMERA = GRAPHIC.camera;
     CAMERA.pos = Vec3f(0, 0, -24);
     CAMERA.rot = Vec3f(0, 0, 0);
 
@@ -20,7 +22,7 @@ int main() {
     sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
     sf::Mouse::setPosition(sf::Vector2i(
-        VERTEX.res_half.x, VERTEX.res_half.y
+        GRAPHIC.res_half.x, GRAPHIC.res_half.y
     ), window);
 
     Vecs3f cubeWorld = {
@@ -102,16 +104,14 @@ int main() {
     );
     Mesh3D tri(equTri);
 
-    VERTEX.mesh += cube;
-    VERTEX.mesh += wall;
-    // VERTEX.mesh += tri;
-    VERTEX.allocateProjection();
+    GRAPHIC.mesh += cube;
+    GRAPHIC.mesh += wall;
+    // GRAPHIC.mesh += tri;
+    GRAPHIC.allocateProjection();
 
     // Free memory
     cube.freeMemory();
     wall.freeMemory();
-
-    FragmentShader &FRAGMENT = FragmentShader::instance();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
@@ -140,7 +140,7 @@ int main() {
                     CAMERA.focus = !CAMERA.focus;
                     window.setMouseCursorVisible(!CAMERA.focus);
                     sf::Mouse::setPosition(sf::Vector2i(
-                        VERTEX.res_half.x, VERTEX.res_half.y
+                        GRAPHIC.res_half.x, GRAPHIC.res_half.y
                     ), window);
                 }
             }
@@ -162,12 +162,12 @@ int main() {
             // Mouse movement handling
             sf::Vector2i mousepos = sf::Mouse::getPosition(window);
             sf::Mouse::setPosition(sf::Vector2i(
-                VERTEX.res_half.x, VERTEX.res_half.y
+                GRAPHIC.res_half.x, GRAPHIC.res_half.y
             ), window);
 
             // Move from center
-            int dMx = mousepos.x - VERTEX.res_half.x;
-            int dMy = mousepos.y - VERTEX.res_half.y;
+            int dMx = mousepos.x - GRAPHIC.res_half.x;
+            int dMy = mousepos.y - GRAPHIC.res_half.y;
 
             // Camera look around
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
@@ -195,24 +195,24 @@ int main() {
         // Rotate the cube
         float rot1 = M_PI / 6 * FPS.dTimeSec;
         float rot2 = M_PI / 3 * FPS.dTimeSec;
-        VERTEX.mesh.rotate(0, Vec3f(), Vec3f(rot1, 0, rot2));
+        GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(rot1, 0, rot2));
 
         // ========== Render Pipeline ==========
 
-        VERTEX.cameraProjection();
-        VERTEX.createDepthMap();
-        VERTEX.rasterization();
+        VertexShader::cameraProjection();
+        VertexShader::createDepthMap();
+        VertexShader::rasterization();
 
         // Beta feature
-        FRAGMENT.phongShading();
+        FragmentShader::phongShading();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
         SFTex.updateTexture(
-            VERTEX.buffer.color,
-            VERTEX.buffer.width,
-            VERTEX.buffer.height,
-            VERTEX.pixelSize
+            GRAPHIC.buffer.color,
+            GRAPHIC.buffer.width,
+            GRAPHIC.buffer.height,
+            GRAPHIC.pixelSize
         );
         window.clear(sf::Color(0, 0, 0));
         window.draw(SFTex.sprite);
@@ -250,9 +250,11 @@ int main() {
     }
 
     // Clean up
-    VERTEX.freeProjection();
-    VERTEX.mesh.freeMemory();
-    VERTEX.buffer.free();
+    GRAPHIC.mesh.freeMemory();
+    GRAPHIC.buffer.free();
+    GRAPHIC.freeProjection();
+
+    SFTex.free();
 
     return 0;
 }

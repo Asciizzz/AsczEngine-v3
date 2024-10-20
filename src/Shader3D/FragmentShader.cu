@@ -3,8 +3,8 @@
 // Phong Shading
 
 void FragmentShader::phongShading() {
-    VertexShader &vertex = VertexShader::instance();
-    Buffer3D &buffer = vertex.buffer;
+    Graphic3D &graphic = Graphic3D::instance();
+    Buffer3D &buffer = graphic.buffer;
 
     phongShadingKernel<<<buffer.blockCount, buffer.blockSize>>>(
         buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture,

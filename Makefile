@@ -20,7 +20,8 @@ AsczEngine:
 		src/MathLib/Matrix.cu \
 		src/Graphic3D/Mesh3D.cu \
 		src/Graphic3D/Camera3D.cu \
-		src/Shader3D/Buffer3D.cu \
+		src/Graphic3D/Buffer3D.cu \
+		src/Graphic3D/Graphic3D.cu \
 		src/Shader3D/VertexShader.cu \
 		src/Shader3D/FragmentShader.cu \
 		src/System/FpsHandler.cu \
