@@ -94,7 +94,7 @@ public:
         Mesh3D mesh = Mesh3D(meshId, world, normal, texture, color, faces);
 
         // Shift the mesh to the origin
-        Vec3f shift = Vec3f(-(minX + maxX) / 2, -(minY + maxY) / 2, -(minZ + maxZ) / 2);
+        Vec3f shift = Vec3f(-(minX + maxX) / 2, -(minY) / 2, -(minZ + maxZ) / 2);
         mesh.translate(meshId, shift);
 
         return mesh;

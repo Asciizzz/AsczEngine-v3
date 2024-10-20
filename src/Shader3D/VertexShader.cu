@@ -168,6 +168,7 @@ __global__ void rasterizationKernel(
     Vec3f n2 = normal[nIdx.z];
     n0.norm(); n1.norm(); n2.norm();
     buffNormal[i] = n0 * alp + n1 * bet + n2 * gam;
+    buffNormal[i].norm();
 
     // Set texture
     Vec2f t0 = texture[tIdx.x];

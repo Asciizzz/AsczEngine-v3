@@ -1,1 +1,1 @@
-assets/Models/Anime.obj 1
+assets/Models/Anime.obj 0.6
