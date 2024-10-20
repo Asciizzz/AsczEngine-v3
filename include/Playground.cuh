@@ -57,11 +57,8 @@ public:
                 texture.push_back(t);
             } else if (type == "f") {
                 /* Note:
-                
                 Faces index in .obj files are 1-based
-
                 Faces format: f v1/t1/n1 v2/t2/n2 v3/t3/n3
-
                 */
 
                 std::string vtn1, vtn2, vtn3;
