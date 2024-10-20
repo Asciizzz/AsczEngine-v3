@@ -62,7 +62,7 @@ int main() {
     cube.scale(Vec3f(), Vec3f(4));
 
     // Create a white wall behind the cube
-    float wallSize = 12;
+    float wallSize = 10;
     Vecs3f wallWorld = {
         Vec3f(-wallSize, -wallSize, wallSize), Vec3f(wallSize, -wallSize, wallSize),
         Vec3f(wallSize, wallSize, wallSize), Vec3f(-wallSize, wallSize, wallSize)
