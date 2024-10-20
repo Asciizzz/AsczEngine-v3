@@ -90,6 +90,11 @@ Vec3f Vec3f::bary(Vec2f v, Vec2f v0, Vec2f v1, Vec2f v2) {
     float c = 1 - a - b;
     return Vec3f(a, b, c);
 }
+void Vec3f::limit(float min, float max) {
+    x = std::max(min, std::min(x, max));
+    y = std::max(min, std::min(y, max));
+    z = std::max(min, std::min(z, max));
+}
 
 // Transformations
 Vec3f Vec3f::translate(Vec3f& vec, const Vec3f& t) {
@@ -174,4 +179,10 @@ Vec4f Vec4f::operator*(const float scl) {
 }
 Vec4f Vec4f::operator/(const float scl) {
     return Vec4f(x / scl, y / scl, z / scl, w / scl);
+}
+void Vec4f::limit(float min, float max) {
+    x = std::max(min, std::min(x, max));
+    y = std::max(min, std::min(y, max));
+    z = std::max(min, std::min(z, max));
+    w = std::max(min, std::min(w, max));
 }

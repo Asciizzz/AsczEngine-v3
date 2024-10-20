@@ -206,11 +206,7 @@ int main() {
         RENDER.rasterization();
 
         // Beta feature
-        // LIGHT.phongShading();
-        LIGHT.lightProjection();
-        // LIGHT.resetShadowMap();
-        // LIGHT.createShadowMap();
-        // LIGHT.applyShadowMap();
+        LIGHT.phongShading();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)

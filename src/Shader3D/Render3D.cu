@@ -84,6 +84,52 @@ __global__ void cameraProjectionKernel(
     projection[i] = p;
 }
 
+__device__ short findPlaneIntersection(Vec4f p1, Vec4f p2) {
+    short planeIntersect = 0;
+    if (p1.x < -1 && p2.x >= -1) planeIntersect = 0;
+    else if (p1.x > 1 && p2.x <= 1) planeIntersect = 1;
+    else if (p1.y < -1 && p2.y >= -1) planeIntersect = 2;
+    else if (p1.y > 1 && p2.y <= 1) planeIntersect = 3;
+    else if (p1.z < -1 && p2.z >= -1) planeIntersect = 4;
+    else if (p1.z > 1 && p2.z <= 1) planeIntersect = 5;
+
+    return planeIntersect;
+}
+
+__device__ Vec4f findIntersection(Vec3f p1, Vec3f p2, short planeIntersect) {
+    // Left plane: x = -1, planeIntersect = 0
+    // Right plane: x = 1, planeIntersect = 1
+    // Bottom plane: y = -1, planeIntersect = 2
+    // Top plane: y = 1, planeIntersect = 3
+    // Near plane: z = -1, planeIntersect = 4
+    // Far plane: z = 1, planeIntersect = 5
+
+    // NOTE: WE WILL ONLY HANDLE 1 PLANE INTERSECTION
+    // ANYMORE THAN THAT AND MY BRAIN WILL EXPLODE
+
+    if (planeIntersect == 0) {
+        float t = (-1 - p1.x) / (p2.x - p1.x);
+        return Vec4f(-1, p1.y + t * (p2.y - p1.y), p1.z + t * (p2.z - p1.z), 1);
+    } else if (planeIntersect == 1) {
+        float t = (1 - p1.x) / (p2.x - p1.x);
+        return Vec4f(1, p1.y + t * (p2.y - p1.y), p1.z + t * (p2.z - p1.z), 1);
+    } else if (planeIntersect == 2) {
+        float t = (-1 - p1.y) / (p2.y - p1.y);
+        return Vec4f(p1.x + t * (p2.x - p1.x), -1, p1.z + t * (p2.z - p1.z), 1);
+    } else if (planeIntersect == 3) {
+        float t = (1 - p1.y) / (p2.y - p1.y);
+        return Vec4f(p1.x + t * (p2.x - p1.x), 1, p1.z + t * (p2.z - p1.z), 1);
+    } else if (planeIntersect == 4) {
+        float t = (-1 - p1.z) / (p2.z - p1.z);
+        return Vec4f(p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y), -1, 1);
+    } else if (planeIntersect == 5) {
+        float t = (1 - p1.z) / (p2.z - p1.z);
+        return Vec4f(p1.x + t * (p2.x - p1.x), p1.y + t * (p2.y - p1.y), 1, 1);
+    }
+
+    return Vec4f();
+}
+
 __global__ void createDepthMapKernel(
     Vec4f *projection, Vec3f *world, Vec3uli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
@@ -100,24 +146,6 @@ __global__ void createDepthMapKernel(
 
     // Entirely outside the frustum
     if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
-
-    // NOTE: We will perform frustum culling on the fly
-    int oob = (p0.w <= 0) + (p1.w <= 0) + (p2.w <= 0);
-
-    // If exactly 2 points are outside the frustum
-    // We just need to shift the oob points to the intersection of the frustum
-    if (oob == 2) {
-        short planeIntersect = 0;
-        // Left plane: x = -1, planeIntersect = 0
-        // Right plane: x = 1, planeIntersect = 1
-        // Bottom plane: y = -1, planeIntersect = 2
-        // Top plane: y = 1, planeIntersect = 3
-        // Near plane: z = -1, planeIntersect = 4
-        // Far plane: z = 1, planeIntersect = 5
-
-        if (p0.w > 0) {
-        }
-    }
 
     p0.x = (p0.x + 1) * buffWidth / 2;
     p0.y = (1 - p0.y) * buffHeight / 2;

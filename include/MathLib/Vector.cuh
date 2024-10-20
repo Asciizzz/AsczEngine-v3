@@ -66,8 +66,9 @@ struct Vec3f {
     __host__ __device__ Vec3f operator&(const Vec3f &vec); // Cross product
     __host__ __device__ float mag(); // Magnitude
     __host__ __device__ void norm(); // Normalize
-    // Special operations (baricentric alpha, beta, gamma)
-    __host__ __device__ static Vec3f bary(Vec2f v, Vec2f v0, Vec2f v1, Vec2f v2);
+    // Special operations
+    __host__ __device__ static Vec3f bary(Vec2f v, Vec2f v0, Vec2f v1, Vec2f v2); // Barycentric coordinates
+    __host__ __device__ void limit(float min, float max); // Limit the vector
 
     // Transformations
     __host__ __device__ static Vec3f translate(Vec3f &vec, const Vec3f &t);
@@ -92,6 +93,7 @@ struct Vec4f {
     __host__ __device__ Vec4f operator-(const Vec4f &vec);
     __host__ __device__ Vec4f operator*(const float scl);
     __host__ __device__ Vec4f operator/(const float scl);
+    __host__ __device__ void limit(float min, float max); // Limit the vector
 };
 
 #endif
