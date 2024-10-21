@@ -26,12 +26,12 @@ __global__ void cameraProjectionKernel(
 __global__ void getVisibleFacesKernel(
     Vec4f *screen, ULLInt numWs,
     Vec3x3ulli *faces, ULLInt numFs,
-    Vec3x3x1ulli *facesVisible, ULLInt *numFsVisible
+    Vec3x3x1ulli *fsVisible, ULLInt *numFsVisible
 );
 
 // Tile-based depth map creation (using nested parallelism, or dynamic parallelism)
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs,
+    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs, int fOffset,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 );

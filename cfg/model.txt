@@ -1,1 +1,1 @@
-assets/Models/Sukuna.obj 10
+assets/Models/Sukuna.obj 40

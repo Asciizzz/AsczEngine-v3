@@ -35,7 +35,7 @@ void VertexShader::getVisibleFaces() {
     getVisibleFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
         mesh.screen, mesh.numWs,
         mesh.faces, mesh.numFs,
-        mesh.facesVisible, mesh.numFsVisible
+        mesh.fsVisible, mesh.numFsVisible
     );
     cudaDeviceSynchronize();
 }
@@ -49,20 +49,38 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // Retrieve the visibleFace count from the device
-    ULLInt visibleFaces;
-    cudaMemcpy(&visibleFaces, mesh.numFsVisible, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    ULLInt numFsVisible;
+    cudaMemcpy(&numFsVisible, mesh.numFsVisible, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 
     dim3 blockSize(8, 32);
-    ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
-    ULLInt blockNumFace = (visibleFaces + blockSize.y - 1) / blockSize.y;
-    dim3 blockNum(blockNumTile, blockNumFace);
+    // If there are too many faces, split the work
+    // If numFsVisible greater than limit, split the work
+    int limit = 200000;
 
-    createDepthMapKernel<<<blockNum, blockSize>>>(
-        mesh.screen, mesh.world, mesh.facesVisible, visibleFaces,
-        buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
-        graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
-    );
-    cudaDeviceSynchronize();
+    // Set the face process count and block size
+    int processCount = numFsVisible / limit + 1;
+    if (processCount == 1) limit = numFsVisible;
+
+    std::vector<cudaStream_t> streams(processCount);
+    for (int i = 0; i < processCount; i++)
+        cudaStreamCreate(&streams[i]);
+
+
+    ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
+    ULLInt blockNumFace = (limit + blockSize.y - 1) / blockSize.y;
+    dim3 blockNum(blockNumTile, blockNumFace);
+    for (int i = 0; i < processCount; i++)
+        createDepthMapKernel<<<blockNum, blockSize, 0, streams[i]>>>(
+            mesh.screen, mesh.world, mesh.fsVisible, numFsVisible, i * limit,
+            buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
+            graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
+        );
+
+    for (int i = 0; i < processCount; i++)
+        cudaStreamSynchronize(streams[i]);
+    
+    for (int i = 0; i < processCount; i++)
+        cudaStreamDestroy(streams[i]);
 }
 
 void VertexShader::rasterization() {
@@ -96,7 +114,7 @@ __global__ void cameraProjectionKernel(
 __global__ void getVisibleFacesKernel(
     Vec4f *screen, ULLInt numWs,
     Vec3x3ulli *faces, ULLInt numFs,
-    Vec3x3x1ulli *facesVisible, ULLInt *numFsVisible
+    Vec3x3x1ulli *fsVisible, ULLInt *numFsVisible
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
@@ -111,20 +129,20 @@ __global__ void getVisibleFacesKernel(
 
     // Set the face to be visible
     ULLInt idx = atomicAdd(numFsVisible, 1);
-    facesVisible[idx].v = fv;
-    facesVisible[idx].n = faces[fIdx].n;
-    facesVisible[idx].t = faces[fIdx].t;
-    facesVisible[idx].w = fIdx;
+    fsVisible[idx].v = fv;
+    fsVisible[idx].n = faces[fIdx].n;
+    fsVisible[idx].t = faces[fIdx].t;
+    fsVisible[idx].w = fIdx;
 }
 
 // Depth map creation
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs,
+    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs, int fOffset,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
+    ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y + fOffset;
 
     if (tIdx >= tileNumX * tileNumY || fIdx >= numFs) return;
 
@@ -190,7 +208,7 @@ __global__ void createDepthMapKernel(
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
-            buffFaceId[bIdx] = faces[fIdx].w;
+            buffFaceId[bIdx] = faces[fIdx].w; // Change this if you find the currect approach unviable
             buffBary[bIdx] = bary;
         }
     }

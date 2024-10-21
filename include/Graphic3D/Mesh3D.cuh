@@ -41,9 +41,11 @@ public:
 
     // Faces (triangles)
     ULLInt numFs;
-    ULLInt *numFsVisible;
     Vec3x3ulli *faces;
-    Vec3x3x1ulli *facesVisible;
+
+    // Visible faces
+    ULLInt *numFsVisible;
+    Vec3x3x1ulli *fsVisible;
 
     // Object Ids for vertex attributes and faces
     UInt *wObjId;

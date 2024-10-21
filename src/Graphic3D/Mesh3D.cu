@@ -58,10 +58,10 @@ void Mesh3D::freeVertices() {
 void Mesh3D::mallocFaces() {
     blockNumFs = (numFs + blockSize - 1) / blockSize;
     cudaMalloc(&faces, numFs * sizeof(Vec3x3ulli));
-    cudaMalloc(&facesVisible, numFs * sizeof(Vec3x3x1ulli));
     cudaMalloc(&fObjId, numFs * sizeof(UInt));
 
     // This will be thrown into a kernel
+    cudaMalloc(&fsVisible, numFs * sizeof(Vec3x3x1ulli));
     if (!numFsVisible) {
         cudaMalloc(&numFsVisible, sizeof(ULLInt));
         cudaMemset(numFsVisible, 0, sizeof(ULLInt));
@@ -76,8 +76,9 @@ void Mesh3D::resizeFaces(ULLInt numFs) {
 
 void Mesh3D::freeFaces() {
     cudaFree(faces);
-    cudaFree(facesVisible);
     cudaFree(fObjId);
+
+    cudaFree(fsVisible);
 }
 
 void Mesh3D::free() {
@@ -166,26 +167,29 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     ULLInt newBlockNumFs = (newNumFs + blockSize - 1) / blockSize;
 
     Vec3x3ulli *newFaces;
-    Vec3x3x1ulli *newFacesVisible;
     UInt *newFObjId;
     
     cudaMalloc(&newFaces, newNumFs * sizeof(Vec3x3ulli));
-    cudaMalloc(&newFacesVisible, newNumFs * sizeof(Vec3x3x1ulli));
     cudaMalloc(&newFObjId, newNumFs * sizeof(UInt));
 
     cudaMemcpy(newFaces, faces, numFs * sizeof(Vec3x3ulli), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newFacesVisible, facesVisible, numFs * sizeof(Vec3x3x1ulli), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newFObjId, fObjId, numFs * sizeof(UInt), cudaMemcpyDeviceToDevice);
 
     cudaMemcpy(newFaces + numFs, mesh.faces, mesh.numFs * sizeof(Vec3x3ulli), cudaMemcpyDeviceToDevice);
     incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaces, numWs, numNs, numTs, numFs, newNumFs);
-    cudaMemcpy(newFacesVisible + numFs, mesh.facesVisible, mesh.numFs * sizeof(Vec3x3x1ulli), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newFObjId + numFs, mesh.fObjId, mesh.numFs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+
+    // Still a WIP so we are going to be extra careful
+    Vec3x3x1ulli *newFacesVisible;
+    cudaMalloc(&newFacesVisible, newNumFs * sizeof(Vec3x3x1ulli));
+    cudaMemcpy(newFacesVisible, fsVisible, numFs * sizeof(Vec3x3x1ulli), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newFacesVisible + numFs, mesh.fsVisible, mesh.numFs * sizeof(Vec3x3x1ulli), cudaMemcpyDeviceToDevice);
 
     freeFaces();
     faces = newFaces;
-    facesVisible = newFacesVisible;
     fObjId = newFObjId;
+    
+    fsVisible = newFacesVisible;
 
     // Update number of vertices and faces
     numWs = newNumWs;
