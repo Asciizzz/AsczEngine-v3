@@ -16,7 +16,7 @@ void SFMLTexture::resize(int width, int height) {
     cudaMalloc(&d_sfPixel, width * height * 4 * sizeof(sf::Uint8));
 
     pixelCount = width * height * 4;
-    blockCount = (width * height + blockSize - 1) / blockSize;
+    blockNum = (width * height + blockSize - 1) / blockSize;
 }
 
 void SFMLTexture::updateTexture(Vec4f *color, int b_w, int b_h, int p_s) {

@@ -49,6 +49,12 @@ public:
     int pixelSize = 8;
     void setResolution(float w, float h, float ps=4);
 
+    // For tile-based rasterization
+    int tileWidth = 20;
+    int tileHeight = 20;
+    int tileNumX, tileNumY, tileNum;
+    void setTileSize(int tw, int th);
+
     // Free everything
     void free();
 

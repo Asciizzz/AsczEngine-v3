@@ -23,7 +23,7 @@ public:
 
     // Set kernel parameters
     int blockSize = 256;
-    int blockCount;
+    int blockNum;
 
     SFMLTexture(int width, int height);
     void free();

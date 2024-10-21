@@ -8,7 +8,7 @@ class Buffer3D {
 public:
     int width, height, size;
     int blockSize = 256;
-    int blockCount;
+    int blockNum;
 
     // Device pointers
     bool *active;

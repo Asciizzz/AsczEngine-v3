@@ -12,12 +12,14 @@ int main() {
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
-    int width, height, pixelSize;
+    int width, height, pixelSize, tileWidth, tileHeight;
     // Note: higher pixelSize = lower resolution
-    std::ifstream("cfg/resolution.txt") >> width >> height >> pixelSize;
+    std::ifstream("cfg/resolution.txt")
+        >> width >> height >> pixelSize >> tileWidth >> tileHeight;
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
     GRAPHIC.setResolution(width, height, pixelSize);
+    GRAPHIC.setTileSize(tileWidth, tileHeight);
 
     Camera3D &CAMERA = GRAPHIC.camera;
     std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
@@ -222,14 +224,15 @@ int main() {
                 }
 
                 // Press f2 to set the resolution and pixel size again
-                if (event.key.code == sf::Keyboard::F2) {
-                    std::ifstream("cfg/resolution.txt") >> width >> height >> pixelSize;
-                    GRAPHIC.setResolution(width, height, pixelSize);
-                    SFTex.free();
-                    SFTex.resize(width, height);
+                // Do not use this as I just introduced tile-based rasterization
+                // if (event.key.code == sf::Keyboard::F2) {
+                //     std::ifstream("cfg/resolution.txt") >> width >> height >> pixelSize;
+                //     GRAPHIC.setResolution(width, height, pixelSize);
+                //     SFTex.free();
+                //     SFTex.resize(width, height);
                     
-                    window.setSize(sf::Vector2u(width, height));
-                }
+                //     window.setSize(sf::Vector2u(width, height));
+                // }
             }
 
             // Scroll to zoom in/out

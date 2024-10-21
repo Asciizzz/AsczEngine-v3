@@ -6,7 +6,7 @@ void FragmentShader::phongShading() {
     Graphic3D &graphic = Graphic3D::instance();
     Buffer3D &buffer = graphic.buffer;
 
-    phongShadingKernel<<<buffer.blockCount, buffer.blockSize>>>(
+    phongShadingKernel<<<buffer.blockNum, buffer.blockSize>>>(
         graphic.light,
         buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture,
         buffer.width, buffer.height
@@ -83,9 +83,9 @@ __global__ void lightProjectionKernel(
 void FragmentShader::resetShadowDepthMap() {
     Graphic3D &graphic = Graphic3D::instance();
 
-    int blockCount = (graphic.sSize + 255) / 256;
+    int blockNum = (graphic.sSize + 255) / 256;
 
-    resetShadowDepthMapKernel<<<blockCount, 256>>>(
+    resetShadowDepthMapKernel<<<blockNum, 256>>>(
         graphic.shadowActive, graphic.shadowDepth, graphic.sWidth, graphic.sHeight
     );
     cudaDeviceSynchronize();
@@ -169,7 +169,7 @@ void FragmentShader::applyShadowMap() {
     Graphic3D &graphic = Graphic3D::instance();
     Buffer3D &buffer = graphic.buffer;
 
-    applyShadowMapKernel<<<buffer.blockCount, buffer.blockSize>>>(
+    applyShadowMapKernel<<<buffer.blockNum, buffer.blockSize>>>(
         buffer.active, buffer.world, buffer.color, buffer.width, buffer.height,
         graphic.shadowActive, graphic.shadowDepth, graphic.sWidth, graphic.sHeight
     );
@@ -204,7 +204,7 @@ void FragmentShader::customFragmentShader() {
     Buffer3D &buffer = graphic.buffer;
     Mesh3D &mesh = graphic.mesh;
 
-    customFragmentShaderKernel<<<buffer.blockCount, buffer.blockSize>>>(
+    customFragmentShaderKernel<<<buffer.blockNum, buffer.blockSize>>>(
         mesh.world, buffer.world, mesh.wMeshId, buffer.wMeshId,
         mesh.normal, buffer.normal, mesh.nMeshId, buffer.nMeshId,
         mesh.texture, buffer.texture, mesh.tMeshId, buffer.tMeshId,

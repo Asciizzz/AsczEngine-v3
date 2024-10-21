@@ -8,6 +8,24 @@ void Graphic3D::setResolution(float w, float h, float ps) {
     buffer.resize(w, h, pixelSize);
 }
 
+void Graphic3D::setTileSize(int tw, int th) {
+    tileWidth = tw;
+    tileHeight = th;
+
+    // Buffer W/H must be divisible by tile W/H, otherwise throw an error
+    // It's a bit forceful, but it's better to have a consistent tile size
+    // Otherwise the entire tile-based rasterization will be broken
+    // Trust me, I've been there
+    if (buffer.width % tileWidth != 0 || buffer.height % tileHeight != 0) {
+        std::cerr << "Buffer W/H must be divisible by tile W/H" << std::endl;
+        exit(1);
+    }
+
+    tileNumX = buffer.width / tileWidth;
+    tileNumY = buffer.height / tileHeight;
+    tileNum = tileNumX * tileNumY;
+}
+
 void Graphic3D::free() {
     mesh.free();
     buffer.free();

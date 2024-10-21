@@ -6,7 +6,7 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
     this->width = width / pixelSize;
     this->height = height / pixelSize;
     size = width * height;
-    blockCount = (size + blockSize - 1) / blockSize;
+    blockNum = (size + blockSize - 1) / blockSize;
 
     free(); // Free the previous buffer
 
@@ -40,7 +40,7 @@ void Buffer3D::free() {
 }
 
 void Buffer3D::clearBuffer() {
-    clearBufferKernel<<<blockCount, blockSize>>>(
+    clearBufferKernel<<<blockNum, blockSize>>>(
         active, depth, color,
         world, normal, texture,
         wMeshId, nMeshId, tMeshId,
@@ -76,7 +76,7 @@ __global__ void clearBufferKernel(
 
 // Night sky
 void Buffer3D::nightSky() {
-    nightSkyKernel<<<blockCount, blockSize>>>(color, width, height);
+    nightSkyKernel<<<blockNum, blockSize>>>(color, width, height);
     cudaDeviceSynchronize();
 }
 

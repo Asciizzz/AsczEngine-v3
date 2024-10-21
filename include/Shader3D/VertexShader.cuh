@@ -25,7 +25,7 @@ __global__ void cameraProjectionKernel(
 __global__ void createDepthMapKernel(
     Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
-    int tileCountX, int tileCountY, int tileWidth, int tileHeight
+    int tileNumX, int tileNumY, int tileWidth, int tileHeight
 );
 
 __global__ void rasterizationKernel(

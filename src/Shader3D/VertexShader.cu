@@ -36,22 +36,15 @@ void VertexShader::createDepthMap() {
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
-    // Divide the tile into a nxn grid
-    int tileWidth = 20;
-    int tileHeight = 20;
-    int tileCountX = buffer.width / tileWidth;
-    int tileCountY = buffer.height / tileHeight;
-    int tileSize = tileCountX * tileCountY;
-
     dim3 blockSize(16, 16);
-    ULLInt tileBlockCount = (tileSize + blockSize.x - 1) / blockSize.x;
-    ULLInt faceBlockCount = (mesh.numFs + blockSize.y - 1) / blockSize.y;
-    dim3 blockCount(tileBlockCount, faceBlockCount);
+    ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
+    ULLInt blockNumFace = (mesh.numFs + blockSize.y - 1) / blockSize.y;
+    dim3 blockNum(blockNumTile, blockNumFace);
 
-    createDepthMapKernel<<<blockCount, blockSize>>>(
+    createDepthMapKernel<<<blockNum, blockSize>>>(
         projection, mesh.world, mesh.faces, mesh.numFs,
         buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
-        tileCountX, tileCountY, tileWidth, tileHeight
+        graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
     );
     cudaDeviceSynchronize();
 }
@@ -61,7 +54,7 @@ void VertexShader::rasterization() {
     Buffer3D &buffer = graphic.buffer;
     Mesh3D &mesh = graphic.mesh;
 
-    rasterizationKernel<<<buffer.blockCount, buffer.blockSize>>>(
+    rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
         mesh.world, buffer.world, mesh.wMeshId, buffer.wMeshId,
         mesh.normal, buffer.normal, mesh.nMeshId, buffer.nMeshId,
         mesh.texture, buffer.texture, mesh.tMeshId, buffer.tMeshId,
@@ -86,12 +79,12 @@ __global__ void cameraProjectionKernel(
 __global__ void createDepthMapKernel(
     Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
-    int tileCountX, int tileCountY, int tileWidth, int tileHeight
+    int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
     ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (tIdx >= tileCountX * tileCountY || fIdx >= numFs) return;
+    if (tIdx >= tileNumX * tileNumY || fIdx >= numFs) return;
 
     Vec3uli fv = faces[fIdx].v;
     Vec4f p0 = projection[fv.x];
@@ -110,8 +103,8 @@ __global__ void createDepthMapKernel(
 
     // Buffer bounding box based on the tile
 
-    int tX = tIdx % tileCountX;
-    int tY = tIdx / tileCountX;
+    int tX = tIdx % tileNumX;
+    int tY = tIdx / tileNumX;
 
     int bufferMinX = tX * tileWidth;
     int bufferMaxX = bufferMinX + tileWidth;
