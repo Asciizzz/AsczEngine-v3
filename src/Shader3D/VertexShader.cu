@@ -111,7 +111,10 @@ __global__ void createDepthMapKernel(
         int bIdx = x + y * buffWidth;
 
         Vec3f bary = Vec3f::bary(
-            Vec2f(x, y), Vec2f(p0.x, p0.y), Vec2f(p1.x, p1.y), Vec2f(p2.x, p2.y)
+            Vec2f(x + .5f, y + .5f),
+            Vec2f(p0.x, p0.y),
+            Vec2f(p1.x, p1.y),
+            Vec2f(p2.x, p2.y)
         );
 
         if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;

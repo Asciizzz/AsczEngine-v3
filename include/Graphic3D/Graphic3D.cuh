@@ -57,6 +57,8 @@ public:
     Camera3D camera;
     Buffer3D buffer;
 
+    void operator+=(Mesh3D &m);
+
     // For vertex shader and rasterization
     Vec4f *projection; // x, y, depth, isInsideFrustum
     void allocateProjection();

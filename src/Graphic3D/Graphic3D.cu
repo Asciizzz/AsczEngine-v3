@@ -17,6 +17,11 @@ void Graphic3D::free() {
     freeShadow();
 }
 
+void Graphic3D::operator+=(Mesh3D &m) {
+    mesh += m;
+    m.free();
+}
+
 void Graphic3D::allocateProjection() {
     cudaMalloc(&projection, mesh.numWs * sizeof(Vec4f));
 }

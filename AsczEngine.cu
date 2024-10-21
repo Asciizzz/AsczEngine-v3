@@ -169,7 +169,7 @@ int main() {
 
     Mesh3D graph(3, world, normal, texture, color, faces);
 
-    GRAPHIC.mesh += obj;
+    GRAPHIC += obj;
     // GRAPHIC.mesh += cube;
     // GRAPHIC.mesh += wall;
     // GRAPHIC.mesh += graph;
@@ -177,8 +177,6 @@ int main() {
     GRAPHIC.allocateEdges();
     GRAPHIC.allocateShadow(1000, 1000);
 
-    // Free memory
-    obj.free();
     cube.free();
     wall.free();
     graph.free();
