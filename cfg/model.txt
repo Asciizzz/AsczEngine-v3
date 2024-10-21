@@ -1,2 +1,2 @@
-assets/Models/MalevolentShrine.obj 10
+assets/Models/Buddha.obj 10
 assets/Untrack/Anime.obj 1

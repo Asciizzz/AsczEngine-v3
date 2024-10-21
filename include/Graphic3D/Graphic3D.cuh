@@ -70,9 +70,9 @@ public:
     LightSrc light;
 
     // Transformations for mesh with specific id
-    void translateMesh(UInt meshId, Vec3f t);
-    void rotateMesh(UInt meshId, Vec3f origin, Vec3f rot);
-    void scaleMesh(UInt meshId, Vec3f origin, Vec3f scl);
+    void translateMesh(UInt objId, Vec3f t);
+    void rotateMesh(UInt objId, Vec3f origin, Vec3f rot);
+    void scaleMesh(UInt objId, Vec3f origin, Vec3f scl);
 
 private:
     Graphic3D() {}

@@ -30,11 +30,11 @@ __global__ void createDepthMapKernel(
 
 __global__ void rasterizationKernel(
     // World data
-    Vec3f *world, Vec3f *buffWorld, UInt *wMeshId, UInt *buffWMeshId,
+    Vec3f *world, Vec3f *buffWorld, UInt *wObjId, UInt *buffWObjId,
     // Normal data
-    Vec3f *normal, Vec3f *buffNormal, UInt *nMeshId, UInt *buffNMeshId,
+    Vec3f *normal, Vec3f *buffNormal, UInt *nObjId, UInt *buffNObjId,
     // Texture data
-    Vec2f *texture, Vec2f *buffTexture, UInt *tMeshId, UInt *buffTMeshId,
+    Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
     // Color data (shared with world for now)
     Vec4f *color, Vec4f *buffColor,
     // Face data

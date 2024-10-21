@@ -21,9 +21,9 @@ __global__ void phongShadingKernel(
 
 // Custom Fragment Shader
 __global__ void customFragmentShaderKernel(
-    Vec3f *world, Vec3f *buffWorld, UInt *wMeshId, UInt *buffWMeshId,
-    Vec3f *normal, Vec3f *buffNormal, UInt *nMeshId, UInt *buffNMeshId,
-    Vec2f *texture, Vec2f *buffTexture, UInt *tMeshId, UInt *buffTMeshId,
+    Vec3f *world, Vec3f *buffWorld, UInt *wObjId, UInt *buffWObjId,
+    Vec3f *normal, Vec3f *buffNormal, UInt *nObjId, UInt *buffNObjId,
+    Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
     Vec4f *color, Vec4f *buffColor,
     Vec3x3uli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
     bool *buffActive, int buffWidth, int buffHeight

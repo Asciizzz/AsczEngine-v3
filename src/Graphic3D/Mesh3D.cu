@@ -1,42 +1,5 @@
 #include <Mesh3D.cuh>
 
-// Mesh struct
-
-Mesh::Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces) :
-    meshId(world.size(), id), world(world), normal(normal),
-    texture(texture), color(color), faces(faces)
-{}
-
-Mesh::Mesh(Mesh &mesh, UInt id) :
-    meshId(mesh.world.size(), id), world(mesh.world), normal(mesh.normal),
-    texture(mesh.texture), color(mesh.color), faces(mesh.faces)
-{}
-
-Mesh Mesh::operator+=(Mesh &mesh) {
-    ULLInt oldSize = world.size();
-
-    meshId.insert(meshId.end(), mesh.meshId.begin(), mesh.meshId.end());
-    world.insert(world.end(), mesh.world.begin(), mesh.world.end());
-    normal.insert(normal.end(), mesh.normal.begin(), mesh.normal.end());
-    texture.insert(texture.end(), mesh.texture.begin(), mesh.texture.end());
-    color.insert(color.end(), mesh.color.begin(), mesh.color.end());
-    faces.insert(faces.end(), mesh.faces.begin(), mesh.faces.end());
-
-    // Shift the faces indices
-    for (ULLInt i = oldSize; i < faces.size(); i++) {
-        faces[i].v += oldSize;
-        faces[i].t += oldSize;
-        faces[i].n += oldSize;
-    }
-    return *this;
-}
-
-Mesh Mesh::operator+(Mesh mesh) {
-    Mesh newMesh = *this;
-    newMesh += mesh;
-    return newMesh;
-}
-
 // Constructor
 
 Mesh3D::Mesh3D(ULLInt numWs, ULLInt numNs, ULLInt numTs, ULLInt numFs) :
@@ -54,17 +17,6 @@ Mesh3D::Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &
     uploadData(id, world, normal, texture, color, faces);
 }
 
-Mesh3D::Mesh3D(Mesh &mesh) :
-    numWs(mesh.world.size()),
-    numNs(mesh.normal.size()),
-    numTs(mesh.texture.size()),
-    numFs(mesh.faces.size())
-{
-    mallocVertices();
-    mallocFaces();
-    uploadData(mesh.meshId[0], mesh.world, mesh.normal, mesh.texture, mesh.color, mesh.faces);
-}
-
 // Memory management
 
 void Mesh3D::mallocVertices() {
@@ -77,9 +29,9 @@ void Mesh3D::mallocVertices() {
     cudaMalloc(&texture, numTs * sizeof(Vec2f));
     cudaMalloc(&screen, numWs * sizeof(Vec4f));
 
-    cudaMalloc(&wMeshId, numWs * sizeof(UInt));
-    cudaMalloc(&nMeshId, numNs * sizeof(UInt));
-    cudaMalloc(&tMeshId, numTs * sizeof(UInt));
+    cudaMalloc(&wObjId, numWs * sizeof(UInt));
+    cudaMalloc(&nObjId, numNs * sizeof(UInt));
+    cudaMalloc(&tObjId, numTs * sizeof(UInt));
 
     cudaMalloc(&color, numWs * sizeof(Vec4f));
 }
@@ -98,9 +50,9 @@ void Mesh3D::freeVertices() {
     cudaFree(texture);
     cudaFree(screen);
 
-    cudaFree(wMeshId);
-    cudaFree(nMeshId);
-    cudaFree(tMeshId);
+    cudaFree(wObjId);
+    cudaFree(nObjId);
+    cudaFree(tObjId);
 
     cudaFree(color);
 }
@@ -108,6 +60,7 @@ void Mesh3D::freeVertices() {
 void Mesh3D::mallocFaces() {
     blockNumFs = (numFs + blockSize - 1) / blockSize;
     cudaMalloc(&faces, numFs * sizeof(Vec3x3uli));
+    cudaMalloc(&fObjId, numFs * sizeof(UInt));
 }
 
 void Mesh3D::resizeFaces(ULLInt numFs) {
@@ -118,6 +71,7 @@ void Mesh3D::resizeFaces(ULLInt numFs) {
 
 void Mesh3D::freeFaces() {
     cudaFree(faces);
+    cudaFree(fObjId);
 }
 
 void Mesh3D::free() {
@@ -130,10 +84,10 @@ void Mesh3D::free() {
 void Mesh3D::uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces) {
     // Vertices
 
-    // Set mesh ID for each vertex attribute
-    setMeshIdKernel<<<blockNumWs, blockSize>>>(this->wMeshId, numWs, id);
-    setMeshIdKernel<<<blockNumNs, blockSize>>>(this->nMeshId, numNs, id);
-    setMeshIdKernel<<<blockNumTs, blockSize>>>(this->tMeshId, numTs, id);
+    // Set obj Id for each vertex attribute
+    setObjIdKernel<<<blockNumWs, blockSize>>>(this->wObjId, numWs, id);
+    setObjIdKernel<<<blockNumNs, blockSize>>>(this->nObjId, numNs, id);
+    setObjIdKernel<<<blockNumTs, blockSize>>>(this->tObjId, numTs, id);
 
     // Set the actual data
     cudaMemcpy(this->world, world.data(), world.size() * sizeof(Vec3f), cudaMemcpyHostToDevice);
@@ -143,6 +97,8 @@ void Mesh3D::uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture,
     cudaMemcpy(this->color, color.data(), color.size() * sizeof(Vec4f), cudaMemcpyHostToDevice);
     
     // Faces indices
+    // Set obj Id for each face
+    setObjIdKernel<<<blockNumFs, blockSize>>>(this->fObjId, numFs, id);
     cudaMemcpy(this->faces, faces.data(), faces.size() * sizeof(Vec3x3uli), cudaMemcpyHostToDevice);
 }
 
@@ -157,35 +113,35 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     Vec3f *newNormal;
     Vec2f *newTexture;
     Vec4f *newScreen;
-    UInt *newWMeshId;
-    UInt *newNMeshId;
-    UInt *newTMeshId;
+    UInt *newWObjId;
+    UInt *newNObjId;
+    UInt *newTObjId;
     Vec4f *newColor;
     cudaMalloc(&newWorld, newNumWs * sizeof(Vec3f));
     cudaMalloc(&newNormal, newNumNs * sizeof(Vec3f));
     cudaMalloc(&newTexture, newNumTs * sizeof(Vec2f));
     cudaMalloc(&newScreen, newNumWs * sizeof(Vec4f));
-    cudaMalloc(&newWMeshId, newNumWs * sizeof(UInt));
-    cudaMalloc(&newNMeshId, newNumNs * sizeof(UInt));
-    cudaMalloc(&newTMeshId, newNumTs * sizeof(UInt));
+    cudaMalloc(&newWObjId, newNumWs * sizeof(UInt));
+    cudaMalloc(&newNObjId, newNumNs * sizeof(UInt));
+    cudaMalloc(&newTObjId, newNumTs * sizeof(UInt));
     cudaMalloc(&newColor, newNumWs * sizeof(Vec4f));
     // Copy old data
     cudaMemcpy(newWorld, world, numWs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newNormal, normal, numNs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTexture, texture, numTs * sizeof(Vec2f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newScreen, screen, numWs * sizeof(Vec4f), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newWMeshId, wMeshId, numWs * sizeof(UInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newNMeshId, nMeshId, numNs * sizeof(UInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newTMeshId, tMeshId, numTs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newWObjId, wObjId, numWs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newNObjId, nObjId, numNs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newTObjId, tObjId, numTs * sizeof(UInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newColor, color, numWs * sizeof(Vec4f), cudaMemcpyDeviceToDevice);
     // Copy new data
     cudaMemcpy(newWorld + numWs, mesh.world, mesh.numWs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newNormal + numNs, mesh.normal, mesh.numNs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTexture + numTs, mesh.texture, mesh.numTs * sizeof(Vec2f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newScreen + numWs, mesh.screen, mesh.numWs * sizeof(Vec4f), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newWMeshId + numWs, mesh.wMeshId, mesh.numWs * sizeof(UInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newNMeshId + numNs, mesh.nMeshId, mesh.numNs * sizeof(UInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newTMeshId + numTs, mesh.tMeshId, mesh.numTs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newWObjId + numWs, mesh.wObjId, mesh.numWs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newNObjId + numNs, mesh.nObjId, mesh.numNs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newTObjId + numTs, mesh.tObjId, mesh.numTs * sizeof(UInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newColor + numWs, mesh.color, mesh.numWs * sizeof(Vec4f), cudaMemcpyDeviceToDevice);
     // Free old data
     freeVertices();
@@ -194,22 +150,32 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     normal = newNormal;
     texture = newTexture;
     screen = newScreen;
-    wMeshId = newWMeshId;
-    nMeshId = newNMeshId;
-    tMeshId = newTMeshId;
+    wObjId = newWObjId;
+    nObjId = newNObjId;
+    tObjId = newTObjId;
     color = newColor;
 
     // Resize faces (with offset for the added vertices)
     ULLInt newNumFs = numFs + mesh.numFs;
     ULLInt newBlockNumFs = (newNumFs + blockSize - 1) / blockSize;
+
     Vec3x3uli *newFaces;
+    UInt *newFObjId;
+    
     cudaMalloc(&newFaces, newNumFs * sizeof(Vec3x3uli));
+    cudaMalloc(&newFObjId, newNumFs * sizeof(UInt));
+
     cudaMemcpy(newFaces, faces, numFs * sizeof(Vec3x3uli), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newFObjId, fObjId, numFs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+
     cudaMemcpy(newFaces + numFs, mesh.faces, mesh.numFs * sizeof(Vec3x3uli), cudaMemcpyDeviceToDevice);
     incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaces, numWs, numNs, numTs, numFs, newNumFs);
+    cudaMemcpy(newFObjId + numFs, mesh.fObjId, mesh.numFs * sizeof(UInt), cudaMemcpyDeviceToDevice);
 
     cudaFree(faces);
+    cudaFree(fObjId);
     faces = newFaces;
+    fObjId = newFObjId;
 
     // Update number of vertices and faces
     numWs = newNumWs;
@@ -222,32 +188,32 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     blockNumFs = (numFs + blockSize - 1) / blockSize;
 }
 
-// Transformations (with mesh ID)
+// Transformations (with obj Id)
 
-void Mesh3D::translate(UInt mID, Vec3f t) {
-    translateWorldKernel<<<blockNumWs, blockSize>>>(world, wMeshId, false, numWs, mID, t);
+void Mesh3D::translate(UInt objID, Vec3f t) {
+    translateWorldKernel<<<blockNumWs, blockSize>>>(world, wObjId, false, numWs, objID, t);
 }
-void Mesh3D::rotate(UInt mID, Vec3f origin, Vec3f rot) {
-    rotateWorldKernel<<<blockNumWs, blockSize>>>(world, wMeshId, false, numWs, mID, origin, rot);
-    rotateNormalKernel<<<blockNumNs, blockSize>>>(normal, nMeshId, false, numNs, mID, origin, rot);
+void Mesh3D::rotate(UInt objID, Vec3f origin, Vec3f rot) {
+    rotateWorldKernel<<<blockNumWs, blockSize>>>(world, wObjId, false, numWs, objID, origin, rot);
+    rotateNormalKernel<<<blockNumNs, blockSize>>>(normal, nObjId, false, numNs, objID, origin, rot);
 }
-void Mesh3D::scale(UInt mID, Vec3f origin, Vec3f scl) {
-    scaleWorldKernel<<<blockNumWs, blockSize>>>(world, wMeshId, false, numWs, mID, origin, scl);
-    scaleNormalKernel<<<blockNumNs, blockSize>>>(normal, nMeshId, false, numNs, mID, origin, scl);
+void Mesh3D::scale(UInt objID, Vec3f origin, Vec3f scl) {
+    scaleWorldKernel<<<blockNumWs, blockSize>>>(world, wObjId, false, numWs, objID, origin, scl);
+    scaleNormalKernel<<<blockNumNs, blockSize>>>(normal, nObjId, false, numNs, objID, origin, scl);
 }
 
-// Transformations (all mesh IDs)
+// Transformations (all obj Ids)
 
 void Mesh3D::translate(Vec3f t) {
-    translateWorldKernel<<<blockNumWs, blockSize>>>(world, wMeshId, true, numWs, 0, t);
+    translateWorldKernel<<<blockNumWs, blockSize>>>(world, wObjId, true, numWs, 0, t);
 }
 void Mesh3D::rotate(Vec3f origin, Vec3f rot) {
-    rotateWorldKernel<<<blockNumWs, blockSize>>>(world, wMeshId, true, numWs, 0, origin, rot);
-    rotateNormalKernel<<<blockNumNs, blockSize>>>(normal, nMeshId, true, numNs, 0, origin, rot);
+    rotateWorldKernel<<<blockNumWs, blockSize>>>(world, wObjId, true, numWs, 0, origin, rot);
+    rotateNormalKernel<<<blockNumNs, blockSize>>>(normal, nObjId, true, numNs, 0, origin, rot);
 }
 void Mesh3D::scale(Vec3f origin, Vec3f scl) {
-    scaleWorldKernel<<<blockNumWs, blockSize>>>(world, wMeshId, true, numWs, 0, origin, scl);
-    scaleNormalKernel<<<blockNumNs, blockSize>>>(normal, nMeshId, true, numNs, 0, origin, scl);
+    scaleWorldKernel<<<blockNumWs, blockSize>>>(world, wObjId, true, numWs, 0, origin, scl);
+    scaleNormalKernel<<<blockNumNs, blockSize>>>(normal, nObjId, true, numNs, 0, origin, scl);
 }
 
 // Kernel for preparing vertices
@@ -260,41 +226,41 @@ __global__ void incrementFaceIdxKernel(Vec3x3uli *faces, ULLInt offsetW, ULLInt 
     }
 }
 
-__global__ void setMeshIdKernel(UInt *meshId, ULLInt numWs, UInt id) {
+__global__ void setObjIdKernel(UInt *objId, ULLInt numWs, UInt id) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < numWs) meshId[idx] = id;
+    if (idx < numWs) objId[idx] = id;
 }
 
 // Kernel for transforming vertices
-__global__ void translateWorldKernel(Vec3f *world, UInt *wMeshId, bool allId, ULLInt numWs, UInt mID, Vec3f t) {
+__global__ void translateWorldKernel(Vec3f *world, UInt *wObjId, bool allId, ULLInt numWs, UInt objID, Vec3f t) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numWs || (!allId && wMeshId[idx] != mID)) return;
+    if (idx >= numWs || (!allId && wObjId[idx] != objID)) return;
 
     world[idx].translate(t);
 }
-__global__ void rotateWorldKernel(Vec3f *world, UInt *wMeshId, bool allId, ULLInt numWs, UInt mID, Vec3f origin, Vec3f rot) {
+__global__ void rotateWorldKernel(Vec3f *world, UInt *wObjId, bool allId, ULLInt numWs, UInt objID, Vec3f origin, Vec3f rot) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numWs || (!allId && wMeshId[idx] != mID)) return;
+    if (idx >= numWs || (!allId && wObjId[idx] != objID)) return;
 
     world[idx].rotate(origin, rot);
 }
-__global__ void scaleWorldKernel(Vec3f *world, UInt *wMeshId, bool allId, ULLInt numWs, UInt mID, Vec3f origin, Vec3f scl) {
+__global__ void scaleWorldKernel(Vec3f *world, UInt *wObjId, bool allId, ULLInt numWs, UInt objID, Vec3f origin, Vec3f scl) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numWs || (!allId && wMeshId[idx] != mID)) return;
+    if (idx >= numWs || (!allId && wObjId[idx] != objID)) return;
 
     world[idx].scale(origin, scl);
 }
 
 // Rotate and scale normals
-__global__ void rotateNormalKernel(Vec3f *normal, UInt *nMeshId, bool allID, ULLInt numNs, UInt mID, Vec3f origin, Vec3f rot) {
+__global__ void rotateNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULLInt numNs, UInt objID, Vec3f origin, Vec3f rot) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numNs || (!allID && nMeshId[idx] != mID)) return;
+    if (idx >= numNs || (!allID && nObjId[idx] != objID)) return;
 
     normal[idx].rotate(origin, rot);
 }
-__global__ void scaleNormalKernel(Vec3f *normal, UInt *nMeshId, bool allID, ULLInt numNs, UInt mID, Vec3f origin, Vec3f scl) {
+__global__ void scaleNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULLInt numNs, UInt objID, Vec3f origin, Vec3f scl) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numNs || (!allID && nMeshId[idx] != mID)) return;
+    if (idx >= numNs || (!allID && nObjId[idx] != objID)) return;
 
     normal[idx].scale(origin, scl);
 }

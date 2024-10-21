@@ -11,7 +11,7 @@
 
 class Playground {
 public:
-    static Mesh3D readObjFile(UInt meshId, std::string path, bool rainbow=false, bool center=true) {
+    static Mesh3D readObjFile(UInt objId, std::string path, bool rainbow=false, bool center=true) {
         std::ifstream file(path);
         if (!file.is_open()) {
             std::cerr << "Error: Could not open file " << path << std::endl;
@@ -91,7 +91,6 @@ public:
         }
 
         for (Vec3f &v : world) {
-
             if (rainbow) {
                 // Set the color based on the ratio of x, y, and z
                 float r = (v.x - minX) / (maxX - minX);
@@ -104,12 +103,12 @@ public:
             }
         }
 
-        Mesh3D mesh = Mesh3D(meshId, world, normal, texture, color, faces);
+        Mesh3D mesh = Mesh3D(objId, world, normal, texture, color, faces);
 
         // Shift the mesh to the origin
         Vec3f shift = Vec3f(-(minX + maxX) / 2, -(minY + maxY) / 2, -(minZ + maxZ) / 2);
         if (!center) shift.y = -minY;
-        mesh.translate(meshId, shift);
+        mesh.translate(objId, shift);
 
         return mesh;
     }

@@ -15,28 +15,10 @@ We will have 4 arrays for vertex data:
 - worldition (x y z)
 - Normal (nx ny nz)
 - Textureture (u v)
-- Mesh ID (id)
+- obj Id (id)
 */
 
-#define Meshs std::vector<Mesh>
 #define Meshs3D std::vector<Mesh3D>
-
-struct Mesh {
-    Vecs3f world;
-    Vecs3f normal;
-    Vecs2f texture;
-    Vecs4f color;
-    UInts meshId;
-
-    Vecs3x3uli faces;
-
-    Mesh(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces);
-    Mesh(Mesh &mesh, UInt id);
-    Mesh() {}
-
-    Mesh operator+=(Mesh &mesh);
-    Mesh operator+(Mesh mesh);
-};
 
 class Mesh3D {
 public:
@@ -53,19 +35,19 @@ public:
     Vec2f *texture;
     Vec4f *screen; // Projected screen space
 
-    UInt *wMeshId;
-    UInt *nMeshId;
-    UInt *tMeshId;
+    UInt *wObjId;
+    UInt *nObjId;
+    UInt *tObjId;
 
     Vec4f *color; // Color is like that weird kid that doesn't fit in
     // Buf he's our friend so we keep him around
 
     // Faces (triangles)
     Vec3x3uli *faces;
+    UInt *fObjId;
 
     Mesh3D(ULLInt numWs=0, ULLInt numNs=0, ULLInt numTs=0, ULLInt numFs=0);
     Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces);
-    Mesh3D(Mesh &mesh);
 
     // Memory management
     void mallocVertices();
@@ -84,11 +66,11 @@ public:
     // Mesh operators
     void operator+=(Mesh3D &mesh);
 
-    // Transformations (with mesh ID)
-    void translate(UInt mID, Vec3f t);
-    void rotate(UInt mID, Vec3f origin, Vec3f rot);
-    void scale(UInt mID, Vec3f origin, Vec3f scl);
-    // Transformations (all mesh IDs)
+    // Transformations (with obj Id)
+    void translate(UInt objID, Vec3f t);
+    void rotate(UInt objID, Vec3f origin, Vec3f rot);
+    void scale(UInt objID, Vec3f origin, Vec3f scl);
+    // Transformations (all obj Ids)
     void translate(Vec3f t);
     void rotate(Vec3f origin, Vec3f rot);
     void scale(Vec3f origin, Vec3f scl);
@@ -96,16 +78,16 @@ public:
 
 // Kernel for preparing vertices
 __global__ void incrementFaceIdxKernel(Vec3x3uli *faces, ULLInt offsetW, ULLInt offsetN, ULLInt offsetT, ULLInt numFs, ULLInt newNumFs);
-__global__ void setMeshIdKernel(UInt *meshId, ULLInt numWs, UInt id);
+__global__ void setObjIdKernel(UInt *objId, ULLInt numWs, UInt id);
 
 // Kernel for transforming vertices
 // Note: the reason bool allID is used is because we can't overload kernels
-__global__ void translateWorldKernel(Vec3f *world, UInt *wMeshId, bool allID, ULLInt numWs, UInt mID, Vec3f t);
-__global__ void rotateWorldKernel(Vec3f *world, UInt *wMeshId, bool allID, ULLInt numWs, UInt mID, Vec3f origin, Vec3f rot);
-__global__ void scaleWorldKernel(Vec3f *world, UInt *wMeshId, bool allID, ULLInt numWs, UInt mID, Vec3f origin, Vec3f scl);
+__global__ void translateWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f t);
+__global__ void rotateWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f origin, Vec3f rot);
+__global__ void scaleWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f origin, Vec3f scl);
 
 // Only rotation and scaling are needed for normals
-__global__ void rotateNormalKernel(Vec3f *normal, UInt *nMeshId, bool allID, ULLInt numNs, UInt mID, Vec3f origin, Vec3f rot);
-__global__ void scaleNormalKernel(Vec3f *normal, UInt *nMeshId, bool allID, ULLInt numNs, UInt mID, Vec3f origin, Vec3f scl);
+__global__ void rotateNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULLInt numNs, UInt objID, Vec3f origin, Vec3f rot);
+__global__ void scaleNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULLInt numNs, UInt objID, Vec3f origin, Vec3f scl);
 
 #endif
