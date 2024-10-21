@@ -36,10 +36,24 @@ void VertexShader::createDepthMap() {
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
-    for (int i = 0; i < 2; i++)
+    // Divide the tile into a nxn grid
+    int tileSizeX = buffer.width / 4;
+    int tileSizeY = buffer.height / 4;
+    int tileCountX = buffer.width / tileSizeX;
+    int tileCountY = buffer.height / tileSizeY;
+
+    // The line of code below will be put into their own kernel
+    // We have a outer kernel for the tile and an inner kernel for the faces
+
+    // dim3 blockCount(tileCountX, tileCountY);
+    // dim3 blockSize(mesh.blockSize);
+
+    for (int tileX = 0; tileX < tileCountX; tileX++)
+    for (int tileY = 0; tileY < tileCountY; tileY++)
         createDepthMapKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
             projection, mesh.world, mesh.faces, mesh.numFs,
-            buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height
+            buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
+            tileX, tileY, tileSizeX, tileSizeY
         );
     cudaDeviceSynchronize();
 }
@@ -74,7 +88,8 @@ __global__ void cameraProjectionKernel(
 __global__ void createDepthMapKernel(
     Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
-    int buffWidth, int buffHeight
+    int buffWidth, int buffHeight,
+    int tileX, int tileY, int tileSizeX, int tileSizeY
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
@@ -94,17 +109,30 @@ __global__ void createDepthMapKernel(
     p2.x = (p2.x + 1) * buffWidth / 2;
     p2.y = (1 - p2.y) * buffHeight / 2;
 
+    // Buffer bounding box based on the tile
+
+    int bufferMinX = tileX * tileSizeX;
+    int bufferMaxX = bufferMinX + tileSizeX;
+    int bufferMinY = tileY * tileSizeY;
+    int bufferMaxY = bufferMinY + tileSizeY;
+
     // Bounding box
     int minX = min(min(p0.x, p1.x), p2.x);
     int maxX = max(max(p0.x, p1.x), p2.x);
     int minY = min(min(p0.y, p1.y), p2.y);
     int maxY = max(max(p0.y, p1.y), p2.y);
 
-    // Clip the bounding box
-    minX = max(minX, 0);
-    maxX = min(maxX, buffWidth - 1);
-    minY = max(minY, 0);
-    maxY = min(maxY, buffHeight - 1);
+    // If bounding box is outside the buffer, return
+    if (minX > bufferMaxX ||
+        maxX < bufferMinX ||
+        minY > bufferMaxY ||
+        maxY < bufferMinY) return;
+
+    // Clip the bounding box based on the buffer
+    minX = max(minX, bufferMinX);
+    maxX = min(maxX, bufferMaxX);
+    minY = max(minY, bufferMinY);
+    maxY = min(maxY, bufferMaxY);
 
     for (int x = minX; x <= maxX; x++)
     for (int y = minY; y <= maxY; y++) {
