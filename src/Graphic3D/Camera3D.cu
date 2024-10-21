@@ -41,11 +41,6 @@ void Camera3D::updateView() {
     view = Mat4f(rMat) * Mat4f(tMat);
 }
 
-void Camera3D::setResolution(float w, float h) {
-    res = Vec2f(w, h);
-    aspect = w / h;
-}
-
 void Camera3D::updateProjection() {
     float f = 1 / tan(fov / 2);
     float ar = aspect;

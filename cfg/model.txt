@@ -1,1 +1,1 @@
-assets/Models/Sukuna.obj 10
+assets/Untrack/Anime.obj 1

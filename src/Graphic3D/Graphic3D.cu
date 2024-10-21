@@ -1,10 +1,10 @@
 #include <Graphic3D.cuh>
 
 void Graphic3D::setResolution(float w, float h, float ps) {
+    pixelSize = ps;
     res = {w, h};
     res_half = {w / 2, h / 2};
-    pixelSize = ps;
-    camera.setResolution(w, h);
+    camera.aspect = w / h;
     buffer.resize(w, h, pixelSize);
 }
 

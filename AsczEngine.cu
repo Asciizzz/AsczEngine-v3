@@ -169,9 +169,9 @@ int main() {
 
     Mesh3D graph(3, world, normal, texture, color, faces);
 
-    // GRAPHIC.mesh += obj;
-    GRAPHIC.mesh += cube;
-    GRAPHIC.mesh += wall;
+    GRAPHIC.mesh += obj;
+    // GRAPHIC.mesh += cube;
+    // GRAPHIC.mesh += wall;
     // GRAPHIC.mesh += graph;
     GRAPHIC.allocateProjection();
     GRAPHIC.allocateEdges();
@@ -290,7 +290,7 @@ int main() {
             float rot = M_PI / 3 * FPS.dTimeSec;
             if (k_ctrl) rot *= -1;
             if (k_shift) rot *= 3;
-            GRAPHIC.mesh.rotate(2, Vec3f(), Vec3f(0, rot, 0));
+            GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot, 0));
         }
         // Press Q to rotate light source in x axis
         if (k_q) {
