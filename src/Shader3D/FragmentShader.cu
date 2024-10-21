@@ -70,7 +70,7 @@ __global__ void customFragmentShaderKernel(
     Vec3f *normal, Vec3f *buffNormal, UInt *nObjId, UInt *buffNObjId,
     Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
     Vec4f *color, Vec4f *buffColor,
-    Vec3x3uli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
+    Vec3x3ulli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
     bool *buffActive, int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -84,9 +84,9 @@ __global__ void customFragmentShaderKernel(
     ULLInt fIdx = buffFaceId[i];
 
     // Set vertex, texture, and normal indices
-    Vec3uli vIdx = faces[fIdx].v;
-    Vec3uli tIdx = faces[fIdx].t;
-    Vec3uli nIdx = faces[fIdx].n;
+    Vec3ulli vIdx = faces[fIdx].v;
+    Vec3ulli tIdx = faces[fIdx].t;
+    Vec3ulli nIdx = faces[fIdx].n;
 
     // Get barycentric coordinates
     float alp = buffBary[i].x;

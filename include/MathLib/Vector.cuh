@@ -14,8 +14,8 @@
 #define Vecs2f std::vector<Vec2f>
 #define Vecs3f std::vector<Vec3f>
 #define Vecs4f std::vector<Vec4f>
-#define Vecs3uli std::vector<Vec3uli>
-#define Vecs3x3uli std::vector<Vec3x3uli>
+#define Vecs3ulli std::vector<Vec3ulli>
+#define Vecs3x3ulli std::vector<Vec3x3ulli>
 
 #define M_PI 3.14159265358979323846 // 180 degrees
 #define M_PI_2 1.57079632679489661923 // 90 degrees
@@ -35,17 +35,17 @@ struct Vec2f {
     __host__ __device__ Vec2f operator/(const float scl);
 };
 
-struct Vec3uli { // For faces indices
-    ULInt x, y, z;
-    __host__ __device__ Vec3uli();
-    __host__ __device__ Vec3uli(ULInt x, ULInt y, ULInt z);
-    __host__ __device__ Vec3uli(ULInt a);
+struct Vec3ulli { // For faces indices
+    ULLInt x, y, z;
+    __host__ __device__ Vec3ulli();
+    __host__ __device__ Vec3ulli(ULLInt x, ULLInt y, ULLInt z);
+    __host__ __device__ Vec3ulli(ULLInt a);
 
-    __host__ __device__ void operator+=(ULInt t);
-    __host__ __device__ void operator-=(ULInt t);
+    __host__ __device__ void operator+=(ULLInt t);
+    __host__ __device__ void operator-=(ULLInt t);
 };
 
-struct Vec3x3uli { // Also for faces indices (but way more complex)
+struct Vec3x3ulli { // Also for faces indices (but way more complex)
     /* Explanation:
 
     .obj files store faces in the format of v/t/n v/t/n v/t/n
@@ -55,23 +55,20 @@ struct Vec3x3uli { // Also for faces indices (but way more complex)
         n: normal index
     */
 
-    Vec3uli v, t, n;
-    __host__ __device__ Vec3x3uli();
-    __host__ __device__ Vec3x3uli(Vec3uli v, Vec3uli t, Vec3uli n);
+    Vec3ulli v, t, n;
+    __host__ __device__ Vec3x3ulli();
+    __host__ __device__ Vec3x3ulli(Vec3ulli v, Vec3ulli t, Vec3ulli n);
     // Some .obj have organized faces (a/a/a b/b/b c/c/c)
-    __host__ __device__ Vec3x3uli(Vec3uli vtn);
-    __host__ __device__ Vec3x3uli(ULInt i1, ULInt i2, ULInt i3);
+    __host__ __device__ Vec3x3ulli(Vec3ulli vtn);
+    __host__ __device__ Vec3x3ulli(ULLInt i1, ULLInt i2, ULLInt i3);
 
-    __host__ __device__ void operator+=(ULInt t);
-    __host__ __device__ void operator-=(ULInt t);
+    __host__ __device__ void operator+=(ULLInt t);
+    __host__ __device__ void operator-=(ULLInt t);
 };
 
-struct Vec2uli { // For edges indices
-    ULInt x, y;
-};
-
-struct Vec3x2uli { // For group of edges indices
-    Vec2uli a, b, c;
+struct Vec3x3x1ulli {
+    Vec3ulli v, t, n;
+    ULLInt w;
 };
 
 struct Vec4f; // Forward declaration
