@@ -22,17 +22,10 @@ __global__ void cameraProjectionKernel(
 );
 
 // Tile-based depth map creation (using nested parallelism, or dynamic parallelism)
-__global__ void tileDepthMapKernel(
-    Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
-    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
-    int buffWidth, int buffHeight,
-    int tileX, int tileY, int tileSize
-);
 __global__ void createDepthMapKernel(
     Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
-    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
-    int buffWidth, int buffHeight,
-    int tileX, int tileY, int tileSizeX, int tileSizeY
+    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
+    int tileCountX, int tileCountY, int tileWidth, int tileHeight
 );
 
 __global__ void rasterizationKernel(

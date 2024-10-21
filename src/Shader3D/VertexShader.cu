@@ -37,24 +37,22 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // Divide the tile into a nxn grid
-    int tileSizeX = buffer.width / 4;
-    int tileSizeY = buffer.height / 4;
-    int tileCountX = buffer.width / tileSizeX;
-    int tileCountY = buffer.height / tileSizeY;
+    int tileWidth = 20;
+    int tileHeight = 20;
+    int tileCountX = buffer.width / tileWidth;
+    int tileCountY = buffer.height / tileHeight;
+    int tileSize = tileCountX * tileCountY;
 
-    // The line of code below will be put into their own kernel
-    // We have a outer kernel for the tile and an inner kernel for the faces
+    dim3 blockSize(16, 16);
+    ULLInt tileBlockCount = (tileSize + blockSize.x - 1) / blockSize.x;
+    ULLInt faceBlockCount = (mesh.numFs + blockSize.y - 1) / blockSize.y;
+    dim3 blockCount(tileBlockCount, faceBlockCount);
 
-    // dim3 blockCount(tileCountX, tileCountY);
-    // dim3 blockSize(mesh.blockSize);
-
-    for (int tileX = 0; tileX < tileCountX; tileX++)
-    for (int tileY = 0; tileY < tileCountY; tileY++)
-        createDepthMapKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-            projection, mesh.world, mesh.faces, mesh.numFs,
-            buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
-            tileX, tileY, tileSizeX, tileSizeY
-        );
+    createDepthMapKernel<<<blockCount, blockSize>>>(
+        projection, mesh.world, mesh.faces, mesh.numFs,
+        buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
+        tileCountX, tileCountY, tileWidth, tileHeight
+    );
     cudaDeviceSynchronize();
 }
 
@@ -87,14 +85,15 @@ __global__ void cameraProjectionKernel(
 
 __global__ void createDepthMapKernel(
     Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
-    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
-    int buffWidth, int buffHeight,
-    int tileX, int tileY, int tileSizeX, int tileSizeY
+    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
+    int tileCountX, int tileCountY, int tileWidth, int tileHeight
 ) {
-    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numFs) return;
+    ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    Vec3uli fv = faces[i].v;
+    if (tIdx >= tileCountX * tileCountY || fIdx >= numFs) return;
+
+    Vec3uli fv = faces[fIdx].v;
     Vec4f p0 = projection[fv.x];
     Vec4f p1 = projection[fv.y];
     Vec4f p2 = projection[fv.z];
@@ -111,10 +110,13 @@ __global__ void createDepthMapKernel(
 
     // Buffer bounding box based on the tile
 
-    int bufferMinX = tileX * tileSizeX;
-    int bufferMaxX = bufferMinX + tileSizeX;
-    int bufferMinY = tileY * tileSizeY;
-    int bufferMaxY = bufferMinY + tileSizeY;
+    int tX = tIdx % tileCountX;
+    int tY = tIdx / tileCountX;
+
+    int bufferMinX = tX * tileWidth;
+    int bufferMaxX = bufferMinX + tileWidth;
+    int bufferMinY = tY * tileHeight;
+    int bufferMaxY = bufferMinY + tileHeight;
 
     // Bounding box
     int minX = min(min(p0.x, p1.x), p2.x);
@@ -122,11 +124,11 @@ __global__ void createDepthMapKernel(
     int minY = min(min(p0.y, p1.y), p2.y);
     int maxY = max(max(p0.y, p1.y), p2.y);
 
-    // If bounding box is outside the buffer, return
-    if (minX > bufferMaxX ||
-        maxX < bufferMinX ||
-        minY > bufferMaxY ||
-        maxY < bufferMinY) return;
+    // // If bounding box is outside the buffer, return
+    // if (minX > bufferMaxX ||
+    //     maxX < bufferMinX ||
+    //     minY > bufferMaxY ||
+    //     maxY < bufferMinY) return;
 
     // Clip the bounding box based on the buffer
     minX = max(minX, bufferMinX);
@@ -137,6 +139,7 @@ __global__ void createDepthMapKernel(
     for (int x = minX; x <= maxX; x++)
     for (int y = minY; y <= maxY; y++) {
         int bIdx = x + y * buffWidth;
+        if (bIdx >= buffWidth * buffHeight) continue;
 
         Vec3f bary = Vec3f::bary(
             Vec2f(x + .5f, y + .5f),
@@ -152,7 +155,7 @@ __global__ void createDepthMapKernel(
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
-            buffFaceId[bIdx] = i;
+            buffFaceId[bIdx] = fIdx;
             buffBary[bIdx] = bary;
         }
     }
