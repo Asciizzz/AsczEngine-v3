@@ -22,6 +22,15 @@ struct LightSrc {
     float ambient = 0.1;
     float specular = 1.2;
     Vec3f color = {1, 1, 1};
+
+    std::string data() {
+        std::string str = "LightSrc:\n";
+        str += "| Dir: " + std::to_string(dir.x) + " " + std::to_string(dir.y) + " " + std::to_string(dir.z) + "\n";
+        str += "| Ambient: " + std::to_string(ambient) + "\n";
+        str += "| Specular: " + std::to_string(specular) + "\n";
+        str += "| Color: " + std::to_string(color.x) + " " + std::to_string(color.y) + " " + std::to_string(color.z) + "\n";
+        return str;
+    }
 };
 
 class Graphic3D {

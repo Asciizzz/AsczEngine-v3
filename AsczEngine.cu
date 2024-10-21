@@ -172,6 +172,8 @@ int main() {
         bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
         bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
         bool k_r = sf::Keyboard::isKeyPressed(sf::Keyboard::R);
+        bool k_q = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
+        bool k_e = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
 
         if (CAMERA.focus) {
             // Mouse movement handling
@@ -209,6 +211,23 @@ int main() {
             if (k_ctrl) rot *= -1;
             if (k_shift) rot *= 3;
             GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot, 0));
+        }
+
+        // Press Q to rotate light source in x axis
+        // Press E to rotate light source in z axis
+        if (k_q) {
+            float rot = M_PI / 3 * FPS.dTimeSec;
+            if (k_ctrl) rot *= -1;
+            if (k_shift) rot *= 3;
+
+            GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(rot, 0, 0));
+        }
+        if (k_e) {
+            float rot = M_PI / 3 * FPS.dTimeSec;
+            if (k_ctrl) rot *= -1;
+            if (k_shift) rot *= 3;
+
+            GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(0, 0, rot));
         }
 
         // ========== Render Pipeline ==========
@@ -250,8 +269,8 @@ int main() {
         sf::Color fpsColor((1 - gRatio) * 255, gRatio * 255, 0);
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
 
-        // Camera data
-        LOG.addLog(CAMERA.data(), sf::Color::White);
+        LOG.addLog(CAMERA.data() + "|\n", sf::Color::White);
+        LOG.addLog(GRAPHIC.light.data(), sf::Color(255, 190, 190));
 
         // Displays
         window.clear(sf::Color(0, 0, 0));
