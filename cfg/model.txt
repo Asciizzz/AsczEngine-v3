@@ -1,1 +1,1 @@
-assets/Heavy/Anime.obj 1
+assets/Untrack/Statue.obj 10
