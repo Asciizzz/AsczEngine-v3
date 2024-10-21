@@ -82,14 +82,12 @@ std::string Camera3D::data() {
     std::string str = "Camera3D\n";
     str += "| Pos: " + std::to_string(pos.x) + ", " + std::to_string(pos.y) + ", " + std::to_string(pos.z) + "\n";
     str += "| Rot: " + std::to_string(rot.x) + ", " + std::to_string(rot.y) + ", " + std::to_string(rot.z) + "\n";
-    str += "|\n";    
-    str += "| Fov: " + std::to_string(fov * 180 / M_PI) + "\n";
-    str += "| Aspect: " + std::to_string(aspect) + "\n";
-    str += "| Near: " + std::to_string(near) + "\n";
-    str += "| Far: " + std::to_string(far) + "\n";
-    str += "|\n";
     str += "| Fd: " + std::to_string(forward.x) + ", " + std::to_string(forward.y) + ", " + std::to_string(forward.z) + "\n";
     str += "| Rg: " + std::to_string(right.x) + ", " + std::to_string(right.y) + ", " + std::to_string(right.z) + "\n";
     str += "| Up: " + std::to_string(up.x) + ", " + std::to_string(up.y) + ", " + std::to_string(up.z) + "\n";
+    str += "| Fov: " + std::to_string(fov * 180 / M_PI) + "\n";
+    str += "| Asp: " + std::to_string(aspect) + "\n";
+    str += "| Nrr: " + std::to_string(near) + "\n";
+    str += "| Far: " + std::to_string(far) + "\n";
     return str;
 }

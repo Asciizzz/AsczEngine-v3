@@ -41,8 +41,8 @@ struct Vec3uli { // For faces indices
     __host__ __device__ Vec3uli(ULInt x, ULInt y, ULInt z);
     __host__ __device__ Vec3uli(ULInt a);
 
-    __host__ __device__ void operator+=(ULInt d);
-    __host__ __device__ void operator-=(ULInt d);
+    __host__ __device__ void operator+=(ULInt t);
+    __host__ __device__ void operator-=(ULInt t);
 };
 
 struct Vec3x3uli { // Also for faces indices (but way more complex)
@@ -62,8 +62,8 @@ struct Vec3x3uli { // Also for faces indices (but way more complex)
     __host__ __device__ Vec3x3uli(Vec3uli vtn);
     __host__ __device__ Vec3x3uli(ULInt i1, ULInt i2, ULInt i3);
 
-    __host__ __device__ void operator+=(ULInt d);
-    __host__ __device__ void operator-=(ULInt d);
+    __host__ __device__ void operator+=(ULInt t);
+    __host__ __device__ void operator-=(ULInt t);
 };
 
 struct Vec2uli { // For edges indices
@@ -120,11 +120,13 @@ struct Vec4f {
     __host__ __device__ Vec4f(float x, float y, float z, float w);
     __host__ __device__ Vec3f toVec3f(bool norm=true); // From Homogeneous to Cartesian
 
-    // We only need operator + - and scalar multiplication
     __host__ __device__ Vec4f operator+(const Vec4f &vec);
+    __host__ __device__ Vec4f operator+(const float t);
     __host__ __device__ Vec4f operator-(const Vec4f &vec);
+    __host__ __device__ Vec4f operator-(const float t);
     __host__ __device__ Vec4f operator*(const float scl);
     __host__ __device__ Vec4f operator/(const float scl);
+
     __host__ __device__ void limit(float min, float max); // Limit the vector
 };
 

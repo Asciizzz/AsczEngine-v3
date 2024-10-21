@@ -31,6 +31,7 @@ void CsLogHandler::drawLog(sf::RenderWindow& window) {
         return;
     };
 
+    int count = 0;
     for (int i = 0; i < cslogs.size(); i++) {
         // Remove the /n at the end of the log
         // As it is unnecessary
@@ -38,8 +39,7 @@ void CsLogHandler::drawLog(sf::RenderWindow& window) {
             cslogs[i].log.pop_back();
 
         // Count the number of /n in the previous logs
-        int count = 0;
-        if (i != 0) count = std::count(
+        if (i != 0) count += std::count(
             cslogs[i - 1].log.begin(), cslogs[i - 1].log.end(), '\n'
         );
 

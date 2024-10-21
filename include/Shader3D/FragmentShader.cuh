@@ -13,6 +13,9 @@ public:
     static void resetShadowDepthMap();
     static void createShadowDepthMap();
     static void applyShadowMap();
+
+    // Custom Fragment Shader
+    static void customFragmentShader();
 };
 
 // Phong Shading
@@ -37,6 +40,16 @@ __global__ void createShadowDepthMapKernel(
 __global__ void applyShadowMapKernel(
     bool *buffActive, Vec3f *buffWorld, Vec4f *buffColor, int buffWidth, int buffHeight,
     bool *shadowActive, float *shadowDepth, int sWidth, int sHeight
+);
+
+// Custom Fragment Shader
+__global__ void customFragmentShaderKernel(
+    Vec3f *world, Vec3f *buffWorld, UInt *wMeshId, UInt *buffWMeshId,
+    Vec3f *normal, Vec3f *buffNormal, UInt *nMeshId, UInt *buffNMeshId,
+    Vec2f *texture, Vec2f *buffTexture, UInt *tMeshId, UInt *buffTMeshId,
+    Vec4f *color, Vec4f *buffColor,
+    Vec3x3uli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
+    bool *buffActive, int buffWidth, int buffHeight
 );
 
 #endif

@@ -1,8 +1,9 @@
 #include <Graphic3D.cuh>
 
-void Graphic3D::setResolution(float w, float h) {
+void Graphic3D::setResolution(float w, float h, float ps) {
     res = {w, h};
     res_half = {w / 2, h / 2};
+    pixelSize = ps;
     camera.setResolution(w, h);
     buffer.resize(w, h, pixelSize);
 }

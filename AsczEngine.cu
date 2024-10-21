@@ -12,15 +12,19 @@ int main() {
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
+    int width, height, pixelSize;
+    // Note: higher pixelSize = lower resolution
+    std::ifstream("cfg/resolution.txt") >> width >> height >> pixelSize;
+
     Graphic3D &GRAPHIC = Graphic3D::instance();
-    GRAPHIC.setResolution(1600, 900);
+    GRAPHIC.setResolution(width, height, pixelSize);
 
     Camera3D &CAMERA = GRAPHIC.camera;
     std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
     std::ifstream("cfg/cameraSpd.txt") >> CAMERA.slowFactor >> CAMERA.fastFactor;
 
-    SFMLTexture SFTex = SFMLTexture(1600, 900);
-    sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
+    SFMLTexture SFTex = SFMLTexture(width, height);
+    sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
     window.setMouseCursorVisible(false);
     sf::Mouse::setPosition(sf::Vector2i(
         GRAPHIC.res_half.x, GRAPHIC.res_half.y
@@ -175,6 +179,9 @@ int main() {
 
     // Free memory
     obj.free();
+    cube.free();
+    wall.free();
+    graph.free();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
@@ -214,6 +221,16 @@ int main() {
 
                     std::ifstream color("cfg/lightColor.txt");
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
+                }
+
+                // Press f2 to set the resolution and pixel size again
+                if (event.key.code == sf::Keyboard::F2) {
+                    std::ifstream("cfg/resolution.txt") >> width >> height >> pixelSize;
+                    GRAPHIC.setResolution(width, height, pixelSize);
+                    SFTex.free();
+                    SFTex.resize(width, height);
+                    
+                    window.setSize(sf::Vector2u(width, height));
                 }
             }
 
@@ -299,10 +316,15 @@ int main() {
         VertexShader::rasterization();
 
         FragmentShader::phongShading();
-        FragmentShader::lightProjection();
-        FragmentShader::resetShadowDepthMap();
-        FragmentShader::createShadowDepthMap();
-        FragmentShader::applyShadowMap();
+
+        // Beta features
+        // FragmentShader::lightProjection();
+        // FragmentShader::resetShadowDepthMap();
+        // FragmentShader::createShadowDepthMap();
+        // FragmentShader::applyShadowMap();
+
+        // Custom Fragment Shader
+        FragmentShader::customFragmentShader();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
@@ -315,7 +337,7 @@ int main() {
 
         // ========== Log handling ==========
 
-        // Rainbow color
+        // Rainbow title
         double step = 120 * FPS.dTimeSec;
         if (cycle == 0) {
             rainbowG += step; rainbowR -= step;
@@ -328,15 +350,23 @@ int main() {
             if (rainbowR >= 255) cycle = 0;
         }
         sf::Color rainbow = sf::Color(rainbowR, rainbowG, rainbowB);
-        LOG.addLog("Welcome to AsczEngine 3.0", rainbow, 1);
 
+        // Dynamic FPS color
         double gRatio = double(FPS.fps - 10) / 50;
         gRatio = std::max(0.0, std::min(gRatio, 1.0));
         sf::Color fpsColor((1 - gRatio) * 255, gRatio * 255, 0);
-        LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
 
-        LOG.addLog(CAMERA.data() + "|\n", sf::Color::White);
-        LOG.addLog(GRAPHIC.light.data(), sf::Color(255, 190, 190));
+        // Log all the data
+        LOG.addLog("Welcome to AsczEngine 3.0", rainbow, 1);
+        LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
+        LOG.addLog(
+            "Screen:\n| Res: " + std::to_string(width) +
+            " x " + std::to_string(height) + "\n" +
+            "| Pxs: " + std::to_string(pixelSize),
+            sf::Color(255, 160, 160)
+        );
+        LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));
+        LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 255, 160));
 
         // Displays
         window.clear(sf::Color(0, 0, 0));

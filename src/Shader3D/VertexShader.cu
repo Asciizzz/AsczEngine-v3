@@ -46,8 +46,8 @@ void VertexShader::createDepthMap() {
 
 void VertexShader::rasterization() {
     Graphic3D &graphic = Graphic3D::instance();
-    Mesh3D &mesh = graphic.mesh;
     Buffer3D &buffer = graphic.buffer;
+    Mesh3D &mesh = graphic.mesh;
 
     rasterizationKernel<<<buffer.blockCount, buffer.blockSize>>>(
         mesh.world, buffer.world, mesh.wMeshId, buffer.wMeshId,

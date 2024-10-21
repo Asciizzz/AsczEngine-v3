@@ -196,3 +196,58 @@ __global__ void applyShadowMapKernel(
         buffColor[i].z *= 0.5;
     }
 }
+
+// Custom Fragment Shader
+
+void FragmentShader::customFragmentShader() {
+    Graphic3D &graphic = Graphic3D::instance();
+    Buffer3D &buffer = graphic.buffer;
+    Mesh3D &mesh = graphic.mesh;
+
+    customFragmentShaderKernel<<<buffer.blockCount, buffer.blockSize>>>(
+        mesh.world, buffer.world, mesh.wMeshId, buffer.wMeshId,
+        mesh.normal, buffer.normal, mesh.nMeshId, buffer.nMeshId,
+        mesh.texture, buffer.texture, mesh.tMeshId, buffer.tMeshId,
+        mesh.color, buffer.color,
+        mesh.faces, buffer.faceID, buffer.bary, buffer.bary,
+        buffer.active, buffer.width, buffer.height
+    );
+    cudaDeviceSynchronize();
+}
+
+__global__ void customFragmentShaderKernel(
+    Vec3f *world, Vec3f *buffWorld, UInt *wMeshId, UInt *buffWMeshId,
+    Vec3f *normal, Vec3f *buffNormal, UInt *nMeshId, UInt *buffNMeshId,
+    Vec2f *texture, Vec2f *buffTexture, UInt *tMeshId, UInt *buffTMeshId,
+    Vec4f *color, Vec4f *buffColor,
+    Vec3x3uli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
+    bool *buffActive, int buffWidth, int buffHeight
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+
+    return;
+
+    int bx = i % buffWidth;
+    int by = i / buffWidth;
+
+    ULLInt fIdx = buffFaceId[i];
+
+    // Set vertex, texture, and normal indices
+    Vec3uli vIdx = faces[fIdx].v;
+    Vec3uli tIdx = faces[fIdx].t;
+    Vec3uli nIdx = faces[fIdx].n;
+
+    // Get barycentric coordinates
+    float alp = buffBary[i].x;
+    float bet = buffBary[i].y;
+    float gam = buffBary[i].z;
+
+    // Have fun with the custom fragment shader
+
+    bool even = (bx + by) % 2 == 0;
+
+    if (even) {
+        buffColor[i].x *= 0.5;
+    }
+}

@@ -46,8 +46,8 @@ public:
     // Resolution
     Vec2f res = {800, 600};
     Vec2f res_half = {400, 300};
-    int pixelSize = 2;
-    void setResolution(float w, float h);
+    int pixelSize = 8;
+    void setResolution(float w, float h, float ps=4);
 
     // Free everything
     void free();

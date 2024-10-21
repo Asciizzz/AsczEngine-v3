@@ -27,11 +27,11 @@ Vec2f Vec2f::operator/(const float scl) {
 Vec3uli::Vec3uli() : x(0), y(0), z(0) {}
 Vec3uli::Vec3uli(ULInt x, ULInt y, ULInt z) : x(x), y(y), z(z) {}
 Vec3uli::Vec3uli(ULInt a) : x(a), y(a), z(a) {}
-void Vec3uli::operator+=(ULInt d) {
-    x += d; y += d; z += d;
+void Vec3uli::operator+=(ULInt t) {
+    x += t; y += t; z += t;
 }
-void Vec3uli::operator-=(ULInt d) {
-    x -= d; y -= d; z -= d;
+void Vec3uli::operator-=(ULInt t) {
+    x -= t; y -= t; z -= t;
 }
 
 // VEC3x3uli
@@ -41,11 +41,11 @@ Vec3x3uli::Vec3x3uli(Vec3uli vtn) : v(vtn), t(vtn), n(vtn) {}
 Vec3x3uli::Vec3x3uli(ULInt i1, ULInt i2, ULInt i3) :
     v(Vec3uli(i1, i2, i3)), t(Vec3uli(i1, i2, i3)), n(Vec3uli(i1, i2, i3))
 {}
-void Vec3x3uli::operator+=(ULInt d) {
-    v += d; t += d; n += d;
+void Vec3x3uli::operator+=(ULInt t) {
+    v += t; t += t; n += t;
 }
-void Vec3x3uli::operator-=(ULInt d) {
-    v -= d; t -= d; n -= d;
+void Vec3x3uli::operator-=(ULInt t) {
+    v -= t; t -= t; n -= t;
 }
 
 // VEC3f
@@ -189,8 +189,14 @@ Vec3f Vec4f::toVec3f(bool norm) {
 Vec4f Vec4f::operator+(const Vec4f& v) {
     return Vec4f(x + v.x, y + v.y, z + v.z, w + v.w);
 }
+Vec4f Vec4f::operator+(const float t) {
+    return Vec4f(x + t, y + t, z + t, w + t);
+}
 Vec4f Vec4f::operator-(const Vec4f& v) {
     return Vec4f(x - v.x, y - v.y, z - v.z, w - v.w);
+}
+Vec4f Vec4f::operator-(const float t) {
+    return Vec4f(x - t, y - t, z - t, w - t);
 }
 Vec4f Vec4f::operator*(const float scl) {
     return Vec4f(x * scl, y * scl, z * scl, w * scl);
