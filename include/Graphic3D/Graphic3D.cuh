@@ -43,11 +43,16 @@ public:
     Graphic3D(const Graphic3D&) = delete;
     Graphic3D &operator=(const Graphic3D&) = delete;
 
+    // Resolution
     Vec2f res = {800, 600};
     Vec2f res_half = {400, 300};
     int pixelSize = 2;
     void setResolution(float w, float h);
 
+    // Free everything
+    void free();
+
+    // Data
     Mesh3D mesh;
     Camera3D camera;
     Buffer3D buffer;
@@ -58,31 +63,27 @@ public:
     void freeProjection();
     void resizeProjection();
 
-    // For bresenham and rasterization
+    // For bresenham and rasterization (BETA)
     Vec2uli *edges; // Note: the indices are from the world space
     void allocateEdges();
     void freeEdges();
     void resizeEdges();
 
-    // Free everything
-    void free();
-
-    /* Example faces - edges relationship
-
-    Face 0: {0, 1, 2}
-
-    Edge 0: {0, 1}, Edge 1: {1, 2}, Edge 2: {2, 0}
-    
-    => Size Edge = Size Face * 3
-    */
-
-    // BETA: LightSrc
+    // BETA: LightSrc and shadow mapping
     LightSrc light;
+
+    int sWidth, sHeight, sSize;
+    bool *shadowActive;
+    float *shadowDepth;
+    Vec3f *lightProj;
+    void allocateShadow(int sw, int sh);
+    void freeShadow();
 
 private:
     Graphic3D() {}
 };
 
+// Helpful device functions
 __device__ bool atomicMinFloat(float* addr, float value);
 
 // Helpful kernels

@@ -7,6 +7,15 @@ void Graphic3D::setResolution(float w, float h) {
     buffer.resize(w, h, pixelSize);
 }
 
+void Graphic3D::free() {
+    mesh.free();
+    buffer.free();
+    freeProjection();
+    freeEdges();
+
+    freeShadow();
+}
+
 void Graphic3D::allocateProjection() {
     cudaMalloc(&projection, mesh.numWs * sizeof(Vec4f));
 }
@@ -34,11 +43,22 @@ void Graphic3D::resizeEdges() {
     allocateEdges();
 }
 
-void Graphic3D::free() {
-    mesh.free();
-    buffer.free();
-    freeProjection();
-    freeEdges();
+// BETA: Shadow Map
+void Graphic3D::allocateShadow(int sw, int sh) {
+    sWidth = sw;
+    sHeight = sh;
+    sSize = sw * sh;
+
+    cudaMalloc(&shadowActive, sSize * sizeof(bool));
+    cudaMalloc(&shadowDepth, sSize * sizeof(float));
+
+    cudaMalloc(&lightProj, mesh.numWs * sizeof(Vec3f));
+}
+
+void Graphic3D::freeShadow() {
+    if (shadowActive) cudaFree(shadowActive);
+    if (shadowDepth) cudaFree(shadowDepth);
+    if (lightProj) cudaFree(lightProj);
 }
 
 // Atomic functions

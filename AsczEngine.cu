@@ -13,18 +13,20 @@ int main() {
     CsLogHandler LOG = CsLogHandler();
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
-    GRAPHIC.setResolution(1600, 1000);
+    GRAPHIC.setResolution(1600, 900);
 
     Camera3D &CAMERA = GRAPHIC.camera;
     std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
     std::ifstream("cfg/cameraSpd.txt") >> CAMERA.slowFactor >> CAMERA.fastFactor;
 
-    SFMLTexture SFTex = SFMLTexture(1600, 1000);
-    sf::RenderWindow window(sf::VideoMode(1600, 1000), "AsczEngine");
+    SFMLTexture SFTex = SFMLTexture(1600, 900);
+    sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
     window.setMouseCursorVisible(false);
     sf::Mouse::setPosition(sf::Vector2i(
         GRAPHIC.res_half.x, GRAPHIC.res_half.y
     ), window);
+
+    // ===================== INITIALIZATION =====================
 
     std::string objPath = "";
     float objScale = 1;
@@ -36,6 +38,64 @@ int main() {
     Mesh3D obj = Playground::readObjFile(0, objPath, true);
     obj.scale(Vec3f(), Vec3f(objScale));
     // obj.rotate(0, Vec3f(), Vec3f(0, 0, 0));
+
+    Vecs3f cubeWorld = {
+        Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
+        Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
+        Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
+        Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
+    };
+    Vecs3f cubeNormal = {
+        Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
+        Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
+        Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
+        Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
+    };
+    Vecs2f cubeTexture = {
+        Vec2f(0, 0), Vec2f(1, 0),
+        Vec2f(1, 1), Vec2f(0, 1),
+        Vec2f(0, 0), Vec2f(1, 0),
+        Vec2f(1, 1), Vec2f(0, 1)
+    };
+    Vecs4f cubeColor = {
+        Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
+        Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
+        Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
+        Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
+    };
+    Vecs3x3uli cubeFaces = {
+        Vec3x3uli(0, 1, 2), Vec3x3uli(0, 2, 3),
+        Vec3x3uli(4, 5, 6), Vec3x3uli(4, 6, 7),
+        Vec3x3uli(0, 4, 7), Vec3x3uli(0, 7, 3),
+        Vec3x3uli(1, 5, 6), Vec3x3uli(1, 6, 2),
+        Vec3x3uli(0, 1, 5), Vec3x3uli(0, 5, 4),
+        Vec3x3uli(3, 2, 6), Vec3x3uli(3, 6, 7)
+    };
+    Mesh3D cube(1, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
+    cube.scale(Vec3f(), Vec3f(4));
+
+    // Create a white wall behind the cube
+    float wallSize = 10;
+    Vecs3f wallWorld = {
+        Vec3f(-wallSize, -wallSize, wallSize), Vec3f(wallSize, -wallSize, wallSize),
+        Vec3f(wallSize, wallSize, wallSize), Vec3f(-wallSize, wallSize, wallSize)
+    };
+    Vecs3f wallNormal = { // Facing towards the cube
+        Vec3f(0, 0, -1), Vec3f(0, 0, -1),
+        Vec3f(0, 0, -1), Vec3f(0, 0, -1)
+    };
+    Vecs2f wallTexture = {
+        Vec2f(0, 0), Vec2f(1, 0),
+        Vec2f(1, 1), Vec2f(0, 1)
+    };
+    Vecs4f wallColor = {
+        Vec4f(255, 125, 125, 255), Vec4f(125, 255, 125, 255),
+        Vec4f(125, 125, 255, 255), Vec4f(255, 255, 125, 255)
+    };
+    Vecs3x3uli wallFaces = {
+        Vec3x3uli(0, 1, 2), Vec3x3uli(0, 2, 3)
+    };
+    Mesh3D wall(2, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
 
     // Graphing calculator for y = f(x, z)
     Vecs3f world;
@@ -103,12 +163,15 @@ int main() {
         }
     }
 
-    Mesh3D graph(1, world, normal, texture, color, faces);
+    Mesh3D graph(3, world, normal, texture, color, faces);
 
-    GRAPHIC.mesh += obj;
+    // GRAPHIC.mesh += obj;
+    GRAPHIC.mesh += cube;
+    GRAPHIC.mesh += wall;
     // GRAPHIC.mesh += graph;
     GRAPHIC.allocateProjection();
     GRAPHIC.allocateEdges();
+    GRAPHIC.allocateShadow(800, 800);
 
     // Free memory
     obj.free();
@@ -210,11 +273,9 @@ int main() {
             float rot = M_PI / 3 * FPS.dTimeSec;
             if (k_ctrl) rot *= -1;
             if (k_shift) rot *= 3;
-            GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot, 0));
+            GRAPHIC.mesh.rotate(2, Vec3f(), Vec3f(0, rot, 0));
         }
-
         // Press Q to rotate light source in x axis
-        // Press E to rotate light source in z axis
         if (k_q) {
             float rot = M_PI / 3 * FPS.dTimeSec;
             if (k_ctrl) rot *= -1;
@@ -222,6 +283,7 @@ int main() {
 
             GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(rot, 0, 0));
         }
+        // Press E to rotate light source in z axis
         if (k_e) {
             float rot = M_PI / 3 * FPS.dTimeSec;
             if (k_ctrl) rot *= -1;
@@ -237,6 +299,10 @@ int main() {
         VertexShader::rasterization();
 
         FragmentShader::phongShading();
+        FragmentShader::lightProjection();
+        FragmentShader::resetShadowDepthMap();
+        FragmentShader::createShadowDepthMap();
+        FragmentShader::applyShadowMap();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)

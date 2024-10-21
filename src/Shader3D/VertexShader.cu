@@ -79,10 +79,10 @@ __global__ void createDepthMapKernel(
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numFs) return;
 
-    Vec3uli f = faces[i].v;
-    Vec4f p0 = projection[f.x];
-    Vec4f p1 = projection[f.y];
-    Vec4f p2 = projection[f.z];
+    Vec3uli fv = faces[i].v;
+    Vec4f p0 = projection[fv.x];
+    Vec4f p1 = projection[fv.y];
+    Vec4f p2 = projection[fv.z];
 
     // Entirely outside the frustum
     if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
