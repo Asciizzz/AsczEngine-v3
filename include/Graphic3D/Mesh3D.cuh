@@ -50,6 +50,7 @@ public:
     Vec3f *world;
     Vec3f *normal;
     Vec2f *texture;
+    Vec4f *screen; // Projected screen space
 
     UInt *wMeshId;
     UInt *nMeshId;

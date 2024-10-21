@@ -18,12 +18,12 @@ public:
 
 // Pipeline Kernels
 __global__ void cameraProjectionKernel(
-    Vec4f *projection, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
+    Vec4f *screen, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
 );
 
 // Tile-based depth map creation (using nested parallelism, or dynamic parallelism)
 __global__ void createDepthMapKernel(
-    Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
+    Vec4f *screen, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 );

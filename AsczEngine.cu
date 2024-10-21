@@ -175,8 +175,6 @@ int main() {
     // GRAPHIC.mesh += cube;
     // GRAPHIC.mesh += wall;
     // GRAPHIC.mesh += graph;
-    GRAPHIC.allocateProjection();
-    GRAPHIC.allocateEdges();
     GRAPHIC.allocateShadow(1000, 1000);
 
     cube.free();

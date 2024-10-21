@@ -19,10 +19,9 @@ void VertexShader::cameraProjection() {
     Mesh3D &mesh = graphic.mesh;
     Camera3D &camera = graphic.camera;
     Buffer3D &buffer = graphic.buffer;
-    Vec4f *projection = graphic.projection;
 
     cameraProjectionKernel<<<mesh.blockNumWs, mesh.blockSize>>>(
-        projection, mesh.world, camera, buffer.width, buffer.height, mesh.numWs
+        mesh.screen, mesh.world, camera, buffer.width, buffer.height, mesh.numWs
     );
     cudaDeviceSynchronize();
 }
@@ -31,18 +30,17 @@ void VertexShader::createDepthMap() {
     Graphic3D &graphic = Graphic3D::instance();
     Mesh3D &mesh = graphic.mesh;
     Buffer3D &buffer = graphic.buffer;
-    Vec4f *projection = graphic.projection;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
-    dim3 blockSize(16, 16);
+    dim3 blockSize(8, 16);
     ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
     ULLInt blockNumFace = (mesh.numFs + blockSize.y - 1) / blockSize.y;
     dim3 blockNum(blockNumTile, blockNumFace);
 
     createDepthMapKernel<<<blockNum, blockSize>>>(
-        projection, mesh.world, mesh.faces, mesh.numFs,
+        mesh.screen, mesh.world, mesh.faces, mesh.numFs,
         buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
         graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
     );
@@ -67,17 +65,17 @@ void VertexShader::rasterization() {
 
 // Kernels
 __global__ void cameraProjectionKernel(
-    Vec4f *projection, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
+    Vec4f *screen, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numWs) return;
 
     Vec4f p = VertexShader::toScreenSpace(camera, world[i], buffWidth, buffHeight);
-    projection[i] = p;
+    screen[i] = p;
 }
 
 __global__ void createDepthMapKernel(
-    Vec4f *projection, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
+    Vec4f *screen, Vec3f *world, Vec3x3uli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
@@ -87,9 +85,9 @@ __global__ void createDepthMapKernel(
     if (tIdx >= tileNumX * tileNumY || fIdx >= numFs) return;
 
     Vec3uli fv = faces[fIdx].v;
-    Vec4f p0 = projection[fv.x];
-    Vec4f p1 = projection[fv.y];
-    Vec4f p2 = projection[fv.z];
+    Vec4f p0 = screen[fv.x];
+    Vec4f p1 = screen[fv.y];
+    Vec4f p2 = screen[fv.z];
 
     // Entirely outside the frustum
     if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;

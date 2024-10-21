@@ -75,6 +75,7 @@ void Mesh3D::mallocVertices() {
     cudaMalloc(&world, numWs * sizeof(Vec3f));
     cudaMalloc(&normal, numNs * sizeof(Vec3f));
     cudaMalloc(&texture, numTs * sizeof(Vec2f));
+    cudaMalloc(&screen, numWs * sizeof(Vec4f));
 
     cudaMalloc(&wMeshId, numWs * sizeof(UInt));
     cudaMalloc(&nMeshId, numNs * sizeof(UInt));
@@ -95,9 +96,12 @@ void Mesh3D::freeVertices() {
     cudaFree(world);
     cudaFree(normal);
     cudaFree(texture);
+    cudaFree(screen);
+
     cudaFree(wMeshId);
     cudaFree(nMeshId);
     cudaFree(tMeshId);
+
     cudaFree(color);
 }
 
@@ -152,6 +156,7 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     Vec3f *newWorld;
     Vec3f *newNormal;
     Vec2f *newTexture;
+    Vec4f *newScreen;
     UInt *newWMeshId;
     UInt *newNMeshId;
     UInt *newTMeshId;
@@ -159,6 +164,7 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     cudaMalloc(&newWorld, newNumWs * sizeof(Vec3f));
     cudaMalloc(&newNormal, newNumNs * sizeof(Vec3f));
     cudaMalloc(&newTexture, newNumTs * sizeof(Vec2f));
+    cudaMalloc(&newScreen, newNumWs * sizeof(Vec4f));
     cudaMalloc(&newWMeshId, newNumWs * sizeof(UInt));
     cudaMalloc(&newNMeshId, newNumNs * sizeof(UInt));
     cudaMalloc(&newTMeshId, newNumTs * sizeof(UInt));
@@ -167,6 +173,7 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     cudaMemcpy(newWorld, world, numWs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newNormal, normal, numNs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTexture, texture, numTs * sizeof(Vec2f), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newScreen, screen, numWs * sizeof(Vec4f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newWMeshId, wMeshId, numWs * sizeof(UInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newNMeshId, nMeshId, numNs * sizeof(UInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTMeshId, tMeshId, numTs * sizeof(UInt), cudaMemcpyDeviceToDevice);
@@ -175,6 +182,7 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     cudaMemcpy(newWorld + numWs, mesh.world, mesh.numWs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newNormal + numNs, mesh.normal, mesh.numNs * sizeof(Vec3f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTexture + numTs, mesh.texture, mesh.numTs * sizeof(Vec2f), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newScreen + numWs, mesh.screen, mesh.numWs * sizeof(Vec4f), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newWMeshId + numWs, mesh.wMeshId, mesh.numWs * sizeof(UInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newNMeshId + numNs, mesh.nMeshId, mesh.numNs * sizeof(UInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newTMeshId + numTs, mesh.tMeshId, mesh.numTs * sizeof(UInt), cudaMemcpyDeviceToDevice);
@@ -185,6 +193,7 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     world = newWorld;
     normal = newNormal;
     texture = newTexture;
+    screen = newScreen;
     wMeshId = newWMeshId;
     nMeshId = newNMeshId;
     tMeshId = newTMeshId;

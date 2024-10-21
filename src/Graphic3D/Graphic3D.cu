@@ -29,42 +29,12 @@ void Graphic3D::setTileSize(int tw, int th) {
 void Graphic3D::free() {
     mesh.free();
     buffer.free();
-    freeProjection();
-    freeEdges();
-
     freeShadow();
 }
 
 void Graphic3D::operator+=(Mesh3D &m) {
     mesh += m;
     m.free();
-}
-
-void Graphic3D::allocateProjection() {
-    cudaMalloc(&projection, mesh.numWs * sizeof(Vec4f));
-}
-void Graphic3D::freeProjection() {
-    if (projection) cudaFree(projection);
-}
-void Graphic3D::resizeProjection() {
-    freeProjection();
-    allocateProjection();
-}
-
-void Graphic3D::allocateEdges() {
-    cudaMalloc(&edges, mesh.numFs * 3 * sizeof(Vec3x2uli));
-
-    facesToEdgesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-        edges, mesh.faces, mesh.numFs
-    );
-    cudaDeviceSynchronize();
-}
-void Graphic3D::freeEdges() {
-    if (edges) cudaFree(edges);
-}
-void Graphic3D::resizeEdges() {
-    freeEdges();
-    allocateEdges();
 }
 
 // BETA: Shadow Map

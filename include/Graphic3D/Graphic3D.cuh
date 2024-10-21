@@ -60,22 +60,11 @@ public:
 
     // Data
     Mesh3D mesh;
+
     Camera3D camera;
     Buffer3D buffer;
 
     void operator+=(Mesh3D &m);
-
-    // For vertex shader and rasterization
-    Vec4f *projection; // x, y, depth, isInsideFrustum
-    void allocateProjection();
-    void freeProjection();
-    void resizeProjection();
-
-    // For bresenham and rasterization (BETA)
-    Vec2uli *edges; // Note: the indices are from the world space
-    void allocateEdges();
-    void freeEdges();
-    void resizeEdges();
 
     // BETA: LightSrc and shadow mapping
     LightSrc light;
