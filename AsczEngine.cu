@@ -13,14 +13,14 @@ int main() {
     CsLogHandler LOG = CsLogHandler();
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
-    GRAPHIC.setResolution(1600, 900);
+    GRAPHIC.setResolution(1600, 1000);
 
     Camera3D &CAMERA = GRAPHIC.camera;
     std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
     std::ifstream("cfg/cameraSpd.txt") >> CAMERA.slowFactor >> CAMERA.fastFactor;
 
-    SFMLTexture SFTex = SFMLTexture(1600, 900);
-    sf::RenderWindow window(sf::VideoMode(1600, 900), "AsczEngine");
+    SFMLTexture SFTex = SFMLTexture(1600, 1000);
+    sf::RenderWindow window(sf::VideoMode(1600, 1000), "AsczEngine");
     window.setMouseCursorVisible(false);
     sf::Mouse::setPosition(sf::Vector2i(
         GRAPHIC.res_half.x, GRAPHIC.res_half.y
@@ -108,9 +108,10 @@ int main() {
     GRAPHIC.mesh += obj;
     // GRAPHIC.mesh += graph;
     GRAPHIC.allocateProjection();
+    GRAPHIC.allocateEdges();
 
     // Free memory
-    obj.freeMemory();
+    obj.free();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
@@ -263,10 +264,7 @@ int main() {
     }
 
     // Clean up
-    GRAPHIC.mesh.freeMemory();
-    GRAPHIC.buffer.free();
-    GRAPHIC.freeProjection();
-
+    GRAPHIC.free();
     SFTex.free();
 
     return 0;

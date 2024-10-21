@@ -73,7 +73,7 @@ public:
     void resizeFaces(ULLInt numFs);
     void freeFaces();
 
-    void freeMemory();
+    void free();
 
     // Upload host data to device
     void uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3uli &faces);

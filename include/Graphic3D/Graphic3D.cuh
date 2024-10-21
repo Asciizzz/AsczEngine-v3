@@ -49,6 +49,24 @@ public:
     void freeProjection();
     void resizeProjection();
 
+    // For bresenham and rasterization
+    Vec2uli *edges; // Note: the indices are from the world space
+    void allocateEdges();
+    void freeEdges();
+    void resizeEdges();
+
+    // Free everything
+    void free();
+
+    /* Example faces - edges relationship
+
+    Face 0: {0, 1, 2}
+
+    Edge 0: {0, 1}, Edge 1: {1, 2}, Edge 2: {2, 0}
+    
+    => Size Edge = Size Face * 3
+    */
+
     // BETA: LightSrc
     LightSrc light;
 
@@ -57,5 +75,10 @@ private:
 };
 
 __device__ bool atomicMinFloat(float* addr, float value);
+
+// Helpful kernels
+__global__ void facesToEdgesKernel(
+    Vec2uli *edges, Vec3x3uli *faces, ULLInt numFs
+);
 
 #endif

@@ -116,7 +116,7 @@ void Mesh3D::freeFaces() {
     cudaFree(faces);
 }
 
-void Mesh3D::freeMemory() {
+void Mesh3D::free() {
     freeVertices();
     freeFaces();
 }

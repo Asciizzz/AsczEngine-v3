@@ -18,6 +18,29 @@ void Graphic3D::resizeProjection() {
     allocateProjection();
 }
 
+void Graphic3D::allocateEdges() {
+    cudaMalloc(&edges, mesh.numFs * 3 * sizeof(Vec3x2uli));
+
+    facesToEdgesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
+        edges, mesh.faces, mesh.numFs
+    );
+    cudaDeviceSynchronize();
+}
+void Graphic3D::freeEdges() {
+    if (edges) cudaFree(edges);
+}
+void Graphic3D::resizeEdges() {
+    freeEdges();
+    allocateEdges();
+}
+
+void Graphic3D::free() {
+    mesh.free();
+    buffer.free();
+    freeProjection();
+    freeEdges();
+}
+
 // Atomic functions
 __device__ bool atomicMinFloat(float* addr, float value) {
     int* addr_as_int = (int*)addr;
@@ -29,4 +52,19 @@ __device__ bool atomicMinFloat(float* addr, float value) {
     } while (assumed != old);
 
     return __int_as_float(old) > value;
+}
+
+// Helpful kernels
+__global__ void facesToEdgesKernel(
+    Vec2uli *edges, Vec3x3uli *faces, ULLInt numFs
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numFs) return;
+
+    Vec3uli v = faces[i].v;
+    
+    // Edge only contain world space indices
+    edges[i * 3 + 0] = {v.x, v.y};
+    edges[i * 3 + 1] = {v.y, v.z};
+    edges[i * 3 + 2] = {v.z, v.x};
 }

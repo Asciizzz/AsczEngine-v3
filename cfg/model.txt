@@ -1,1 +1,1 @@
-assets/Models/City/Building004.obj 4
+assets/Heavy/Anime.obj 1

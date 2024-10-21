@@ -66,6 +66,14 @@ struct Vec3x3uli { // Also for faces indices (but way more complex)
     __host__ __device__ void operator-=(ULInt d);
 };
 
+struct Vec2uli { // For edges indices
+    ULInt x, y;
+};
+
+struct Vec3x2uli { // For group of edges indices
+    Vec2uli a, b, c;
+};
+
 struct Vec4f; // Forward declaration
 struct Vec3f {
     float x, y, z;
