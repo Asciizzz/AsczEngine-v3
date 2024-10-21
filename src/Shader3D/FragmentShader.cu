@@ -60,7 +60,7 @@ void FragmentShader::customFragmentShader() {
         mesh.texture, buffer.texture, mesh.tObjId, buffer.tObjId,
         mesh.color, buffer.color,
         mesh.faces, buffer.faceID, buffer.bary, buffer.bary,
-        buffer.active, buffer.width, buffer.height
+        buffer.active, buffer.depth, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
 }
@@ -71,17 +71,17 @@ __global__ void customFragmentShaderKernel(
     Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
     Vec4f *color, Vec4f *buffColor,
     Vec3x3ulli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
-    bool *buffActive, int buffWidth, int buffHeight
+    bool *buffActive, float *buffDepth, int buffWidth, int buffHeight
 ) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+    int bIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (bIdx >= buffWidth * buffHeight || !buffActive[bIdx]) return;
 
     return;
 
-    int bx = i % buffWidth;
-    int by = i / buffWidth;
+    int bx = bIdx % buffWidth;
+    int by = bIdx / buffWidth;
 
-    ULLInt fIdx = buffFaceId[i];
+    ULLInt fIdx = buffFaceId[bIdx];
 
     // Set vertex, texture, and normal indices
     Vec3ulli vIdx = faces[fIdx].v;
@@ -89,15 +89,21 @@ __global__ void customFragmentShaderKernel(
     Vec3ulli nIdx = faces[fIdx].n;
 
     // Get barycentric coordinates
-    float alp = buffBary[i].x;
-    float bet = buffBary[i].y;
-    float gam = buffBary[i].z;
+    float alp = buffBary[bIdx].x;
+    float bet = buffBary[bIdx].y;
+    float gam = buffBary[bIdx].z;
 
     // Have fun with the custom fragment shader
 
-    bool even = (bx + by) % 2 == 0;
+    // If the z is in range 0.9 to 1, reduce the opacity
+    // 0.9: 100% opacity, 1: 0% opacity
+    float ratio = 1 - (buffDepth[bIdx] - 0.9) * 10;
+    ratio = ratio < 0 ? 0 : ratio > 1 ? 1 : ratio;
 
-    if (even) {
-        buffColor[i].x *= 0.5;
+    // Set color
+    if (ratio != 1) {
+        buffColor[bIdx].x *= ratio;
+        buffColor[bIdx].y *= ratio;
+        buffColor[bIdx].z *= ratio;
     }
 }

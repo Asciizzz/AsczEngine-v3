@@ -111,8 +111,8 @@ int main() {
     Vecs3x3ulli faces;
 
     // Append points to the grid
-    Vec2f rangeX(-100, 100);
-    Vec2f rangeZ(-100, 100);
+    Vec2f rangeX(-500, 500);
+    Vec2f rangeZ(-500, 500);
     Vec2f step(1, 1);
 
     int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
@@ -120,44 +120,80 @@ int main() {
 
     float maxY = -INFINITY;
     float minY = INFINITY;
+    int numX = 0;
+    int numZ = 0;
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
+        numX++;
+
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
+            numZ++;
+
             // World pos of the point
-            // float y = sin(x / 10) * cos(z / 10) * 10;
-            float y = rand() % 30 - 10;
+            float y = sin(x / 50) * cos(z / 50) * 50;
+            // float y = rand() % 30 - 10;
 
             maxY = std::max(maxY, y);
             minY = std::min(minY, y);
 
             world.push_back(Vec3f(x, y, z));
 
-            // x y in range (-0.01, 0.01)
-            float nx = (rand() % 200 - 100) / 10000.0;
-            float nz = (rand() % 200 - 100) / 10000.0;
-            Vec3f n = Vec3f(nx, 1, nz);
-            n.norm();
-            normal.push_back(n);
-
             // x and z ratio (0 - 1)
             float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-
             // Texture
             texture.push_back(Vec2f(ratioX, ratioZ));
-
-            // Cool color
-            color.push_back(Vec4f(40 * ratioX + 130, 255, 40 * ratioX + 130, 255));
         }
     }
+    numZ /= numX;
 
     for (ULLInt i = 0; i < world.size(); i++) {
-        // Set green color based on y value
-        float ratioY = (world[i].y - minY) / (maxY - minY);
-        color[i].y = 150 + 100 * ratioY;
+        // Set color based on ratio
+        float r = (world[i].x - rangeX.x) / (rangeX.y - rangeX.x);
+        float g = (world[i].y - minY) / (maxY - minY);
+        float b = (world[i].z - rangeZ.x) / (rangeZ.y - rangeZ.x);
+        color.push_back(Vec4f(255 - r * 255, g * 255, b * 255, 255));
 
-        // Random ratio range from 0.8 to 1.2
-        color[i].y *= 0.8 + 0.4 * (rand() % 100) / 100;
-        color[i].y = std::min(255.0f, std::max(0.0f, color[i].y));
+        // Set normal based on the triangle of surrounding points
+        int x = i / numZ;
+        int z = i % numZ;
+
+        if (x == 0 || x == numX - 1 || z == 0 || z == numZ - 1) {
+            normal.push_back(Vec3f(0, 1, 0));
+            continue;
+        }
+
+        int idxLeft = x * numZ + z - 1;
+        int idxRight = x * numZ + z + 1;
+        int idxUp = (x - 1) * numZ + z;
+        int idxDown = (x + 1) * numZ + z;
+
+        std::vector<int> idxDir = {
+            idxLeft, idxRight, idxUp, idxDown
+        };
+
+        // Triangle group: mid left up, mid up right, mid right down, mid down left
+        std::vector<Vec3f> triNormals;
+
+        for (int j = 0; j < 4; j++) {
+            int idx = idxDir[j];
+            Vec3f mid = world[i];
+            Vec3f left = world[idxLeft];
+            Vec3f right = world[idxRight];
+            Vec3f up = world[idxUp];
+            Vec3f down = world[idxDown];
+
+            if (j == 0) triNormals.push_back((mid - left) & (up - left));
+            if (j == 1) triNormals.push_back((mid - up) & (right - up));
+            if (j == 2) triNormals.push_back((mid - right) & (down - right));
+            if (j == 3) triNormals.push_back((mid - down) & (left - down));
+        }
+
+        Vec3f avgNormal = Vec3f();
+        for (Vec3f triNormal : triNormals) {
+            avgNormal += triNormal;
+        }
+        avgNormal.norm();
+        normal.push_back(avgNormal);
     }
 
     // Append faces to the grid
@@ -171,14 +207,13 @@ int main() {
 
     Mesh3D graph(3, world, normal, texture, color, faces);
 
-    GRAPHIC += obj;
+    // GRAPHIC += obj;
     // GRAPHIC.mesh += cube;
     // GRAPHIC.mesh += wall;
-    // GRAPHIC.mesh += graph;
+    GRAPHIC += graph;
 
     cube.free();
     wall.free();
-    graph.free();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision

@@ -31,7 +31,7 @@ __global__ void getVisibleFacesKernel(
 
 // Tile-based depth map creation (using nested parallelism, or dynamic parallelism)
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs, int fOffset,
+    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 );

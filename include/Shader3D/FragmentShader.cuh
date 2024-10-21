@@ -26,7 +26,7 @@ __global__ void customFragmentShaderKernel(
     Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
     Vec4f *color, Vec4f *buffColor,
     Vec3x3ulli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
-    bool *buffActive, int buffWidth, int buffHeight
+    bool *buffActive, float *buffDepth, int buffWidth, int buffHeight
 );
 
 #endif

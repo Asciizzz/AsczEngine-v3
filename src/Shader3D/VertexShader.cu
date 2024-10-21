@@ -53,34 +53,16 @@ void VertexShader::createDepthMap() {
     cudaMemcpy(&numFsVisible, mesh.numFsVisible, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 
     dim3 blockSize(8, 32);
-    // If there are too many faces, split the work
-    // If numFsVisible greater than limit, split the work
-    int limit = 200000;
-
-    // Set the face process count and block size
-    int processCount = numFsVisible / limit + 1;
-    if (processCount == 1) limit = numFsVisible;
-
-    std::vector<cudaStream_t> streams(processCount);
-    for (int i = 0; i < processCount; i++)
-        cudaStreamCreate(&streams[i]);
-
-
     ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
-    ULLInt blockNumFace = (limit + blockSize.y - 1) / blockSize.y;
+    ULLInt blockNumFace = (numFsVisible + blockSize.y - 1) / blockSize.y;
     dim3 blockNum(blockNumTile, blockNumFace);
-    for (int i = 0; i < processCount; i++)
-        createDepthMapKernel<<<blockNum, blockSize, 0, streams[i]>>>(
-            mesh.screen, mesh.world, mesh.fsVisible, numFsVisible, i * limit,
-            buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
-            graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
-        );
 
-    for (int i = 0; i < processCount; i++)
-        cudaStreamSynchronize(streams[i]);
-    
-    for (int i = 0; i < processCount; i++)
-        cudaStreamDestroy(streams[i]);
+    createDepthMapKernel<<<blockNum, blockSize>>>(
+        mesh.screen, mesh.world, mesh.fsVisible, numFsVisible,
+        buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
+        graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
+    );
+    cudaDeviceSynchronize();
 }
 
 void VertexShader::rasterization() {
@@ -137,12 +119,12 @@ __global__ void getVisibleFacesKernel(
 
 // Depth map creation
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs, int fOffset,
+    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y + fOffset;
+    ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (tIdx >= tileNumX * tileNumY || fIdx >= numFs) return;
 
