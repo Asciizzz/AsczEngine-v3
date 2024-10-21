@@ -19,6 +19,7 @@ We will have 4 arrays for vertex data:
 */
 
 #define Meshs std::vector<Mesh>
+#define Meshs3D std::vector<Mesh3D>
 
 struct Mesh {
     Vecs3f world;
@@ -56,7 +57,8 @@ public:
     UInt *nMeshId;
     UInt *tMeshId;
 
-    Vec4f *color;
+    Vec4f *color; // Color is like that weird kid that doesn't fit in
+    // Buf he's our friend so we keep him around
 
     // Faces (triangles)
     Vec3x3uli *faces;

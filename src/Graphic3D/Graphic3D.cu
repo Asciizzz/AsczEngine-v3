@@ -29,30 +29,11 @@ void Graphic3D::setTileSize(int tw, int th) {
 void Graphic3D::free() {
     mesh.free();
     buffer.free();
-    freeShadow();
 }
 
 void Graphic3D::operator+=(Mesh3D &m) {
     mesh += m;
     m.free();
-}
-
-// BETA: Shadow Map
-void Graphic3D::allocateShadow(int sw, int sh) {
-    sWidth = sw;
-    sHeight = sh;
-    sSize = sw * sh;
-
-    cudaMalloc(&shadowActive, sSize * sizeof(bool));
-    cudaMalloc(&shadowDepth, sSize * sizeof(float));
-
-    cudaMalloc(&lightProj, mesh.numWs * sizeof(Vec3f));
-}
-
-void Graphic3D::freeShadow() {
-    if (shadowActive) cudaFree(shadowActive);
-    if (shadowDepth) cudaFree(shadowDepth);
-    if (lightProj) cudaFree(lightProj);
 }
 
 // Atomic functions
@@ -66,19 +47,4 @@ __device__ bool atomicMinFloat(float* addr, float value) {
     } while (assumed != old);
 
     return __int_as_float(old) > value;
-}
-
-// Helpful kernels
-__global__ void facesToEdgesKernel(
-    Vec2uli *edges, Vec3x3uli *faces, ULLInt numFs
-) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numFs) return;
-
-    Vec3uli v = faces[i].v;
-    
-    // Edge only contain world space indices
-    edges[i * 3 + 0] = {v.x, v.y};
-    edges[i * 3 + 1] = {v.y, v.z};
-    edges[i * 3 + 2] = {v.z, v.x};
 }

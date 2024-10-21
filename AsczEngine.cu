@@ -175,7 +175,6 @@ int main() {
     // GRAPHIC.mesh += cube;
     // GRAPHIC.mesh += wall;
     // GRAPHIC.mesh += graph;
-    GRAPHIC.allocateShadow(1000, 1000);
 
     cube.free();
     wall.free();
@@ -315,12 +314,6 @@ int main() {
         VertexShader::rasterization();
 
         FragmentShader::phongShading();
-
-        // Beta features
-        // FragmentShader::lightProjection();
-        // FragmentShader::resetShadowDepthMap();
-        // FragmentShader::createShadowDepthMap();
-        // FragmentShader::applyShadowMap();
 
         // Custom Fragment Shader
         FragmentShader::customFragmentShader();

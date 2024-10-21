@@ -16,9 +16,9 @@ Vec4f VertexShader::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, 
 
 void VertexShader::cameraProjection() {
     Graphic3D &graphic = Graphic3D::instance();
-    Mesh3D &mesh = graphic.mesh;
     Camera3D &camera = graphic.camera;
     Buffer3D &buffer = graphic.buffer;
+    Mesh3D &mesh = graphic.mesh;
 
     cameraProjectionKernel<<<mesh.blockNumWs, mesh.blockSize>>>(
         mesh.screen, mesh.world, camera, buffer.width, buffer.height, mesh.numWs
@@ -28,13 +28,13 @@ void VertexShader::cameraProjection() {
 
 void VertexShader::createDepthMap() {
     Graphic3D &graphic = Graphic3D::instance();
-    Mesh3D &mesh = graphic.mesh;
     Buffer3D &buffer = graphic.buffer;
+    Mesh3D &mesh = graphic.mesh;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
-    dim3 blockSize(8, 16);
+    dim3 blockSize(8, 32);
     ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
     ULLInt blockNumFace = (mesh.numFs + blockSize.y - 1) / blockSize.y;
     dim3 blockNum(blockNumTile, blockNumFace);
@@ -115,11 +115,11 @@ __global__ void createDepthMapKernel(
     int minY = min(min(p0.y, p1.y), p2.y);
     int maxY = max(max(p0.y, p1.y), p2.y);
 
-    // // If bounding box is outside the buffer, return
-    // if (minX > bufferMaxX ||
-    //     maxX < bufferMinX ||
-    //     minY > bufferMaxY ||
-    //     maxY < bufferMinY) return;
+    // If bounding box is outside the tile area, return
+    if (minX > bufferMaxX ||
+        maxX < bufferMinX ||
+        minY > bufferMaxY ||
+        maxY < bufferMinY) return;
 
     // Clip the bounding box based on the buffer
     minX = max(minX, bufferMinX);

@@ -58,23 +58,21 @@ public:
     // Free everything
     void free();
 
-    // Data
+    // Mesh3D
     Mesh3D mesh;
+    void operator+=(Mesh3D &m);
 
+    // Camera3D and Buffer3D
     Camera3D camera;
     Buffer3D buffer;
-
-    void operator+=(Mesh3D &m);
 
     // BETA: LightSrc and shadow mapping
     LightSrc light;
 
-    int sWidth, sHeight, sSize;
-    bool *shadowActive;
-    float *shadowDepth;
-    Vec3f *lightProj;
-    void allocateShadow(int sw, int sh);
-    void freeShadow();
+    // Transformations for mesh with specific id
+    void translateMesh(UInt meshId, Vec3f t);
+    void rotateMesh(UInt meshId, Vec3f origin, Vec3f rot);
+    void scaleMesh(UInt meshId, Vec3f origin, Vec3f scl);
 
 private:
     Graphic3D() {}
@@ -82,10 +80,5 @@ private:
 
 // Helpful device functions
 __device__ bool atomicMinFloat(float* addr, float value);
-
-// Helpful kernels
-__global__ void facesToEdgesKernel(
-    Vec2uli *edges, Vec3x3uli *faces, ULLInt numFs
-);
 
 #endif
