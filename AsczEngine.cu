@@ -171,7 +171,7 @@ int main() {
     // GRAPHIC.mesh += graph;
     GRAPHIC.allocateProjection();
     GRAPHIC.allocateEdges();
-    GRAPHIC.allocateShadow(800, 800);
+    GRAPHIC.allocateShadow(1000, 1000);
 
     // Free memory
     obj.free();

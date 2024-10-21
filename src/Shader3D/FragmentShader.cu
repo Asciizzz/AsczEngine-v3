@@ -71,9 +71,9 @@ __global__ void lightProjectionKernel(
     // Convert every point in the x y z range of [-100, 100] to NDC
     // The projection is super simple, we basically project onto the xy plane
     Vec3f w = world[i];
-    w.x = (w.x + 10) / 20 * sWidth;
-    w.y = (w.y + 10) / 20 * sHeight;
-    w.z = (w.z + 10) / 20;
+    w.x = (w.x + 100) / 200 * sWidth;
+    w.y = (w.y + 100) / 200 * sHeight;
+    w.z = (w.z + 100) / 200;
 
     lightProj[i] = w;
 }
@@ -106,12 +106,13 @@ __global__ void resetShadowDepthMapKernel(
 void FragmentShader::createShadowDepthMap() {
     Graphic3D &graphic = Graphic3D::instance();
     Mesh3D &mesh = graphic.mesh;
-    Buffer3D &buffer = graphic.buffer;
     Vec3f *lightProj = graphic.lightProj;
+    bool *shadowActive = graphic.shadowActive;
+    float *shadowDepth = graphic.shadowDepth;
 
     createShadowDepthMapKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
         lightProj, mesh.world, mesh.faces, mesh.numFs,
-        buffer.active, buffer.depth, graphic.sWidth, graphic.sHeight
+        shadowActive, shadowDepth, graphic.sWidth, graphic.sHeight
     );
     cudaDeviceSynchronize();
 }
@@ -183,9 +184,9 @@ __global__ void applyShadowMapKernel(
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
 
     Vec3f w = buffWorld[i];
-    w.x = (w.x + 10) / 20 * sWidth;
-    w.y = (w.y + 10) / 20 * sHeight;
-    w.z = (w.z + 10) / 20;
+    w.x = (w.x + 100) / 200 * sWidth;
+    w.y = (w.y + 100) / 200 * sHeight;
+    w.z = (w.z + 100) / 200;
 
     int sIdx = w.x + w.y * sWidth;
 
