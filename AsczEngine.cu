@@ -395,9 +395,9 @@ int main() {
         LOG.addLog(
             "Screen:\n| Res: " + std::to_string(width) +
             " x " + std::to_string(height) +
-            " | Pxs: " + std::to_string(pixelSize) + "\n" +
-            "| Tile: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight) + "\n" +
-            "| Face count: " + std::to_string(GRAPHIC.numVisibFs) + " / " + std::to_string(GRAPHIC.mesh.numFs),
+            " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
+            "| Tile Size: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight) + "\n" +
+            "| Visible Face: " + std::to_string(GRAPHIC.numVisibFs) + " / " + std::to_string(GRAPHIC.mesh.numFs),
             sf::Color(255, 160, 160)
         );
         LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));
