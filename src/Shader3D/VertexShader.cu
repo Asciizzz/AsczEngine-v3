@@ -26,20 +26,6 @@ void VertexShader::cameraProjection() {
     cudaDeviceSynchronize();
 }
 
-void VertexShader::getVisibleFaces() {
-    Graphic3D &graphic = Graphic3D::instance();
-    Mesh3D &mesh = graphic.mesh;
-
-    cudaMemset(mesh.numFsVisible, 0, sizeof(ULLInt));
-
-    getVisibleFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-        mesh.screen, mesh.numWs,
-        mesh.faces, mesh.numFs,
-        mesh.fsVisible, mesh.numFsVisible
-    );
-    cudaDeviceSynchronize();
-}
-
 void VertexShader::createDepthMap() {
     Graphic3D &graphic = Graphic3D::instance();
     Buffer3D &buffer = graphic.buffer;
@@ -48,17 +34,13 @@ void VertexShader::createDepthMap() {
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
-    // Retrieve the visibleFace count from the device
-    ULLInt numFsVisible;
-    cudaMemcpy(&numFsVisible, mesh.numFsVisible, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-
     dim3 blockSize(8, 32);
     ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
-    ULLInt blockNumFace = (numFsVisible + blockSize.y - 1) / blockSize.y;
+    ULLInt blockNumFace = (mesh.numFs + blockSize.y - 1) / blockSize.y;
     dim3 blockNum(blockNumTile, blockNumFace);
 
     createDepthMapKernel<<<blockNum, blockSize>>>(
-        mesh.screen, mesh.world, mesh.fsVisible, numFsVisible,
+        mesh.screen, mesh.world, mesh.faces, mesh.numFs,
         buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
         graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
     );
@@ -92,34 +74,9 @@ __global__ void cameraProjectionKernel(
     screen[i] = p;
 }
 
-// Find visible faces
-__global__ void getVisibleFacesKernel(
-    Vec4f *screen, ULLInt numWs,
-    Vec3x3ulli *faces, ULLInt numFs,
-    Vec3x3x1ulli *fsVisible, ULLInt *numFsVisible
-) {
-    ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (fIdx >= numFs) return;
-
-    Vec3ulli fv = faces[fIdx].v;
-    Vec4f p0 = screen[fv.x];
-    Vec4f p1 = screen[fv.y];
-    Vec4f p2 = screen[fv.z];
-
-    // Entirely outside the frustum
-    if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
-
-    // Set the face to be visible
-    ULLInt idx = atomicAdd(numFsVisible, 1);
-    fsVisible[idx].v = fv;
-    fsVisible[idx].n = faces[fIdx].n;
-    fsVisible[idx].t = faces[fIdx].t;
-    fsVisible[idx].w = fIdx;
-}
-
 // Depth map creation
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs,
+    Vec4f *screen, Vec3f *world, Vec3x3ulli *faces, ULLInt numFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
@@ -190,7 +147,7 @@ __global__ void createDepthMapKernel(
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
-            buffFaceId[bIdx] = faces[fIdx].w; // Change this if you find the currect approach unviable
+            buffFaceId[bIdx] = fIdx; // Change this if you find the currect approach unviable
             buffBary[bIdx] = bary;
         }
     }

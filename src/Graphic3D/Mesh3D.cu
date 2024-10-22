@@ -60,6 +60,11 @@ void Mesh3D::mallocFaces() {
     cudaMalloc(&faces, numFs * sizeof(Vec3x3ulli));
     cudaMalloc(&fObjId, numFs * sizeof(UInt));
 
+    // BETA
+    cudaMalloc(&faceWs, numFs * sizeof(Vec3ulli));
+    cudaMalloc(&faceNs, numFs * sizeof(Vec3ulli));
+    cudaMalloc(&faceTs, numFs * sizeof(Vec3ulli));
+
     // This will be thrown into a kernel
     cudaMalloc(&fsVisible, numFs * sizeof(Vec3x3x1ulli));
     if (!numFsVisible) {
@@ -77,6 +82,10 @@ void Mesh3D::resizeFaces(ULLInt numFs) {
 void Mesh3D::freeFaces() {
     cudaFree(faces);
     cudaFree(fObjId);
+
+    cudaFree(faceWs);
+    cudaFree(faceNs);
+    cudaFree(faceTs);
 
     cudaFree(fsVisible);
 }
@@ -168,16 +177,35 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
 
     Vec3x3ulli *newFaces;
     UInt *newFObjId;
+
+    Vec3ulli *newFaceWs;
+    Vec3ulli *newFaceNs;
+    Vec3ulli *newFaceTs;
     
     cudaMalloc(&newFaces, newNumFs * sizeof(Vec3x3ulli));
     cudaMalloc(&newFObjId, newNumFs * sizeof(UInt));
 
+    cudaMalloc(&newFaceWs, newNumFs * sizeof(Vec3ulli));
+    cudaMalloc(&newFaceNs, newNumFs * sizeof(Vec3ulli));
+    cudaMalloc(&newFaceTs, newNumFs * sizeof(Vec3ulli));
+
     cudaMemcpy(newFaces, faces, numFs * sizeof(Vec3x3ulli), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newFObjId, fObjId, numFs * sizeof(UInt), cudaMemcpyDeviceToDevice);
 
+    cudaMemcpy(newFaceWs, faceWs, numFs * sizeof(Vec3ulli), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newFaceNs, faceNs, numFs * sizeof(Vec3ulli), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newFaceTs, faceTs, numFs * sizeof(Vec3ulli), cudaMemcpyDeviceToDevice);
+
     cudaMemcpy(newFaces + numFs, mesh.faces, mesh.numFs * sizeof(Vec3x3ulli), cudaMemcpyDeviceToDevice);
-    incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaces, numWs, numNs, numTs, numFs, newNumFs);
+    incrementFacesIdxKernel<<<newBlockNumFs, blockSize>>>(newFaces, numWs, numNs, numTs, numFs, newNumFs);
     cudaMemcpy(newFObjId + numFs, mesh.fObjId, mesh.numFs * sizeof(UInt), cudaMemcpyDeviceToDevice);
+
+    cudaMemcpy(newFaceWs + numFs, mesh.faceWs, mesh.numFs * sizeof(Vec3ulli), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newFaceNs + numFs, mesh.faceNs, mesh.numFs * sizeof(Vec3ulli), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newFaceTs + numFs, mesh.faceTs, mesh.numFs * sizeof(Vec3ulli), cudaMemcpyDeviceToDevice);
+    incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaceWs, numWs, numFs, newNumFs);
+    incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaceNs, numNs, numFs, newNumFs);
+    incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaceTs, numTs, numFs, newNumFs);
 
     // Still a WIP so we are going to be extra careful
     Vec3x3x1ulli *newFacesVisible;
@@ -186,8 +214,13 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     cudaMemcpy(newFacesVisible + numFs, mesh.fsVisible, mesh.numFs * sizeof(Vec3x3x1ulli), cudaMemcpyDeviceToDevice);
 
     freeFaces();
+
     faces = newFaces;
     fObjId = newFObjId;
+
+    faceWs = newFaceWs;
+    faceNs = newFaceNs;
+    faceTs = newFaceTs;
     
     fsVisible = newFacesVisible;
 
@@ -231,13 +264,18 @@ void Mesh3D::scale(Vec3f origin, Vec3f scl) {
 }
 
 // Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(Vec3x3ulli *faces, ULLInt offsetW, ULLInt offsetN, ULLInt offsetT, ULLInt numFs, ULLInt newNumFs) {
+__global__ void incrementFacesIdxKernel(Vec3x3ulli *faces, ULLInt offsetW, ULLInt offsetN, ULLInt offsetT, ULLInt numFs, ULLInt newNumFs) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < newNumFs && idx >= numFs) {
         faces[idx].v += offsetW;
         faces[idx].n += offsetN;
         faces[idx].t += offsetT;
     }
+}
+
+__global__ void incrementFaceIdxKernel(Vec3ulli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs) { // BETA
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < newNumFs && idx >= numFs) faces[idx] += offset;
 }
 
 __global__ void setObjIdKernel(UInt *objId, ULLInt numWs, UInt id) {

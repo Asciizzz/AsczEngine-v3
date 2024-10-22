@@ -43,6 +43,11 @@ public:
     ULLInt numFs;
     Vec3x3ulli *faces;
 
+    // Beta faces
+    Vec3ulli *faceWs;
+    Vec3ulli *faceNs;
+    Vec3ulli *faceTs;
+
     // Visible faces
     ULLInt *numFsVisible;
     Vec3x3x1ulli *fsVisible;
@@ -84,7 +89,8 @@ public:
 };
 
 // Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(Vec3x3ulli *faces, ULLInt offsetW, ULLInt offsetN, ULLInt offsetT, ULLInt numFs, ULLInt newNumFs);
+__global__ void incrementFacesIdxKernel(Vec3x3ulli *faces, ULLInt offsetW, ULLInt offsetN, ULLInt offsetT, ULLInt numFs, ULLInt newNumFs);
+__global__ void incrementFaceIdxKernel(Vec3ulli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs);
 __global__ void setObjIdKernel(UInt *objId, ULLInt numWs, UInt id);
 
 // Kernel for transforming vertices
