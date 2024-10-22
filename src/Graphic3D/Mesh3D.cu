@@ -75,7 +75,6 @@ void Mesh3D::mallocFaces() {
 
     cudaMalloc(&d_numVisibFs, sizeof(ULLInt));
     cudaMemset(d_numVisibFs, 0, sizeof(ULLInt));
-    cudaMalloc(&visibFIdx, numFs * sizeof(ULLInt));
     cudaMalloc(&visibFWs, numFs * sizeof(Vec3ulli));
     cudaMalloc(&visibFNs, numFs * sizeof(Vec3ulli));
     cudaMalloc(&visibFTs, numFs * sizeof(Vec3ulli));
@@ -191,7 +190,6 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     Vec3ulli *newFaceTs;
 
     ULLInt *newDNumVisibleFs;
-    ULLInt *newVisibleFIdx;
     Vec3ulli *newVisibleFWs;
     Vec3ulli *newVisibleFNs;
     Vec3ulli *newVisibleFTs;
@@ -212,7 +210,6 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaceTs, numTs, numFs, newNumFs);
 
     cudaMalloc(&newDNumVisibleFs, sizeof(ULLInt));
-    cudaMalloc(&newVisibleFIdx, newNumFs * sizeof(ULLInt));
     cudaMalloc(&newVisibleFWs, newNumFs * sizeof(Vec3ulli));
     cudaMalloc(&newVisibleFNs, newNumFs * sizeof(Vec3ulli));
     cudaMalloc(&newVisibleFTs, newNumFs * sizeof(Vec3ulli));
@@ -222,7 +219,6 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     faceNs = newFaceNs;
     faceTs = newFaceTs;
     d_numVisibFs = newDNumVisibleFs;
-    visibFIdx = newVisibleFIdx;
     visibFWs = newVisibleFWs;
     visibFNs = newVisibleFNs;
     visibFTs = newVisibleFTs;

@@ -47,7 +47,6 @@ public:
 
     ULLInt numVisibFs;
     ULLInt *d_numVisibFs;
-    ULLInt *visibFIdx; // The index of the face the visible face is from
     Vec3ulli *visibFWs;
     Vec3ulli *visibFNs;
     Vec3ulli *visibFTs;

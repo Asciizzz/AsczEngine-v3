@@ -157,7 +157,13 @@ int main() {
         int x = i / numZ;
         int z = i % numZ;
 
-        if (x == 0 || x == numX - 1 || z == 0 || z == numZ - 1) {
+        int edge = 10;
+        if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
+            normal.push_back(Vec3f(0, 1, 0));
+            continue;
+        }
+
+        if (x % 100 == 0 || z % 100 == 0) {
             normal.push_back(Vec3f(0, 1, 0));
             continue;
         }
@@ -388,7 +394,8 @@ int main() {
             "Screen:\n| Res: " + std::to_string(width) +
             " x " + std::to_string(height) +
             " | Pxs: " + std::to_string(pixelSize) + "\n" +
-            "| Tile: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight),
+            "| Tile: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight) + "\n" +
+            "| Face count: " + std::to_string(GRAPHIC.mesh.numVisibFs) + " / " + std::to_string(GRAPHIC.mesh.numFs),
             sf::Color(255, 160, 160)
         );
         LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));
