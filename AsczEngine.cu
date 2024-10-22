@@ -218,7 +218,7 @@ int main() {
     // GRAPHIC.mesh += wall;
     // GRAPHIC += graph;
 
-    GRAPHIC.mallocVisibFs();
+    GRAPHIC.mallocGFaces();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision

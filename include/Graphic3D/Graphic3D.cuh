@@ -62,14 +62,15 @@ public:
     Mesh3D mesh;
     void operator+=(Mesh3D &m);
 
+    // Face properties
     ULLInt numVisibFs;
     ULLInt *d_numVisibFs;
-    Vec3ulli *visibFWs;
-    Vec3ulli *visibFNs;
-    Vec3ulli *visibFTs;
-    void mallocVisibFs();
-    void resizeVisibFs();
-    void freeVisibFs();
+    Vec4ulli *visibFWs;
+    float *faceAreas;
+
+    void mallocGFaces();
+    void freeGFaces();
+    void resizeGFaces();
 
     // Camera3D and Buffer3D
     Camera3D camera;

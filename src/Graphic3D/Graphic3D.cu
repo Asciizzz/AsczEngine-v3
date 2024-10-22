@@ -30,7 +30,7 @@ void Graphic3D::setTileSize(int tw, int th) {
 void Graphic3D::free() {
     mesh.free();
     buffer.free();
-    freeVisibFs();
+    freeGFaces();
 }
 
 // Append Mesh3D
@@ -40,21 +40,21 @@ void Graphic3D::operator+=(Mesh3D &m) {
 }
 
 // Visible Faces
-void Graphic3D::mallocVisibFs() {
+void Graphic3D::mallocGFaces() {
     cudaMalloc(&d_numVisibFs, sizeof(ULLInt));
-    cudaMalloc(&visibFWs, sizeof(Vec3ulli) * mesh.numFs);
-    cudaMalloc(&visibFNs, sizeof(Vec3ulli) * mesh.numFs);
-    cudaMalloc(&visibFTs, sizeof(Vec3ulli) * mesh.numFs);
+    cudaMalloc(&visibFWs, sizeof(Vec4ulli) * mesh.numFs);
+
+    cudaMalloc(&faceAreas, sizeof(float) * mesh.numFs);
 }
-void Graphic3D::freeVisibFs() {
+void Graphic3D::freeGFaces() {
     if (d_numVisibFs) cudaFree(d_numVisibFs);
     if (visibFWs) cudaFree(visibFWs);
-    if (visibFNs) cudaFree(visibFNs);
-    if (visibFTs) cudaFree(visibFTs);
+
+    if (faceAreas) cudaFree(faceAreas);
 }
-void Graphic3D::resizeVisibFs() {
-    freeVisibFs();
-    mallocVisibFs();
+void Graphic3D::resizeGFaces() {
+    freeGFaces();
+    mallocGFaces();
 }
 
 // Atomic functions

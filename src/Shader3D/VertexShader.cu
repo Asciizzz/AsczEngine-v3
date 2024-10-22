@@ -32,8 +32,8 @@ void VertexShader::filterVisibleFaces() {
 
     cudaMemset(grphic.d_numVisibFs, 0, sizeof(ULLInt));
     filterVisibleFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-        mesh.screen, mesh.faceWs, mesh.faceNs, mesh.faceTs, mesh.numFs,
-        grphic.visibFWs, grphic.visibFNs, grphic.visibFTs, grphic.d_numVisibFs
+        mesh.screen, mesh.faceWs, mesh.numFs,
+        grphic.visibFWs, grphic.d_numVisibFs
     );
     cudaDeviceSynchronize();
 
@@ -71,7 +71,7 @@ void VertexShader::rasterization() {
         mesh.normal, buffer.normal, mesh.nObjId, buffer.nObjId,
         mesh.texture, buffer.texture, mesh.tObjId, buffer.tObjId,
         mesh.color, buffer.color,
-        grphic.visibFWs, grphic.visibFNs, grphic.visibFTs, buffer.faceID,
+        mesh.faceWs, mesh.faceNs, mesh.faceTs, buffer.faceID,
         buffer.bary, buffer.bary,
         buffer.active, buffer.width, buffer.height
     );
@@ -91,8 +91,8 @@ __global__ void cameraProjectionKernel(
 
 // Filter visible faces
 __global__ void filterVisibleFacesKernel(
-    Vec4f *screen, Vec3ulli *faceWs, Vec3ulli *faceNs, Vec3ulli *faceTs, ULLInt numFs,
-    Vec3ulli *visibFWs, Vec3ulli *visibFNs, Vec3ulli *visibFTs, ULLInt *numVisibFs
+    Vec4f *screen, Vec3ulli *faceWs, ULLInt numFs,
+    Vec4ulli *visibFWs, ULLInt *numVisibFs
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
@@ -105,15 +105,13 @@ __global__ void filterVisibleFacesKernel(
 
     if (p0.w > 0 || p1.w > 0 || p2.w > 0) {
         ULLInt idx = atomicAdd(numVisibFs, 1);
-        visibFWs[idx] = fw;
-        visibFNs[idx] = faceNs[fIdx];
-        visibFTs[idx] = faceTs[fIdx];
+        visibFWs[idx] = Vec4ulli(fw.x, fw.y, fw.z, fIdx);
     }
 }
 
 // Depth map creation
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec3ulli *visibFWs, ULLInt numVisibFs,
+    Vec4f *screen, Vec3f *world, Vec4ulli *visibFWs, ULLInt numVisibFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
@@ -122,7 +120,7 @@ __global__ void createDepthMapKernel(
 
     if (tIdx >= tileNumX * tileNumY || fIdx >= numVisibFs) return;
 
-    Vec3ulli fw = visibFWs[fIdx];
+    Vec4ulli fw = visibFWs[fIdx];
     Vec4f p0 = screen[fw.x];
     Vec4f p1 = screen[fw.y];
     Vec4f p2 = screen[fw.z];
@@ -184,7 +182,7 @@ __global__ void createDepthMapKernel(
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
-            buffFaceId[bIdx] = fIdx;
+            buffFaceId[bIdx] = fw.w;
             buffBary[bIdx] = bary;
         }
     }
@@ -195,7 +193,7 @@ __global__ void rasterizationKernel(
     Vec3f *normal, Vec3f *buffNormal, UInt *nObjId, UInt *buffNObjId,
     Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
     Vec4f *color, Vec4f *buffColor,
-    Vec3ulli *visibFWs, Vec3ulli *visibFNs, Vec3ulli *visibFTs, ULLInt *buffFaceId,
+    Vec3ulli *faceWs, Vec3ulli *faceNs, Vec3ulli *faceTs, ULLInt *buffFaceId,
     Vec3f *bary, Vec3f *buffBary,
     bool *buffActive, int buffWidth, int buffHeight
 ) {
@@ -205,9 +203,9 @@ __global__ void rasterizationKernel(
     ULLInt fIdx = buffFaceId[i];
 
     // Set vertex, texture, and normal indices
-    Vec3ulli vIdx = visibFWs[fIdx];
-    Vec3ulli nIdx = visibFNs[fIdx];
-    Vec3ulli tIdx = visibFTs[fIdx];
+    Vec3ulli vIdx = faceWs[fIdx];
+    Vec3ulli nIdx = faceNs[fIdx];
+    Vec3ulli tIdx = faceTs[fIdx];
 
     // Get barycentric coordinates
     float alp = buffBary[i].x;
