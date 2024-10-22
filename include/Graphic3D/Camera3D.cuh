@@ -31,7 +31,7 @@ public:
     Mat4f mvp;
     void updateMVP();
 
-    // Frustum culling check
+    // Frustum culing check
     __host__ __device__ bool isInsideFrustum(Vec3f &v);
 
     // Debug

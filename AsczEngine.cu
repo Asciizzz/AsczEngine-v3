@@ -69,13 +69,13 @@ int main() {
         Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
         Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
     };
-    Vecs3x3ulli cubeFaces = {
-        Vec3x3ulli(0, 1, 2), Vec3x3ulli(0, 2, 3),
-        Vec3x3ulli(4, 5, 6), Vec3x3ulli(4, 6, 7),
-        Vec3x3ulli(0, 4, 7), Vec3x3ulli(0, 7, 3),
-        Vec3x3ulli(1, 5, 6), Vec3x3ulli(1, 6, 2),
-        Vec3x3ulli(0, 1, 5), Vec3x3ulli(0, 5, 4),
-        Vec3x3ulli(3, 2, 6), Vec3x3ulli(3, 6, 7)
+    Vecs3uli cubeFaces = {
+        Vec3uli(0, 1, 2), Vec3uli(0, 2, 3),
+        Vec3uli(4, 5, 6), Vec3uli(4, 6, 7),
+        Vec3uli(0, 4, 7), Vec3uli(0, 7, 3),
+        Vec3uli(1, 5, 6), Vec3uli(1, 6, 2),
+        Vec3uli(0, 1, 5), Vec3uli(0, 5, 4),
+        Vec3uli(3, 2, 6), Vec3uli(3, 6, 7)
     };
     Mesh3D cube(1, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
     cube.scale(Vec3f(), Vec3f(4));
@@ -98,8 +98,8 @@ int main() {
         Vec4f(255, 125, 125, 255), Vec4f(125, 255, 125, 255),
         Vec4f(125, 125, 255, 255), Vec4f(255, 255, 125, 255)
     };
-    Vecs3x3ulli wallFaces = {
-        Vec3x3ulli(0, 1, 2), Vec3x3ulli(0, 2, 3)
+    Vecs3uli wallFaces = {
+        Vec3uli(0, 1, 2), Vec3uli(0, 2, 3)
     };
     Mesh3D wall(2, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
 
@@ -108,7 +108,7 @@ int main() {
     Vecs3f normal;
     Vecs2f texture;
     Vecs4f color;
-    Vecs3x3ulli faces;
+    Vecs3uli faces;
 
     // Append points to the grid
     Vec2f rangeX(-500, 500);
@@ -146,7 +146,7 @@ int main() {
     }
     numZ /= numX;
 
-    for (ULLInt i = 0; i < world.size(); i++) {
+    for (ULInt i = 0; i < world.size(); i++) {
         // Set color based on ratio
         float r = (world[i].x - rangeX.x) / (rangeX.y - rangeX.x);
         float g = (world[i].y - minY) / (maxY - minY);
@@ -197,11 +197,11 @@ int main() {
     }
 
     // Append faces to the grid
-    for (ULLInt x = 0; x < sizeX - 1; x++) {
-        for (ULLInt z = 0; z < sizeZ - 1; z++) {
-            ULLInt i = x * sizeZ + z;
-            faces.push_back(Vec3x3ulli(i, i + 1, i + sizeZ));
-            faces.push_back(Vec3x3ulli(i + 1, i + sizeZ + 1, i + sizeZ));
+    for (ULInt x = 0; x < sizeX - 1; x++) {
+        for (ULInt z = 0; z < sizeZ - 1; z++) {
+            ULInt i = x * sizeZ + z;
+            faces.push_back(Vec3uli(i, i + 1, i + sizeZ));
+            faces.push_back(Vec3uli(i + 1, i + sizeZ + 1, i + sizeZ));
         }
     }
 

@@ -23,29 +23,15 @@ Vec2f Vec2f::operator/(const float scl) {
     return Vec2f(x / scl, y / scl);
 }
 
-// VEC3ulli (unsigned long long int)
-Vec3ulli::Vec3ulli() : x(0), y(0), z(0) {}
-Vec3ulli::Vec3ulli(ULLInt x, ULLInt y, ULLInt z) : x(x), y(y), z(z) {}
-Vec3ulli::Vec3ulli(ULLInt a) : x(a), y(a), z(a) {}
-void Vec3ulli::operator+=(ULLInt t) {
+// VEC3uli (unsigned long long int)
+Vec3uli::Vec3uli() : x(0), y(0), z(0) {}
+Vec3uli::Vec3uli(ULInt x, ULInt y, ULInt z) : x(x), y(y), z(z) {}
+Vec3uli::Vec3uli(ULInt a) : x(a), y(a), z(a) {}
+void Vec3uli::operator+=(ULInt t) {
     x += t; y += t; z += t;
 }
-void Vec3ulli::operator-=(ULLInt t) {
+void Vec3uli::operator-=(ULInt t) {
     x -= t; y -= t; z -= t;
-}
-
-// VEC3x3ulli
-Vec3x3ulli::Vec3x3ulli() {}
-Vec3x3ulli::Vec3x3ulli(Vec3ulli v, Vec3ulli t, Vec3ulli n) : v(v), t(t), n(n) {}
-Vec3x3ulli::Vec3x3ulli(Vec3ulli vtn) : v(vtn), t(vtn), n(vtn) {}
-Vec3x3ulli::Vec3x3ulli(ULLInt i1, ULLInt i2, ULLInt i3) :
-    v(Vec3ulli(i1, i2, i3)), t(Vec3ulli(i1, i2, i3)), n(Vec3ulli(i1, i2, i3))
-{}
-void Vec3x3ulli::operator+=(ULLInt t) {
-    v += t; t += t; n += t;
-}
-void Vec3x3ulli::operator-=(ULLInt t) {
-    v -= t; t -= t; n -= t;
 }
 
 // VEC3f

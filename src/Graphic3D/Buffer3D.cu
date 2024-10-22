@@ -21,7 +21,7 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
     cudaMalloc(&nObjId, size * sizeof(UInt));
     cudaMalloc(&tObjId, size * sizeof(UInt));
 
-    cudaMalloc(&faceID, size * sizeof(ULLInt));
+    cudaMalloc(&faceID, size * sizeof(ULInt));
     cudaMalloc(&bary, size * sizeof(Vec3f));
 }
 
@@ -54,7 +54,7 @@ __global__ void clearBufferKernel(
     bool *active, float *depth, Vec4f *color,
     Vec3f *world, Vec3f *normal, Vec2f *texture,
     UInt *wObjId, UInt *nObjId, UInt *tObjId,
-    ULLInt *faceID, Vec3f *bary, int size
+    ULInt *faceID, Vec3f *bary, int size
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= size) return;

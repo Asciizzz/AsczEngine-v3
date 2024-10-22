@@ -59,7 +59,8 @@ void FragmentShader::customFragmentShader() {
         mesh.normal, buffer.normal, mesh.nObjId, buffer.nObjId,
         mesh.texture, buffer.texture, mesh.tObjId, buffer.tObjId,
         mesh.color, buffer.color,
-        mesh.faces, buffer.faceID, buffer.bary, buffer.bary,
+        mesh.faceWs, mesh.faceNs, mesh.faceTs, buffer.faceID,
+        buffer.bary, buffer.bary,
         buffer.active, buffer.depth, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
@@ -70,7 +71,8 @@ __global__ void customFragmentShaderKernel(
     Vec3f *normal, Vec3f *buffNormal, UInt *nObjId, UInt *buffNObjId,
     Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
     Vec4f *color, Vec4f *buffColor,
-    Vec3x3ulli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
+    Vec3uli *faceWs, Vec3uli *faceNs, Vec3uli *faceTs, ULInt *buffFaceId,
+    Vec3f *bary, Vec3f *buffBary,
     bool *buffActive, float *buffDepth, int buffWidth, int buffHeight
 ) {
     int bIdx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -81,12 +83,12 @@ __global__ void customFragmentShaderKernel(
     int bx = bIdx % buffWidth;
     int by = bIdx / buffWidth;
 
-    ULLInt fIdx = buffFaceId[bIdx];
+    ULInt fIdx = buffFaceId[bIdx];
 
     // Set vertex, texture, and normal indices
-    Vec3ulli vIdx = faces[fIdx].v;
-    Vec3ulli tIdx = faces[fIdx].t;
-    Vec3ulli nIdx = faces[fIdx].n;
+    Vec3uli vIdx = faceWs[fIdx];
+    Vec3uli tIdx = faceTs[fIdx];
+    Vec3uli nIdx = faceNs[fIdx];
 
     // Get barycentric coordinates
     float alp = buffBary[bIdx].x;

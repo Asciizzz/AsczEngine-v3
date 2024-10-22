@@ -24,11 +24,11 @@ class Mesh3D {
 public:
 
     // Block properties
-    ULLInt blockSize = 256;
-    ULLInt blockNumWs, blockNumNs, blockNumTs, blockNumFs;
+    ULInt blockSize = 256;
+    ULInt blockNumWs, blockNumNs, blockNumTs, blockNumFs;
 
     // Number of world coorinates, normal, texture
-    ULLInt numWs, numNs, numTs;
+    ULInt numWs, numNs, numTs;
 
     // Vertices
     Vec3f *world;
@@ -39,41 +39,43 @@ public:
     Vec4f *color; // Color is like that weird kid that doesn't fit in
     // Buf he's our friend so we keep him around
 
-    // Faces (triangles)
-    ULLInt numFs;
-    Vec3x3ulli *faces;
+    // Faces index (triangles)
+    ULInt numFs;
+    Vec3uli *faceWs;
+    Vec3uli *faceNs;
+    Vec3uli *faceTs;
 
-    // Beta faces
-    Vec3ulli *faceWs;
-    Vec3ulli *faceNs;
-    Vec3ulli *faceTs;
-
-    // Visible faces
-    ULLInt *numFsVisible;
-    Vec3x3x1ulli *fsVisible;
-
-    // Object Ids for vertex attributes and faces
+    // Object Ids for vertex attributes
     UInt *wObjId;
     UInt *nObjId;
     UInt *tObjId;
-    UInt *fObjId;
 
-    Mesh3D(ULLInt numWs=0, ULLInt numNs=0, ULLInt numTs=0, ULLInt numFs=0);
-    Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3ulli &faces);
+    Mesh3D(ULInt numWs=0, ULInt numNs=0, ULInt numTs=0, ULInt numFs=0);
+    Mesh3D(
+        UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color,
+        Vecs3uli &faceWs, Vecs3uli &faceNs, Vecs3uli &faceTs
+    );
+    Mesh3D(
+        UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, 
+        Vecs3uli &faceAll
+    );
 
     // Memory management
     void mallocVertices();
-    void resizeVertices(ULLInt numWs, ULLInt numNs, ULLInt numTs);
+    void resizeVertices(ULInt numWs, ULInt numNs, ULInt numTs);
     void freeVertices();
 
     void mallocFaces();
-    void resizeFaces(ULLInt numFs);
+    void resizeFaces(ULInt numFs);
     void freeFaces();
 
     void free();
 
     // Upload host data to device
-    void uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3ulli &faces);
+    void uploadData(
+        UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color,
+        Vecs3uli &faceWs, Vecs3uli &faceNs, Vecs3uli &faceTs
+    );
 
     // Mesh operators
     void operator+=(Mesh3D &mesh);
@@ -89,18 +91,17 @@ public:
 };
 
 // Kernel for preparing vertices
-__global__ void incrementFacesIdxKernel(Vec3x3ulli *faces, ULLInt offsetW, ULLInt offsetN, ULLInt offsetT, ULLInt numFs, ULLInt newNumFs);
-__global__ void incrementFaceIdxKernel(Vec3ulli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs);
-__global__ void setObjIdKernel(UInt *objId, ULLInt numWs, UInt id);
+__global__ void incrementFaceIdxKernel(Vec3uli *faces, ULInt offset, ULInt numFs, ULInt newNumFs);
+__global__ void setObjIdKernel(UInt *objId, ULInt numWs, UInt id);
 
 // Kernel for transforming vertices
 // Note: the reason bool allID is used is because we can't overload kernels
-__global__ void translateWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f t);
-__global__ void rotateWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f origin, Vec3f rot);
-__global__ void scaleWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f origin, Vec3f scl);
+__global__ void translateWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULInt numWs, UInt objID, Vec3f t);
+__global__ void rotateWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULInt numWs, UInt objID, Vec3f origin, Vec3f rot);
+__global__ void scaleWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULInt numWs, UInt objID, Vec3f origin, Vec3f scl);
 
 // Only rotation and scaling are needed for normals
-__global__ void rotateNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULLInt numNs, UInt objID, Vec3f origin, Vec3f rot);
-__global__ void scaleNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULLInt numNs, UInt objID, Vec3f origin, Vec3f scl);
+__global__ void rotateNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULInt numNs, UInt objID, Vec3f origin, Vec3f rot);
+__global__ void scaleNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULInt numNs, UInt objID, Vec3f origin, Vec3f scl);
 
 #endif
