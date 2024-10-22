@@ -23,9 +23,9 @@ public:
         Vecs3f normal;
         Vecs2f texture;
         Vecs4f color;
-        Vecs3uli faceWs;
-        Vecs3uli faceNs;
-        Vecs3uli faceTs;
+        Vecs3ulli faceWs;
+        Vecs3ulli faceNs;
+        Vecs3ulli faceTs;
 
         // We will use these value to shift the mesh to the origin
         float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
@@ -66,7 +66,7 @@ public:
                 std::string vtn1, vtn2, vtn3, vtn4 = "";
                 ss >> vtn1 >> vtn2 >> vtn3 >> vtn4;
 
-                Vec3uli v, t, n;
+                Vec3ulli v, t, n;
                 std::stringstream ss1(vtn1), ss2(vtn2), ss3(vtn3);
                 ss1 >> v.x; ss1.ignore(1); ss1 >> t.x; ss1.ignore(1); ss1 >> n.x;
                 ss2 >> v.y; ss2.ignore(1); ss2 >> t.y; ss2.ignore(1); ss2 >> n.y;
@@ -75,15 +75,15 @@ public:
                 v -= 1; t -= 1; n -= 1;
 
                 if (vtn4 != "") {
-                    ULInt v4, t4, n4;
+                    ULLInt v4, t4, n4;
                     std::stringstream ss4(vtn4);
                     ss4 >> v4; ss4.ignore(1); ss4 >> t4; ss4.ignore(1); ss4 >> n4;
                     v4 -= 1; t4 -= 1; n4 -= 1;
 
                     // Create an additional face to triangulate the quad
-                    faceWs.push_back(Vec3uli(v.x, v.z, v4));
-                    faceNs.push_back(Vec3uli(n.x, n.z, n4));
-                    faceTs.push_back(Vec3uli(t.x, t.z, t4));
+                    faceWs.push_back(Vec3ulli(v.x, v.z, v4));
+                    faceNs.push_back(Vec3ulli(n.x, n.z, n4));
+                    faceTs.push_back(Vec3ulli(t.x, t.z, t4));
                 }
 
                 faceWs.push_back(v);

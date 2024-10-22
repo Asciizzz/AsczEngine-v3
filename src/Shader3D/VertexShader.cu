@@ -26,6 +26,20 @@ void VertexShader::cameraProjection() {
     cudaDeviceSynchronize();
 }
 
+void VertexShader::filterVisibleFaces() {
+    Graphic3D &graphic = Graphic3D::instance();
+    Mesh3D &mesh = graphic.mesh;
+
+    cudaMemset(mesh.d_numVisibFs, 0, sizeof(ULLInt));
+    filterVisibleFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
+        mesh.screen, mesh.faceWs, mesh.faceNs, mesh.faceTs, mesh.numFs,
+        mesh.visibFWs, mesh.visibFNs, mesh.visibFTs, mesh.d_numVisibFs
+    );
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(&mesh.numVisibFs, mesh.d_numVisibFs, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+}
+
 void VertexShader::createDepthMap() {
     Graphic3D &graphic = Graphic3D::instance();
     Buffer3D &buffer = graphic.buffer;
@@ -35,12 +49,12 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     dim3 blockSize(8, 32);
-    ULInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
-    ULInt blockNumFace = (mesh.numFs + blockSize.y - 1) / blockSize.y;
+    ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
+    ULLInt blockNumFace = (mesh.numVisibFs + blockSize.y - 1) / blockSize.y;
     dim3 blockNum(blockNumTile, blockNumFace);
 
     createDepthMapKernel<<<blockNum, blockSize>>>(
-        mesh.screen, mesh.world, mesh.faceWs, mesh.numFs,
+        mesh.screen, mesh.world, mesh.visibFWs, mesh.numVisibFs,
         buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
         graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
     );
@@ -57,39 +71,61 @@ void VertexShader::rasterization() {
         mesh.normal, buffer.normal, mesh.nObjId, buffer.nObjId,
         mesh.texture, buffer.texture, mesh.tObjId, buffer.tObjId,
         mesh.color, buffer.color,
-        mesh.faceWs, mesh.faceNs, mesh.faceTs, buffer.faceID,
+        mesh.visibFWs, mesh.visibFNs, mesh.visibFTs, buffer.faceID,
         buffer.bary, buffer.bary,
         buffer.active, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
 }
 
-// Kernels
+// Camera projection (MVP) kernel
 __global__ void cameraProjectionKernel(
-    Vec4f *screen, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULInt numWs
+    Vec4f *screen, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
 ) {
-    ULInt i = blockIdx.x * blockDim.x + threadIdx.x;
+    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numWs) return;
 
     Vec4f p = VertexShader::toScreenSpace(camera, world[i], buffWidth, buffHeight);
     screen[i] = p;
 }
 
+// Filter visible faces
+__global__ void filterVisibleFacesKernel(
+    Vec4f *screen, Vec3ulli *faceWs, Vec3ulli *faceNs, Vec3ulli *faceTs, ULLInt numFs,
+    Vec3ulli *visibFWs, Vec3ulli *visibFNs, Vec3ulli *visibFTs, ULLInt *numVisibFs
+) {
+    ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (fIdx >= numFs) return;
+
+    Vec3ulli fw = faceWs[fIdx];
+
+    Vec4f p0 = screen[fw.x];
+    Vec4f p1 = screen[fw.y];
+    Vec4f p2 = screen[fw.z];
+
+    if (p0.w > 0 || p1.w > 0 || p2.w > 0) {
+        ULLInt idx = atomicAdd(numVisibFs, 1);
+        visibFWs[idx] = fw;
+        visibFNs[idx] = faceNs[fIdx];
+        visibFTs[idx] = faceTs[fIdx];
+    }
+}
+
 // Depth map creation
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec3uli *faceWs, ULInt numFs,
-    bool *buffActive, float *buffDepth, ULInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
+    Vec4f *screen, Vec3f *world, Vec3ulli *visibFWs, ULLInt numVisibFs,
+    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
-    ULInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    ULInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
+    ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (tIdx >= tileNumX * tileNumY || fIdx >= numFs) return;
+    if (tIdx >= tileNumX * tileNumY || fIdx >= numVisibFs) return;
 
-    Vec3uli fv = faceWs[fIdx];
-    Vec4f p0 = screen[fv.x];
-    Vec4f p1 = screen[fv.y];
-    Vec4f p2 = screen[fv.z];
+    Vec3ulli fw = visibFWs[fIdx];
+    Vec4f p0 = screen[fw.x];
+    Vec4f p1 = screen[fw.y];
+    Vec4f p2 = screen[fw.z];
 
     // Entirely outside the frustum
     if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
@@ -148,7 +184,7 @@ __global__ void createDepthMapKernel(
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
-            buffFaceId[bIdx] = fIdx; // Change this if you find the currect approach unviable
+            buffFaceId[bIdx] = fIdx;
             buffBary[bIdx] = bary;
         }
     }
@@ -159,19 +195,19 @@ __global__ void rasterizationKernel(
     Vec3f *normal, Vec3f *buffNormal, UInt *nObjId, UInt *buffNObjId,
     Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
     Vec4f *color, Vec4f *buffColor,
-    Vec3uli *faceWs, Vec3uli *faceNs, Vec3uli *faceTs, ULInt *buffFaceId,
+    Vec3ulli *visibFWs, Vec3ulli *visibFNs, Vec3ulli *visibFTs, ULLInt *buffFaceId,
     Vec3f *bary, Vec3f *buffBary,
     bool *buffActive, int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
 
-    ULInt fIdx = buffFaceId[i];
+    ULLInt fIdx = buffFaceId[i];
 
     // Set vertex, texture, and normal indices
-    Vec3uli vIdx = faceWs[fIdx];
-    Vec3uli nIdx = faceNs[fIdx];
-    Vec3uli tIdx = faceTs[fIdx];
+    Vec3ulli vIdx = visibFWs[fIdx];
+    Vec3ulli nIdx = visibFNs[fIdx];
+    Vec3ulli tIdx = visibFTs[fIdx];
 
     // Get barycentric coordinates
     float alp = buffBary[i].x;
