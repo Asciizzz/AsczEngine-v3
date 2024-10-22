@@ -213,10 +213,10 @@ int main() {
 
     Mesh3D graph(3, world, normal, texture, color, faces);
 
-    // GRAPHIC += obj;
+    GRAPHIC += obj;
     // GRAPHIC.mesh += cube;
     // GRAPHIC.mesh += wall;
-    GRAPHIC += graph;
+    // GRAPHIC += graph;
 
     GRAPHIC.mallocVisibFs();
 
