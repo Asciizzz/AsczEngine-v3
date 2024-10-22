@@ -45,12 +45,6 @@ public:
     Vec3ulli *faceNs;
     Vec3ulli *faceTs;
 
-    ULLInt numVisibFs;
-    ULLInt *d_numVisibFs;
-    Vec3ulli *visibFWs;
-    Vec3ulli *visibFNs;
-    Vec3ulli *visibFTs;
-
     // Object Ids for vertex attributes
     UInt *wObjId;
     UInt *nObjId;

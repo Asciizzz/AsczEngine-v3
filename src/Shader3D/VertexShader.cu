@@ -15,10 +15,10 @@ Vec4f VertexShader::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, 
 // Render pipeline
 
 void VertexShader::cameraProjection() {
-    Graphic3D &graphic = Graphic3D::instance();
-    Camera3D &camera = graphic.camera;
-    Buffer3D &buffer = graphic.buffer;
-    Mesh3D &mesh = graphic.mesh;
+    Graphic3D &grphic = Graphic3D::instance();
+    Camera3D &camera = grphic.camera;
+    Buffer3D &buffer = grphic.buffer;
+    Mesh3D &mesh = grphic.mesh;
 
     cameraProjectionKernel<<<mesh.blockNumWs, mesh.blockSize>>>(
         mesh.screen, mesh.world, camera, buffer.width, buffer.height, mesh.numWs
@@ -27,51 +27,51 @@ void VertexShader::cameraProjection() {
 }
 
 void VertexShader::filterVisibleFaces() {
-    Graphic3D &graphic = Graphic3D::instance();
-    Mesh3D &mesh = graphic.mesh;
+    Graphic3D &grphic = Graphic3D::instance();
+    Mesh3D &mesh = grphic.mesh;
 
-    cudaMemset(mesh.d_numVisibFs, 0, sizeof(ULLInt));
+    cudaMemset(grphic.d_numVisibFs, 0, sizeof(ULLInt));
     filterVisibleFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
         mesh.screen, mesh.faceWs, mesh.faceNs, mesh.faceTs, mesh.numFs,
-        mesh.visibFWs, mesh.visibFNs, mesh.visibFTs, mesh.d_numVisibFs
+        grphic.visibFWs, grphic.visibFNs, grphic.visibFTs, grphic.d_numVisibFs
     );
     cudaDeviceSynchronize();
 
-    cudaMemcpy(&mesh.numVisibFs, mesh.d_numVisibFs, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grphic.numVisibFs, grphic.d_numVisibFs, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::createDepthMap() {
-    Graphic3D &graphic = Graphic3D::instance();
-    Buffer3D &buffer = graphic.buffer;
-    Mesh3D &mesh = graphic.mesh;
+    Graphic3D &grphic = Graphic3D::instance();
+    Buffer3D &buffer = grphic.buffer;
+    Mesh3D &mesh = grphic.mesh;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
     dim3 blockSize(8, 32);
-    ULLInt blockNumTile = (graphic.tileNum + blockSize.x - 1) / blockSize.x;
-    ULLInt blockNumFace = (mesh.numVisibFs + blockSize.y - 1) / blockSize.y;
+    ULLInt blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
+    ULLInt blockNumFace = (grphic.numVisibFs + blockSize.y - 1) / blockSize.y;
     dim3 blockNum(blockNumTile, blockNumFace);
 
     createDepthMapKernel<<<blockNum, blockSize>>>(
-        mesh.screen, mesh.world, mesh.visibFWs, mesh.numVisibFs,
+        mesh.screen, mesh.world, grphic.visibFWs, grphic.numVisibFs,
         buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
-        graphic.tileNumX, graphic.tileNumY, graphic.tileWidth, graphic.tileHeight
+        grphic.tileNumX, grphic.tileNumY, grphic.tileWidth, grphic.tileHeight
     );
     cudaDeviceSynchronize();
 }
 
 void VertexShader::rasterization() {
-    Graphic3D &graphic = Graphic3D::instance();
-    Buffer3D &buffer = graphic.buffer;
-    Mesh3D &mesh = graphic.mesh;
+    Graphic3D &grphic = Graphic3D::instance();
+    Buffer3D &buffer = grphic.buffer;
+    Mesh3D &mesh = grphic.mesh;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
         mesh.world, buffer.world, mesh.wObjId, buffer.wObjId,
         mesh.normal, buffer.normal, mesh.nObjId, buffer.nObjId,
         mesh.texture, buffer.texture, mesh.tObjId, buffer.tObjId,
         mesh.color, buffer.color,
-        mesh.visibFWs, mesh.visibFNs, mesh.visibFTs, buffer.faceID,
+        grphic.visibFWs, grphic.visibFNs, grphic.visibFTs, buffer.faceID,
         buffer.bary, buffer.bary,
         buffer.active, buffer.width, buffer.height
     );

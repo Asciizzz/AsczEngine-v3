@@ -56,14 +56,14 @@ void Mesh3D::resizeVertices(ULLInt numWs, ULLInt numNs, ULLInt numTs) {
 }
 
 void Mesh3D::freeVertices() {
-    cudaFree(world);
-    cudaFree(normal);
-    cudaFree(texture);
-    cudaFree(screen);
-    cudaFree(color);
-    cudaFree(wObjId);
-    cudaFree(nObjId);
-    cudaFree(tObjId);
+    if (world) cudaFree(world);
+    if (normal) cudaFree(normal);
+    if (texture) cudaFree(texture);
+    if (screen) cudaFree(screen);
+    if (color) cudaFree(color);
+    if (wObjId) cudaFree(wObjId);
+    if (nObjId) cudaFree(nObjId);
+    if (tObjId) cudaFree(tObjId);
 }
 
 void Mesh3D::mallocFaces() {
@@ -72,13 +72,6 @@ void Mesh3D::mallocFaces() {
     cudaMalloc(&faceWs, numFs * sizeof(Vec3ulli));
     cudaMalloc(&faceNs, numFs * sizeof(Vec3ulli));
     cudaMalloc(&faceTs, numFs * sizeof(Vec3ulli));
-
-    cudaMalloc(&d_numVisibFs, sizeof(ULLInt));
-    cudaMemset(d_numVisibFs, 0, sizeof(ULLInt));
-    cudaMalloc(&visibFWs, numFs * sizeof(Vec3ulli));
-    cudaMalloc(&visibFNs, numFs * sizeof(Vec3ulli));
-    cudaMalloc(&visibFTs, numFs * sizeof(Vec3ulli));
-
 }
 
 void Mesh3D::resizeFaces(ULLInt numFs) {
@@ -88,14 +81,9 @@ void Mesh3D::resizeFaces(ULLInt numFs) {
 }
 
 void Mesh3D::freeFaces() {
-    cudaFree(faceWs);
-    cudaFree(faceNs);
-    cudaFree(faceTs);
-
-    cudaFree(d_numVisibFs);
-    cudaFree(visibFWs);
-    cudaFree(visibFNs);
-    cudaFree(visibFTs);
+    if (faceWs) cudaFree(faceWs);
+    if (faceNs) cudaFree(faceNs);
+    if (faceTs) cudaFree(faceTs);
 }
 
 void Mesh3D::free() {
@@ -189,11 +177,6 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     Vec3ulli *newFaceNs;
     Vec3ulli *newFaceTs;
 
-    ULLInt *newDNumVisibleFs;
-    Vec3ulli *newVisibleFWs;
-    Vec3ulli *newVisibleFNs;
-    Vec3ulli *newVisibleFTs;
-
     cudaMalloc(&newFaceWs, newNumFs * sizeof(Vec3ulli));
     cudaMalloc(&newFaceNs, newNumFs * sizeof(Vec3ulli));
     cudaMalloc(&newFaceTs, newNumFs * sizeof(Vec3ulli));
@@ -209,19 +192,10 @@ void Mesh3D::operator+=(Mesh3D &mesh) {
     incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaceNs, numNs, numFs, newNumFs);
     incrementFaceIdxKernel<<<newBlockNumFs, blockSize>>>(newFaceTs, numTs, numFs, newNumFs);
 
-    cudaMalloc(&newDNumVisibleFs, sizeof(ULLInt));
-    cudaMalloc(&newVisibleFWs, newNumFs * sizeof(Vec3ulli));
-    cudaMalloc(&newVisibleFNs, newNumFs * sizeof(Vec3ulli));
-    cudaMalloc(&newVisibleFTs, newNumFs * sizeof(Vec3ulli));
-
     freeFaces();
     faceWs = newFaceWs;
     faceNs = newFaceNs;
     faceTs = newFaceTs;
-    d_numVisibFs = newDNumVisibleFs;
-    visibFWs = newVisibleFWs;
-    visibFNs = newVisibleFNs;
-    visibFTs = newVisibleFTs;
 
     // Update number of vertices and faces
     numWs = newNumWs;

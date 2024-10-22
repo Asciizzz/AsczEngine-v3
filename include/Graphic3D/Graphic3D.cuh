@@ -58,9 +58,18 @@ public:
     // Free everything
     void free();
 
-    // Mesh3D
+    // Mesh3D and its properties
     Mesh3D mesh;
     void operator+=(Mesh3D &m);
+
+    ULLInt numVisibFs;
+    ULLInt *d_numVisibFs;
+    Vec3ulli *visibFWs;
+    Vec3ulli *visibFNs;
+    Vec3ulli *visibFTs;
+    void mallocVisibFs();
+    void resizeVisibFs();
+    void freeVisibFs();
 
     // Camera3D and Buffer3D
     Camera3D camera;
