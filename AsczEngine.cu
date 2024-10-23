@@ -219,6 +219,7 @@ int main() {
     // GRAPHIC += graph;
 
     GRAPHIC.mallocGFaces();
+    GRAPHIC.mallocFaceStreams();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision

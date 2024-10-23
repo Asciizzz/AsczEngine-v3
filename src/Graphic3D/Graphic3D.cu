@@ -57,6 +57,22 @@ void Graphic3D::resizeGFaces() {
     mallocGFaces();
 }
 
+// Face stream
+void Graphic3D::mallocFaceStreams() {
+    int chunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
+
+    faceStreams = (cudaStream_t*)malloc(chunkNum * sizeof(cudaStream_t));
+    for (int i = 0; i < chunkNum; i++) {
+        cudaStreamCreate(&faceStreams[i]);
+    }
+}
+void Graphic3D::freeFaceStreams() {
+    for (int i = 0; i < mesh.numFs; i++) {
+        cudaStreamDestroy(faceStreams[i]);
+    }
+    cudaFree(faceStreams);
+}
+
 // Atomic functions
 __device__ bool atomicMinFloat(float* addr, float value) {
     int* addr_as_int = (int*)addr;

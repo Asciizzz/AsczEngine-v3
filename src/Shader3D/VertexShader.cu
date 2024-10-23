@@ -48,17 +48,29 @@ void VertexShader::createDepthMap() {
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
-    dim3 blockSize(8, 32);
-    ULLInt blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
-    ULLInt blockNumFace = (grphic.numVisibFs + blockSize.y - 1) / blockSize.y;
-    dim3 blockNum(blockNumTile, blockNumFace);
+    // 1 million elements per batch
+    int chunkSize = 1e6;
+    int chunkNum = (grphic.numVisibFs + chunkSize - 1) / chunkSize;
 
-    createDepthMapKernel<<<blockNum, blockSize>>>(
-        mesh.screen, mesh.world, grphic.visibFWs, grphic.numVisibFs,
-        buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
-        grphic.tileNumX, grphic.tileNumY, grphic.tileWidth, grphic.tileHeight
-    );
-    cudaDeviceSynchronize();
+    dim3 blockSize(8, 32);
+
+    for (int i = 0; i < chunkNum; i++) {
+        size_t currentChunkSize = (i == chunkNum - 1) ? grphic.numVisibFs - i * chunkSize : chunkSize;
+        size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
+        size_t blockNumFace = (currentChunkSize + blockSize.y - 1) / blockSize.y;
+        dim3 blockNum(blockNumTile, blockNumFace);
+
+        createDepthMapKernel<<<blockNum, blockSize, 0, grphic.faceStreams[i]>>>(
+            mesh.screen, mesh.world, grphic.visibFWs + i * chunkSize, currentChunkSize,
+            buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
+            grphic.tileNumX, grphic.tileNumY, grphic.tileWidth, grphic.tileHeight
+        );
+    }
+
+    // Synchronize all streams
+    for (int i = 0; i < chunkNum; i++) {
+        cudaStreamSynchronize(grphic.faceStreams[i]);
+    }
 }
 
 void VertexShader::rasterization() {
