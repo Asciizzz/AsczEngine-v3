@@ -111,8 +111,8 @@ int main() {
     Vecs3ulli faces;
 
     // Append points to the grid
-    Vec2f rangeX(-2000, 2000);
-    Vec2f rangeZ(-2000, 2000);
+    Vec2f rangeX(-500, 500);
+    Vec2f rangeZ(-500, 500);
     Vec2f step(1, 1);
 
     int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
@@ -129,7 +129,7 @@ int main() {
             numZ++;
 
             // World pos of the point
-            float y = sin(x / 200) * cos(z / 200) * 200;
+            float y = sin(x / 50) * cos(z / 50) * 50;
             // float y = rand() % 30 - 10;
 
             maxY = std::max(maxY, y);
@@ -162,11 +162,6 @@ int main() {
             normal.push_back(Vec3f(0, 1, 0));
             continue;
         }
-
-        // if (x % 100 == 0 || z % 100 == 0) {
-        //     normal.push_back(Vec3f(0, 1, 0));
-        //     continue;
-        // }
 
         int idxLeft = x * numZ + z - 1;
         int idxRight = x * numZ + z + 1;
@@ -214,8 +209,8 @@ int main() {
     Mesh3D graph(3, world, normal, texture, color, faces);
 
     // Append all the meshes here
-    // GRAPHIC.appendMesh(obj);
-    GRAPHIC.appendMesh(graph);
+    GRAPHIC.appendMesh(obj);
+    // GRAPHIC.appendMesh(graph);
 
     GRAPHIC.mallocGFaces();
     GRAPHIC.mallocFaceStreams();
