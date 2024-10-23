@@ -60,13 +60,12 @@ public:
 
     // Mesh3D and its properties
     Mesh3D mesh;
-    void operator+=(Mesh3D &m);
+    void appendMesh(Mesh3D &m, bool del=true);
 
     // Face properties
     ULLInt numVisibFs;
     ULLInt *d_numVisibFs;
     Vec4ulli *visibFWs;
-    float *faceAreas;
 
     void mallocGFaces();
     void freeGFaces();
@@ -74,7 +73,7 @@ public:
 
     // Face stream for chunking
     cudaStream_t *faceStreams;
-    size_t chunkSize = 1e6;
+    size_t chunkSize = 5e5;
     void mallocFaceStreams();
     void freeFaceStreams();
 

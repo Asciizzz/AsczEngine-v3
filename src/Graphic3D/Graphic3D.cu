@@ -31,36 +31,34 @@ void Graphic3D::free() {
     mesh.free();
     buffer.free();
     freeGFaces();
+    freeFaceStreams();
 }
 
 // Append Mesh3D
-void Graphic3D::operator+=(Mesh3D &m) {
+void Graphic3D::appendMesh(Mesh3D &m, bool del) {
     mesh += m;
-    m.free();
+    if (del) m.free();
 }
 
-// Visible Faces
+// Graphic faces (runtime)
 void Graphic3D::mallocGFaces() {
     cudaMalloc(&d_numVisibFs, sizeof(ULLInt));
     cudaMalloc(&visibFWs, sizeof(Vec4ulli) * mesh.numFs);
-
-    cudaMalloc(&faceAreas, sizeof(float) * mesh.numFs);
 }
 void Graphic3D::freeGFaces() {
     if (d_numVisibFs) cudaFree(d_numVisibFs);
     if (visibFWs) cudaFree(visibFWs);
-
-    if (faceAreas) cudaFree(faceAreas);
 }
 void Graphic3D::resizeGFaces() {
     freeGFaces();
     mallocGFaces();
 }
 
-// Face stream
+// Face stream for chunking very large number of faces
 void Graphic3D::mallocFaceStreams() {
     int chunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
 
+    // Stream for asynchronous execution (very helpful)
     faceStreams = (cudaStream_t*)malloc(chunkNum * sizeof(cudaStream_t));
     for (int i = 0; i < chunkNum; i++) {
         cudaStreamCreate(&faceStreams[i]);

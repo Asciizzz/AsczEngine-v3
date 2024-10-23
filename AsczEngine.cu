@@ -213,10 +213,8 @@ int main() {
 
     Mesh3D graph(3, world, normal, texture, color, faces);
 
-    GRAPHIC += obj;
-    // GRAPHIC.mesh += cube;
-    // GRAPHIC.mesh += wall;
-    // GRAPHIC += graph;
+    // Append all the meshes here
+    GRAPHIC.appendMesh(obj);
 
     GRAPHIC.mallocGFaces();
     GRAPHIC.mallocFaceStreams();
