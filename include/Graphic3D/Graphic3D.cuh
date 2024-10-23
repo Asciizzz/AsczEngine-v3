@@ -73,7 +73,7 @@ public:
 
     // Face stream for chunking
     cudaStream_t *faceStreams;
-    size_t chunkSize = 2e6;
+    size_t chunkSize = 5e5;
     int chunkNum;
     void mallocFaceStreams();
     void freeFaceStreams();
