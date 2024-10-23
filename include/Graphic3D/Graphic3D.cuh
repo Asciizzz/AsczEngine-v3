@@ -73,9 +73,11 @@ public:
 
     // Face stream for chunking
     cudaStream_t *faceStreams;
-    size_t chunkSize = 5e5;
+    size_t chunkSize = 2e6;
+    int chunkNum;
     void mallocFaceStreams();
     void freeFaceStreams();
+    void resizeFaceStreams();
 
     // Camera3D and Buffer3D
     Camera3D camera;

@@ -49,19 +49,19 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // 1 million elements per batch
-    int chunkSize = 1e6;
-    int chunkNum = (grphic.numVisibFs + chunkSize - 1) / chunkSize;
+    int chunkNum = (grphic.numVisibFs + grphic.chunkSize - 1) / grphic.chunkSize;
 
     dim3 blockSize(8, 32);
 
     for (int i = 0; i < chunkNum; i++) {
-        size_t currentChunkSize = (i == chunkNum - 1) ? grphic.numVisibFs - i * chunkSize : chunkSize;
+        size_t currentChunkSize = (i == chunkNum - 1) ?
+            grphic.numVisibFs - i * grphic.chunkSize : grphic.chunkSize;
         size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
         size_t blockNumFace = (currentChunkSize + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize, 0, grphic.faceStreams[i]>>>(
-            mesh.screen, mesh.world, grphic.visibFWs + i * chunkSize, currentChunkSize,
+            mesh.screen, mesh.world, grphic.visibFWs + i * grphic.chunkSize, currentChunkSize,
             buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
             grphic.tileNumX, grphic.tileNumY, grphic.tileWidth, grphic.tileHeight
         );

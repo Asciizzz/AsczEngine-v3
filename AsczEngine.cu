@@ -111,8 +111,8 @@ int main() {
     Vecs3ulli faces;
 
     // Append points to the grid
-    Vec2f rangeX(-500, 500);
-    Vec2f rangeZ(-500, 500);
+    Vec2f rangeX(-2000, 2000);
+    Vec2f rangeZ(-2000, 2000);
     Vec2f step(1, 1);
 
     int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
@@ -129,7 +129,7 @@ int main() {
             numZ++;
 
             // World pos of the point
-            float y = sin(x / 50) * cos(z / 50) * 50;
+            float y = sin(x / 200) * cos(z / 200) * 200;
             // float y = rand() % 30 - 10;
 
             maxY = std::max(maxY, y);
@@ -157,16 +157,16 @@ int main() {
         int x = i / numZ;
         int z = i % numZ;
 
-        int edge = 10;
+        int edge = 8;
         if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
             normal.push_back(Vec3f(0, 1, 0));
             continue;
         }
 
-        if (x % 100 == 0 || z % 100 == 0) {
-            normal.push_back(Vec3f(0, 1, 0));
-            continue;
-        }
+        // if (x % 100 == 0 || z % 100 == 0) {
+        //     normal.push_back(Vec3f(0, 1, 0));
+        //     continue;
+        // }
 
         int idxLeft = x * numZ + z - 1;
         int idxRight = x * numZ + z + 1;
@@ -214,7 +214,8 @@ int main() {
     Mesh3D graph(3, world, normal, texture, color, faces);
 
     // Append all the meshes here
-    GRAPHIC.appendMesh(obj);
+    // GRAPHIC.appendMesh(obj);
+    GRAPHIC.appendMesh(graph);
 
     GRAPHIC.mallocGFaces();
     GRAPHIC.mallocFaceStreams();
@@ -259,16 +260,13 @@ int main() {
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
                 }
 
-                // Press f2 to set the resolution and pixel size again
-                // Do not use this as I just introduced tile-based rasterization
-                // if (event.key.code == sf::Keyboard::F2) {
-                //     std::ifstream("cfg/resolution.txt") >> width >> height >> pixelSize;
-                //     GRAPHIC.setResolution(width, height, pixelSize);
-                //     SFTex.free();
-                //     SFTex.resize(width, height);
-                    
-                //     window.setSize(sf::Vector2u(width, height));
-                // }
+                // Press C to append a cube
+                if (event.key.code == sf::Keyboard::C) {
+                    GRAPHIC.appendMesh(cube, false);
+                    cube.translate(Vec3f(0, 0, 8));
+                    GRAPHIC.resizeGFaces();
+                    GRAPHIC.resizeFaceStreams();
+                }
             }
 
             // Scroll to zoom in/out

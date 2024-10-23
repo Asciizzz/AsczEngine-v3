@@ -56,7 +56,7 @@ void Graphic3D::resizeGFaces() {
 
 // Face stream for chunking very large number of faces
 void Graphic3D::mallocFaceStreams() {
-    int chunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
+    chunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
 
     // Stream for asynchronous execution (very helpful)
     faceStreams = (cudaStream_t*)malloc(chunkNum * sizeof(cudaStream_t));
@@ -65,10 +65,17 @@ void Graphic3D::mallocFaceStreams() {
     }
 }
 void Graphic3D::freeFaceStreams() {
-    for (int i = 0; i < mesh.numFs; i++) {
-        cudaStreamDestroy(faceStreams[i]);
+    for (int i = 0; i < chunkSize; i++) {
+        if (faceStreams) cudaStreamDestroy(faceStreams[i]);
     }
-    cudaFree(faceStreams);
+    if (faceStreams) delete[] faceStreams;
+}
+void Graphic3D::resizeFaceStreams() {
+    int newChunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
+    if (newChunkNum == chunkNum) return;
+
+    freeFaceStreams();
+    mallocFaceStreams();
 }
 
 // Atomic functions
