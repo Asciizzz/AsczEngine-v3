@@ -23,7 +23,9 @@ public:
         Vecs3f normal;
         Vecs2f texture;
         Vecs4f color;
-        Vecs3x3ulli faces;
+        Vecs3ulli faceWs;
+        Vecs3ulli faceNs;
+        Vecs3ulli faceTs;
 
         // We will use these value to shift the mesh to the origin
         float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
@@ -79,14 +81,14 @@ public:
                     v4 -= 1; t4 -= 1; n4 -= 1;
 
                     // Create an additional face to triangulate the quad
-                    faces.push_back(Vec3x3ulli(
-                        Vec3ulli(v.x, v.z, v4),
-                        Vec3ulli(t.x, t.z, t4),
-                        Vec3ulli(n.x, n.z, n4)
-                    ));
+                    faceWs.push_back(Vec3ulli(v.x, v.z, v4));
+                    faceNs.push_back(Vec3ulli(n.x, n.z, n4));
+                    faceTs.push_back(Vec3ulli(t.x, t.z, t4));
                 }
 
-                faces.push_back(Vec3x3ulli(v, t, n));
+                faceWs.push_back(v);
+                faceNs.push_back(n);
+                faceTs.push_back(t);
             }
         }
 
@@ -103,7 +105,10 @@ public:
             }
         }
 
-        Mesh3D mesh = Mesh3D(objId, world, normal, texture, color, faces);
+        Mesh3D mesh = Mesh3D(
+            objId, world, normal, texture, color,
+            faceWs, faceNs, faceTs    
+        );
 
         // Shift the mesh to the origin
         Vec3f shift = Vec3f(-(minX + maxX) / 2, -(minY + maxY) / 2, -(minZ + maxZ) / 2);

@@ -1,1 +1,1 @@
-assets/Models/Sukuna.obj 40
+assets/Models/MalevolentShrine.obj 10

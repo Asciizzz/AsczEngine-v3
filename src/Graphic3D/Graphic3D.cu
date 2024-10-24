@@ -26,14 +26,56 @@ void Graphic3D::setTileSize(int tw, int th) {
     tileNum = tileNumX * tileNumY;
 }
 
+// Free everything
 void Graphic3D::free() {
     mesh.free();
     buffer.free();
+    freeGFaces();
+    freeFaceStreams();
 }
 
-void Graphic3D::operator+=(Mesh3D &m) {
+// Append Mesh3D
+void Graphic3D::appendMesh(Mesh3D &m, bool del) {
     mesh += m;
-    m.free();
+    if (del) m.free();
+}
+
+// Graphic faces (runtime)
+void Graphic3D::mallocGFaces() {
+    cudaMalloc(&d_numVisibFs, sizeof(ULLInt));
+    cudaMalloc(&visibFWs, sizeof(Vec4ulli) * mesh.numFs);
+}
+void Graphic3D::freeGFaces() {
+    if (d_numVisibFs) cudaFree(d_numVisibFs);
+    if (visibFWs) cudaFree(visibFWs);
+}
+void Graphic3D::resizeGFaces() {
+    freeGFaces();
+    mallocGFaces();
+}
+
+// Face stream for chunking very large number of faces
+void Graphic3D::mallocFaceStreams() {
+    chunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
+
+    // Stream for asynchronous execution (very helpful)
+    faceStreams = (cudaStream_t*)malloc(chunkNum * sizeof(cudaStream_t));
+    for (int i = 0; i < chunkNum; i++) {
+        cudaStreamCreate(&faceStreams[i]);
+    }
+}
+void Graphic3D::freeFaceStreams() {
+    for (int i = 0; i < chunkSize; i++) {
+        if (faceStreams) cudaStreamDestroy(faceStreams[i]);
+    }
+    if (faceStreams) delete[] faceStreams;
+}
+void Graphic3D::resizeFaceStreams() {
+    int newChunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
+    if (newChunkNum == chunkNum) return;
+
+    freeFaceStreams();
+    mallocFaceStreams();
 }
 
 // Atomic functions

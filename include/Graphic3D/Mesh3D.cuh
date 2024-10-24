@@ -39,22 +39,26 @@ public:
     Vec4f *color; // Color is like that weird kid that doesn't fit in
     // Buf he's our friend so we keep him around
 
-    // Faces (triangles)
+    // Faces index (triangles)
     ULLInt numFs;
-    Vec3x3ulli *faces;
+    Vec3ulli *faceWs;
+    Vec3ulli *faceNs;
+    Vec3ulli *faceTs;
 
-    // Visible faces
-    ULLInt *numFsVisible;
-    Vec3x3x1ulli *fsVisible;
-
-    // Object Ids for vertex attributes and faces
+    // Object Ids for vertex attributes
     UInt *wObjId;
     UInt *nObjId;
     UInt *tObjId;
-    UInt *fObjId;
 
     Mesh3D(ULLInt numWs=0, ULLInt numNs=0, ULLInt numTs=0, ULLInt numFs=0);
-    Mesh3D(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3ulli &faces);
+    Mesh3D(
+        UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color,
+        Vecs3ulli &faceWs, Vecs3ulli &faceNs, Vecs3ulli &faceTs
+    );
+    Mesh3D(
+        UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, 
+        Vecs3ulli &faceAll
+    );
 
     // Memory management
     void mallocVertices();
@@ -68,7 +72,10 @@ public:
     void free();
 
     // Upload host data to device
-    void uploadData(UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color, Vecs3x3ulli &faces);
+    void uploadData(
+        UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color,
+        Vecs3ulli &faceWs, Vecs3ulli &faceNs, Vecs3ulli &faceTs
+    );
 
     // Mesh operators
     void operator+=(Mesh3D &mesh);
@@ -84,7 +91,7 @@ public:
 };
 
 // Kernel for preparing vertices
-__global__ void incrementFaceIdxKernel(Vec3x3ulli *faces, ULLInt offsetW, ULLInt offsetN, ULLInt offsetT, ULLInt numFs, ULLInt newNumFs);
+__global__ void incrementFaceIdxKernel(Vec3ulli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs);
 __global__ void setObjIdKernel(UInt *objId, ULLInt numWs, UInt id);
 
 // Kernel for transforming vertices

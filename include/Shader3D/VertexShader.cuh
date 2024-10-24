@@ -12,26 +12,25 @@ public:
 
     // Render pipeline
     static void cameraProjection();
-    static void getVisibleFaces();
+    static void filterVisibleFaces();
     static void createDepthMap();
     static void rasterization();
 };
 
-// Pipeline Kernels
+// Camera projection (MVP) kernel
 __global__ void cameraProjectionKernel(
     Vec4f *screen, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
 );
 
-// Find visible faces
-__global__ void getVisibleFacesKernel(
-    Vec4f *screen, ULLInt numWs,
-    Vec3x3ulli *faces, ULLInt numFs,
-    Vec3x3x1ulli *fsVisible, ULLInt *numFsVisible
+// Filter visible faces
+__global__ void filterVisibleFacesKernel(
+    Vec4f *screen, Vec3ulli *faceWs, ULLInt numFs,
+    Vec4ulli *visibFWs, ULLInt *numVisibFs
 );
 
 // Tile-based depth map creation (using nested parallelism, or dynamic parallelism)
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec3x3x1ulli *faces, ULLInt numFs,
+    Vec4f *screen, Vec3f *world, Vec4ulli *visibFWs, ULLInt numVisibFs,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 );
@@ -47,7 +46,9 @@ __global__ void rasterizationKernel(
     // Color data (shared with world for now)
     Vec4f *color, Vec4f *buffColor,
     // Face data
-    Vec3x3ulli *faces, ULLInt *buffFaceId, Vec3f *bary, Vec3f *buffBary,
+    Vec3ulli *faceWs, Vec3ulli *faceNs, Vec3ulli *faceTs, ULLInt *buffFaceId,
+    // Barycentric data
+    Vec3f *bary, Vec3f *buffBary,
     // Other data
     bool *buffActive, int buffWidth, int buffHeight
 );

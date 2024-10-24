@@ -69,13 +69,13 @@ int main() {
         Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
         Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
     };
-    Vecs3x3ulli cubeFaces = {
-        Vec3x3ulli(0, 1, 2), Vec3x3ulli(0, 2, 3),
-        Vec3x3ulli(4, 5, 6), Vec3x3ulli(4, 6, 7),
-        Vec3x3ulli(0, 4, 7), Vec3x3ulli(0, 7, 3),
-        Vec3x3ulli(1, 5, 6), Vec3x3ulli(1, 6, 2),
-        Vec3x3ulli(0, 1, 5), Vec3x3ulli(0, 5, 4),
-        Vec3x3ulli(3, 2, 6), Vec3x3ulli(3, 6, 7)
+    Vecs3ulli cubeFaces = {
+        Vec3ulli(0, 1, 2), Vec3ulli(0, 2, 3),
+        Vec3ulli(4, 5, 6), Vec3ulli(4, 6, 7),
+        Vec3ulli(0, 4, 7), Vec3ulli(0, 7, 3),
+        Vec3ulli(1, 5, 6), Vec3ulli(1, 6, 2),
+        Vec3ulli(0, 1, 5), Vec3ulli(0, 5, 4),
+        Vec3ulli(3, 2, 6), Vec3ulli(3, 6, 7)
     };
     Mesh3D cube(1, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
     cube.scale(Vec3f(), Vec3f(4));
@@ -98,8 +98,8 @@ int main() {
         Vec4f(255, 125, 125, 255), Vec4f(125, 255, 125, 255),
         Vec4f(125, 125, 255, 255), Vec4f(255, 255, 125, 255)
     };
-    Vecs3x3ulli wallFaces = {
-        Vec3x3ulli(0, 1, 2), Vec3x3ulli(0, 2, 3)
+    Vecs3ulli wallFaces = {
+        Vec3ulli(0, 1, 2), Vec3ulli(0, 2, 3)
     };
     Mesh3D wall(2, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
 
@@ -108,7 +108,7 @@ int main() {
     Vecs3f normal;
     Vecs2f texture;
     Vecs4f color;
-    Vecs3x3ulli faces;
+    Vecs3ulli faces;
 
     // Append points to the grid
     Vec2f rangeX(-500, 500);
@@ -157,7 +157,8 @@ int main() {
         int x = i / numZ;
         int z = i % numZ;
 
-        if (x == 0 || x == numX - 1 || z == 0 || z == numZ - 1) {
+        int edge = 8;
+        if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
             normal.push_back(Vec3f(0, 1, 0));
             continue;
         }
@@ -200,20 +201,19 @@ int main() {
     for (ULLInt x = 0; x < sizeX - 1; x++) {
         for (ULLInt z = 0; z < sizeZ - 1; z++) {
             ULLInt i = x * sizeZ + z;
-            faces.push_back(Vec3x3ulli(i, i + 1, i + sizeZ));
-            faces.push_back(Vec3x3ulli(i + 1, i + sizeZ + 1, i + sizeZ));
+            faces.push_back(Vec3ulli(i, i + 1, i + sizeZ));
+            faces.push_back(Vec3ulli(i + 1, i + sizeZ + 1, i + sizeZ));
         }
     }
 
     Mesh3D graph(3, world, normal, texture, color, faces);
 
-    // GRAPHIC += obj;
-    // GRAPHIC.mesh += cube;
-    // GRAPHIC.mesh += wall;
-    GRAPHIC += graph;
+    // Append all the meshes here
+    GRAPHIC.appendMesh(obj);
+    // GRAPHIC.appendMesh(graph);
 
-    cube.free();
-    wall.free();
+    GRAPHIC.mallocGFaces();
+    GRAPHIC.mallocFaceStreams();
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
@@ -255,16 +255,13 @@ int main() {
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
                 }
 
-                // Press f2 to set the resolution and pixel size again
-                // Do not use this as I just introduced tile-based rasterization
-                // if (event.key.code == sf::Keyboard::F2) {
-                //     std::ifstream("cfg/resolution.txt") >> width >> height >> pixelSize;
-                //     GRAPHIC.setResolution(width, height, pixelSize);
-                //     SFTex.free();
-                //     SFTex.resize(width, height);
-                    
-                //     window.setSize(sf::Vector2u(width, height));
-                // }
+                // Press C to append a cube
+                if (event.key.code == sf::Keyboard::C) {
+                    GRAPHIC.appendMesh(cube, false);
+                    cube.translate(Vec3f(0, 0, 8));
+                    GRAPHIC.resizeGFaces();
+                    GRAPHIC.resizeFaceStreams();
+                }
             }
 
             // Scroll to zoom in/out
@@ -345,7 +342,7 @@ int main() {
         // ========== Render Pipeline ==========
 
         VertexShader::cameraProjection();
-        VertexShader::getVisibleFaces();
+        VertexShader::filterVisibleFaces();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
@@ -389,8 +386,10 @@ int main() {
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
         LOG.addLog(
             "Screen:\n| Res: " + std::to_string(width) +
-            " x " + std::to_string(height) + "\n" +
-            "| Pxs: " + std::to_string(pixelSize),
+            " x " + std::to_string(height) +
+            " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
+            "| Tile Size: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight) + "\n" +
+            "| Visible Face: " + std::to_string(GRAPHIC.numVisibFs) + " / " + std::to_string(GRAPHIC.mesh.numFs),
             sf::Color(255, 160, 160)
         );
         LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));

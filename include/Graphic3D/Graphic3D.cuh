@@ -58,9 +58,26 @@ public:
     // Free everything
     void free();
 
-    // Mesh3D
+    // Mesh3D and its properties
     Mesh3D mesh;
-    void operator+=(Mesh3D &m);
+    void appendMesh(Mesh3D &m, bool del=true);
+
+    // Face properties
+    ULLInt numVisibFs;
+    ULLInt *d_numVisibFs;
+    Vec4ulli *visibFWs;
+
+    void mallocGFaces();
+    void freeGFaces();
+    void resizeGFaces();
+
+    // Face stream for chunking
+    cudaStream_t *faceStreams;
+    size_t chunkSize = 5e5;
+    int chunkNum;
+    void mallocFaceStreams();
+    void freeFaceStreams();
+    void resizeFaceStreams();
 
     // Camera3D and Buffer3D
     Camera3D camera;
