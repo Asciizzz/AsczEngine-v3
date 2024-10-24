@@ -63,9 +63,14 @@ public:
     void appendMesh(Mesh3D &m, bool del=true);
 
     // Face properties
+
     ULLInt numVisibFs;
     ULLInt *d_numVisibFs;
     Vec4ulli *visibFWs;
+
+    ULLInt numCullFs; // Worst case scenerio: 1 face => 4 faces
+    ULLInt *d_numCullFs;
+    Vec4ulli *cullFWs;
 
     void mallocGFaces();
     void freeGFaces();
@@ -85,11 +90,6 @@ public:
 
     // BETA: LightSrc and shadow mapping
     LightSrc light;
-
-    // Transformations for mesh with specific id
-    void translateMesh(UInt objId, Vec3f t);
-    void rotateMesh(UInt objId, Vec3f origin, Vec3f rot);
-    void scaleMesh(UInt objId, Vec3f origin, Vec3f scl);
 
 private:
     Graphic3D() {}

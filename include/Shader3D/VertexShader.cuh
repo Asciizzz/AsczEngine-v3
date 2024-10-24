@@ -13,6 +13,7 @@ public:
     // Render pipeline
     static void cameraProjection();
     static void filterVisibleFaces();
+    static void frustumCulling();
     static void createDepthMap();
     static void rasterization();
 };
@@ -26,6 +27,12 @@ __global__ void cameraProjectionKernel(
 __global__ void filterVisibleFacesKernel(
     Vec4f *screen, Vec3ulli *faceWs, ULLInt numFs,
     Vec4ulli *visibFWs, ULLInt *numVisibFs
+);
+
+// Frustum culling
+__global__ void frustumCullingKernel(
+    Vec4f *screen, Vec4ulli *visibFWs, ULLInt *numVisibFs,
+    Vec4ulli *cullFWs, ULLInt *numCullFs
 );
 
 // Tile-based depth map creation (using nested parallelism, or dynamic parallelism)

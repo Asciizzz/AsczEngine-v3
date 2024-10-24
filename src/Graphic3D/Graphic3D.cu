@@ -44,10 +44,16 @@ void Graphic3D::appendMesh(Mesh3D &m, bool del) {
 void Graphic3D::mallocGFaces() {
     cudaMalloc(&d_numVisibFs, sizeof(ULLInt));
     cudaMalloc(&visibFWs, sizeof(Vec4ulli) * mesh.numFs);
+
+    cudaMalloc(&d_numCullFs, sizeof(ULLInt));
+    cudaMalloc(&cullFWs, sizeof(Vec4ulli) * mesh.numFs * 4);
 }
 void Graphic3D::freeGFaces() {
     if (d_numVisibFs) cudaFree(d_numVisibFs);
     if (visibFWs) cudaFree(visibFWs);
+
+    if (d_numCullFs) cudaFree(d_numCullFs);
+    if (cullFWs) cudaFree(cullFWs);
 }
 void Graphic3D::resizeGFaces() {
     freeGFaces();
@@ -56,7 +62,7 @@ void Graphic3D::resizeGFaces() {
 
 // Face stream for chunking very large number of faces
 void Graphic3D::mallocFaceStreams() {
-    chunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
+    chunkNum = (mesh.numFs * 4 + chunkSize - 1) / chunkSize;
 
     // Stream for asynchronous execution (very helpful)
     faceStreams = (cudaStream_t*)malloc(chunkNum * sizeof(cudaStream_t));

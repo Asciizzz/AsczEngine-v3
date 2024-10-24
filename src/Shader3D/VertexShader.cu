@@ -40,6 +40,22 @@ void VertexShader::filterVisibleFaces() {
     cudaMemcpy(&grphic.numVisibFs, grphic.d_numVisibFs, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
+void VertexShader::frustumCulling() {
+    Graphic3D &grphic = Graphic3D::instance();
+    Mesh3D &mesh = grphic.mesh;
+
+    size_t blockNum = (grphic.numVisibFs + mesh.blockSize - 1) / mesh.blockSize;
+
+    cudaMemset(grphic.d_numCullFs, 0, sizeof(ULLInt));
+    frustumCullingKernel<<<blockNum, mesh.blockSize>>>(
+        mesh.screen, grphic.visibFWs, grphic.d_numVisibFs,
+        grphic.cullFWs, grphic.d_numCullFs
+    );
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(&grphic.numCullFs, grphic.d_numCullFs, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+}
+
 void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
@@ -49,19 +65,20 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // 1 million elements per batch
-    int chunkNum = (grphic.numVisibFs + grphic.chunkSize - 1) / grphic.chunkSize;
+    int chunkNum = (grphic.numCullFs + grphic.chunkSize - 1) / grphic.chunkSize;
 
     dim3 blockSize(8, 32);
 
     for (int i = 0; i < chunkNum; i++) {
         size_t currentChunkSize = (i == chunkNum - 1) ?
-            grphic.numVisibFs - i * grphic.chunkSize : grphic.chunkSize;
+            grphic.numCullFs - i * grphic.chunkSize : grphic.chunkSize;
+
         size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
         size_t blockNumFace = (currentChunkSize + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize, 0, grphic.faceStreams[i]>>>(
-            mesh.screen, mesh.world, grphic.visibFWs + i * grphic.chunkSize, currentChunkSize,
+            mesh.screen, mesh.world, grphic.cullFWs + i * grphic.chunkSize, currentChunkSize,
             buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
             grphic.tileNumX, grphic.tileNumY, grphic.tileWidth, grphic.tileHeight
         );
@@ -119,6 +136,19 @@ __global__ void filterVisibleFacesKernel(
         ULLInt idx = atomicAdd(numVisibFs, 1);
         visibFWs[idx] = Vec4ulli(fw.x, fw.y, fw.z, fIdx);
     }
+}
+
+// Culled faces
+__global__ void frustumCullingKernel(
+    Vec4f *screen, Vec4ulli *visibFWs, ULLInt *numVisibFs,
+    Vec4ulli *cullFWs, ULLInt *numCullFs
+) {
+    ULLInt fVisIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (fVisIdx >= *numVisibFs) return;
+
+    // For the time being we just gonna set the same face
+    ULLInt fCullIdx = atomicAdd(numCullFs, 1);
+    cullFWs[fCullIdx] = visibFWs[fVisIdx];
 }
 
 // Depth map creation

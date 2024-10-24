@@ -343,6 +343,7 @@ int main() {
 
         VertexShader::cameraProjection();
         VertexShader::filterVisibleFaces();
+        VertexShader::frustumCulling();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
