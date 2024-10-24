@@ -1,1 +1,1 @@
-assets/Models/MalevolentShrine.obj 1000
+assets/Heavy/Pool.obj 1
