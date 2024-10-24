@@ -26,18 +26,19 @@ void VertexShader::cameraProjection() {
     cudaDeviceSynchronize();
 }
 
-void VertexShader::filterVisibleFaces() {
+void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
 
-    cudaMemset(grphic.d_numVisibFs, 0, sizeof(ULLInt));
-    filterVisibleFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-        mesh.screen, mesh.faceWs, mesh.numFs,
-        grphic.visibFWs, grphic.d_numVisibFs
+    cudaMemset(grphic.d_faceCounter, 0, sizeof(ULLInt));
+    createRuntimeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
+        mesh.screen, mesh.world, mesh.normal, mesh.texture, mesh.color,
+        mesh.faceWs, mesh.faceNs, mesh.faceTs, mesh.numFs,
+        grphic.runtimeFaces, grphic.d_faceCounter
     );
     cudaDeviceSynchronize();
 
-    cudaMemcpy(&grphic.numVisibFs, grphic.d_numVisibFs, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grphic.faceCounter, grphic.d_faceCounter, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::createDepthMap() {
@@ -49,21 +50,22 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // 1 million elements per batch
-    int chunkNum = (grphic.numVisibFs + grphic.chunkSize - 1) / grphic.chunkSize;
+    int chunkNum = (grphic.faceCounter + grphic.chunkSize - 1) / grphic.chunkSize;
 
     dim3 blockSize(8, 32);
 
     for (int i = 0; i < chunkNum; i++) {
         size_t currentChunkSize = (i == chunkNum - 1) ?
-            grphic.numVisibFs - i * grphic.chunkSize : grphic.chunkSize;
+            grphic.faceCounter - i * grphic.chunkSize : grphic.chunkSize;
         size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
         size_t blockNumFace = (currentChunkSize + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize, 0, grphic.faceStreams[i]>>>(
-            mesh.screen, mesh.world, grphic.visibFWs + i * grphic.chunkSize, currentChunkSize,
-            buffer.active, buffer.depth, buffer.faceID, buffer.bary, buffer.width, buffer.height,
-            grphic.tileNumX, grphic.tileNumY, grphic.tileWidth, grphic.tileHeight
+            grphic.runtimeFaces + i * grphic.chunkSize, currentChunkSize,
+            buffer.active, buffer.depth, buffer.faceID, buffer.bary,
+            buffer.width, buffer.height, grphic.tileNumX, grphic.tileNumY,
+            grphic.tileWidth, grphic.tileHeight
         );
     }
 
@@ -79,12 +81,8 @@ void VertexShader::rasterization() {
     Mesh3D &mesh = grphic.mesh;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        mesh.world, buffer.world, mesh.wObjId, buffer.wObjId,
-        mesh.normal, buffer.normal, mesh.nObjId, buffer.nObjId,
-        mesh.texture, buffer.texture, mesh.tObjId, buffer.tObjId,
-        mesh.color, buffer.color,
-        mesh.faceWs, mesh.faceNs, mesh.faceTs, buffer.faceID,
-        buffer.bary, buffer.bary,
+        buffer.world, buffer.normal, buffer.texture, buffer.color,
+        grphic.runtimeFaces, buffer.faceID, buffer.bary,
         buffer.active, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
@@ -101,41 +99,50 @@ __global__ void cameraProjectionKernel(
     screen[i] = p;
 }
 
-// Filter visible faces
-__global__ void filterVisibleFacesKernel(
-    Vec4f *screen, Vec3ulli *faceWs, ULLInt numFs,
-    Vec4ulli *visibFWs, ULLInt *numVisibFs
+// Create runtime faces
+__global__ void createRuntimeFacesKernel(
+    Vec4f *screen, Vec3f *world, Vec3f *normal, Vec2f *texture, Vec4f *color,
+    Vec3ulli *faceWs, Vec3ulli *faceNs, Vec3ulli *faceTs, ULLInt numFs,
+    Face3D *runtimeFaces, ULLInt *faceCounter
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
 
     Vec3ulli fw = faceWs[fIdx];
+    Vec3ulli fn = faceNs[fIdx];
+    Vec3ulli ft = faceTs[fIdx];
 
     Vec4f p0 = screen[fw.x];
     Vec4f p1 = screen[fw.y];
     Vec4f p2 = screen[fw.z];
 
     if (p0.w > 0 || p1.w > 0 || p2.w > 0) {
-        ULLInt idx = atomicAdd(numVisibFs, 1);
-        visibFWs[idx] = Vec4ulli(fw.x, fw.y, fw.z, fIdx);
+        ULLInt idx = atomicAdd(faceCounter, 1);
+
+        runtimeFaces[idx] = {
+            {world[fw.x], world[fw.y], world[fw.z]},
+            {normal[fn.x], normal[fn.y], normal[fn.z]},
+            {texture[ft.x], texture[ft.y], texture[ft.z]},
+            {color[fw.x], color[fw.y], color[fw.z]},
+            {screen[fw.x], screen[fw.y], screen[fw.z]}
+        };
     }
 }
 
 // Depth map creation
 __global__ void createDepthMapKernel(
-    Vec4f *screen, Vec3f *world, Vec4ulli *visibFWs, ULLInt numVisibFs,
+    Face3D *runtimeFaces, ULLInt faceCounter,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
     ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (tIdx >= tileNumX * tileNumY || fIdx >= numVisibFs) return;
+    if (tIdx >= tileNumX * tileNumY || fIdx >= faceCounter) return;
 
-    Vec4ulli fw = visibFWs[fIdx];
-    Vec4f p0 = screen[fw.x];
-    Vec4f p1 = screen[fw.y];
-    Vec4f p2 = screen[fw.z];
+    Vec4f p0 = runtimeFaces[fIdx].screen[0];
+    Vec4f p1 = runtimeFaces[fIdx].screen[1];
+    Vec4f p2 = runtimeFaces[fIdx].screen[2];
 
     // Entirely outside the frustum
     if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
@@ -194,19 +201,15 @@ __global__ void createDepthMapKernel(
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
-            buffFaceId[bIdx] = fw.w;
+            buffFaceId[bIdx] = fIdx;
             buffBary[bIdx] = bary;
         }
     }
 }
 
 __global__ void rasterizationKernel(
-    Vec3f *world, Vec3f *buffWorld, UInt *wObjId, UInt *buffWObjId,
-    Vec3f *normal, Vec3f *buffNormal, UInt *nObjId, UInt *buffNObjId,
-    Vec2f *texture, Vec2f *buffTexture, UInt *tObjId, UInt *buffTObjId,
-    Vec4f *color, Vec4f *buffColor,
-    Vec3ulli *faceWs, Vec3ulli *faceNs, Vec3ulli *faceTs, ULLInt *buffFaceId,
-    Vec3f *bary, Vec3f *buffBary,
+    Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture, Vec4f *buffColor,
+    Face3D *runtimeFaces, ULLInt *buffFaceId, Vec3f *buffBary,
     bool *buffActive, int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -215,9 +218,6 @@ __global__ void rasterizationKernel(
     ULLInt fIdx = buffFaceId[i];
 
     // Set vertex, texture, and normal indices
-    Vec3ulli vIdx = faceWs[fIdx];
-    Vec3ulli nIdx = faceNs[fIdx];
-    Vec3ulli tIdx = faceTs[fIdx];
 
     // Get barycentric coordinates
     float alp = buffBary[i].x;
@@ -225,33 +225,28 @@ __global__ void rasterizationKernel(
     float gam = buffBary[i].z;
 
     // Set color
-    Vec4f c0 = color[vIdx.x];
-    Vec4f c1 = color[vIdx.y];
-    Vec4f c2 = color[vIdx.z];
+    Vec4f c0 = runtimeFaces[fIdx].color[0];
+    Vec4f c1 = runtimeFaces[fIdx].color[1];
+    Vec4f c2 = runtimeFaces[fIdx].color[2];
     buffColor[i] = c0 * alp + c1 * bet + c2 * gam;
 
     // Set world position
-    Vec3f w0 = world[vIdx.x];
-    Vec3f w1 = world[vIdx.y];
-    Vec3f w2 = world[vIdx.z];
+    Vec3f w0 = runtimeFaces[fIdx].world[0];
+    Vec3f w1 = runtimeFaces[fIdx].world[1];
+    Vec3f w2 = runtimeFaces[fIdx].world[2];
     buffWorld[i] = w0 * alp + w1 * bet + w2 * gam;
 
     // Set normal
-    Vec3f n0 = normal[nIdx.x];
-    Vec3f n1 = normal[nIdx.y];
-    Vec3f n2 = normal[nIdx.z];
+    Vec3f n0 = runtimeFaces[fIdx].normal[0];
+    Vec3f n1 = runtimeFaces[fIdx].normal[1];
+    Vec3f n2 = runtimeFaces[fIdx].normal[2];
     n0.norm(); n1.norm(); n2.norm();
     buffNormal[i] = n0 * alp + n1 * bet + n2 * gam;
     buffNormal[i].norm();
 
     // Set texture
-    Vec2f t0 = texture[tIdx.x];
-    Vec2f t1 = texture[tIdx.y];
-    Vec2f t2 = texture[tIdx.z];
+    Vec2f t0 = runtimeFaces[fIdx].texture[0];
+    Vec2f t1 = runtimeFaces[fIdx].texture[1];
+    Vec2f t2 = runtimeFaces[fIdx].texture[2];
     buffTexture[i] = t0 * alp + t1 * bet + t2 * gam;
-
-    // Set obj Id
-    buffWObjId[i] = wObjId[vIdx.x];
-    buffNObjId[i] = nObjId[nIdx.x];
-    buffTObjId[i] = tObjId[tIdx.x];
 }

@@ -9,6 +9,8 @@
 
 ### Progress:
 
+#### Basic:
+
 - Created `Matrix` and `Vector` as well as their operations.
 - Created dynamic `Camera3D` with fps-like movement and `mat4 MVP`(Model-View-Projection) transformation matrix for converting vertex from 3D world $\rightarrow$ 3D view $\rightarrow$ 2D screen space.
 - Created `Mesh3D` system with `Vertices` and `Faces` data
@@ -23,6 +25,20 @@
   - *Frustum Clipping*: WIP!
   - *Rasterization*: uses the projected `faces` to interpolate and fill in `buffers`: `color`, `depth`, `world`, `normal`, `texture`, etc.
   - *Phong Shading*: uses the `buffers`' datas to apply Phong Shading to each pixel.
+
+#### Complex:
+
+##### Creation of Runtime Faces:
+
+- In a *mesh*, faces are represented by *indices* pointing to the vertices, normals, textures, and colors.
+
+- However, in *runtime*, faces are stored as *complete objects* that contain the actual vertices, normals, textures, and colors.
+
+- This difference is necessary because new faces can be generated during the clipping and splitting process. The original index-based system in the mesh cannot handle these changes, so we need to store the full face data in runtime.
+
+- The `createRuntimeFaces` function performs two main tasks:
+  - Converts index-based faces into fully defined face objects with actual vertices, normals, textures, and colors.
+  - Clips and splits faces that intersect with the camera's frustum to ensure proper rendering.
 
 ### Future Addition:
 

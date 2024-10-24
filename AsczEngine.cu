@@ -42,8 +42,6 @@ int main() {
 
     // Create a .obj mesh (Work in progress)
     Mesh3D obj = Playground::readObjFile(0, objPath, true);
-    obj.scale(Vec3f(), Vec3f(objScale));
-    // obj.rotate(0, Vec3f(), Vec3f(0, 0, 0));
 
     Vecs3f cubeWorld = {
         Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
@@ -78,7 +76,6 @@ int main() {
         Vec3ulli(3, 2, 6), Vec3ulli(3, 6, 7)
     };
     Mesh3D cube(1, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
-    cube.scale(Vec3f(), Vec3f(4));
 
     // Create a white wall behind the cube
     float wallSize = 10;
@@ -258,7 +255,6 @@ int main() {
                 // Press C to append a cube
                 if (event.key.code == sf::Keyboard::C) {
                     GRAPHIC.appendMesh(cube, false);
-                    cube.translate(Vec3f(0, 0, 8));
                     GRAPHIC.resizeGFaces();
                     GRAPHIC.resizeFaceStreams();
                 }
@@ -320,7 +316,6 @@ int main() {
             float rot = M_PI / 3 * FPS.dTimeSec;
             if (k_ctrl) rot *= -1;
             if (k_shift) rot *= 3;
-            GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot, 0));
         }
         // Press Q to rotate light source in x axis
         if (k_q) {
@@ -342,14 +337,11 @@ int main() {
         // ========== Render Pipeline ==========
 
         VertexShader::cameraProjection();
-        VertexShader::filterVisibleFaces();
+        VertexShader::createRuntimeFaces();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
         FragmentShader::phongShading();
-
-        // Custom Fragment Shader
-        FragmentShader::customFragmentShader();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
@@ -389,7 +381,7 @@ int main() {
             " x " + std::to_string(height) +
             " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
             "| Tile Size: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight) + "\n" +
-            "| Visible Face: " + std::to_string(GRAPHIC.numVisibFs) + " / " + std::to_string(GRAPHIC.mesh.numFs),
+            "| Visible Face: " + std::to_string(GRAPHIC.faceCounter) + " / " + std::to_string(GRAPHIC.mesh.numFs),
             sf::Color(255, 160, 160)
         );
         LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));

@@ -45,11 +45,6 @@ public:
     Vec3ulli *faceNs;
     Vec3ulli *faceTs;
 
-    // Object Ids for vertex attributes
-    UInt *wObjId;
-    UInt *nObjId;
-    UInt *tObjId;
-
     Mesh3D(ULLInt numWs=0, ULLInt numNs=0, ULLInt numTs=0, ULLInt numFs=0);
     Mesh3D(
         UInt id, Vecs3f &world, Vecs3f &normal, Vecs2f &texture, Vecs4f &color,
@@ -79,29 +74,9 @@ public:
 
     // Mesh operators
     void operator+=(Mesh3D &mesh);
-
-    // Transformations (with obj Id)
-    void translate(UInt objID, Vec3f t);
-    void rotate(UInt objID, Vec3f origin, Vec3f rot);
-    void scale(UInt objID, Vec3f origin, Vec3f scl);
-    // Transformations (all obj Ids)
-    void translate(Vec3f t);
-    void rotate(Vec3f origin, Vec3f rot);
-    void scale(Vec3f origin, Vec3f scl);
 };
 
 // Kernel for preparing vertices
 __global__ void incrementFaceIdxKernel(Vec3ulli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs);
-__global__ void setObjIdKernel(UInt *objId, ULLInt numWs, UInt id);
-
-// Kernel for transforming vertices
-// Note: the reason bool allID is used is because we can't overload kernels
-__global__ void translateWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f t);
-__global__ void rotateWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f origin, Vec3f rot);
-__global__ void scaleWorldKernel(Vec3f *world, UInt *wObjId, bool allID, ULLInt numWs, UInt objID, Vec3f origin, Vec3f scl);
-
-// Only rotation and scaling are needed for normals
-__global__ void rotateNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULLInt numNs, UInt objID, Vec3f origin, Vec3f rot);
-__global__ void scaleNormalKernel(Vec3f *normal, UInt *nObjId, bool allID, ULLInt numNs, UInt objID, Vec3f origin, Vec3f scl);
 
 #endif

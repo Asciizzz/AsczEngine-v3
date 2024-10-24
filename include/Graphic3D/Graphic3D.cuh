@@ -1,20 +1,18 @@
 #ifndef GRAPHIC3D_CUH
 #define GRAPHIC3D_CUH
 
-/* This is a class that contains:
-
-Mesh3D
-Camera3D
-Buffer3D
-Projection
-
-We will not put any data into the Shader classes
-
-*/
-
 #include <Mesh3D.cuh> 
 #include <Camera3D.cuh>
 #include <Buffer3D.cuh>
+
+// BETA: From mesh data, we will construct primitive data
+struct Face3D {
+    Vec3f world[3];
+    Vec3f normal[3];
+    Vec2f texture[3];
+    Vec4f color[3];
+    Vec4f screen[3];
+};
 
 // BETA: LightSrc
 struct LightSrc {
@@ -63,9 +61,9 @@ public:
     void appendMesh(Mesh3D &m, bool del=true);
 
     // Face properties
-    ULLInt numVisibFs;
-    ULLInt *d_numVisibFs;
-    Vec4ulli *visibFWs;
+    ULLInt faceCounter;
+    ULLInt *d_faceCounter;
+    Face3D *runtimeFaces;
 
     void mallocGFaces();
     void freeGFaces();
@@ -85,11 +83,6 @@ public:
 
     // BETA: LightSrc and shadow mapping
     LightSrc light;
-
-    // Transformations for mesh with specific id
-    void translateMesh(UInt objId, Vec3f t);
-    void rotateMesh(UInt objId, Vec3f origin, Vec3f rot);
-    void scaleMesh(UInt objId, Vec3f origin, Vec3f scl);
 
 private:
     Graphic3D() {}

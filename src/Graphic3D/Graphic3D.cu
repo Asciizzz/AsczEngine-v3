@@ -42,12 +42,13 @@ void Graphic3D::appendMesh(Mesh3D &m, bool del) {
 
 // Graphic faces (runtime)
 void Graphic3D::mallocGFaces() {
-    cudaMalloc(&d_numVisibFs, sizeof(ULLInt));
-    cudaMalloc(&visibFWs, sizeof(Vec4ulli) * mesh.numFs);
+    cudaMalloc(&d_faceCounter, sizeof(ULLInt));
+    // In the worst case scenario, each face when culled can be split into 4 faces
+    cudaMalloc(&runtimeFaces, sizeof(Face3D) * mesh.numFs * 4);
 }
 void Graphic3D::freeGFaces() {
-    if (d_numVisibFs) cudaFree(d_numVisibFs);
-    if (visibFWs) cudaFree(visibFWs);
+    if (d_faceCounter) cudaFree(d_faceCounter);
+    if (runtimeFaces) cudaFree(runtimeFaces);
 }
 void Graphic3D::resizeGFaces() {
     freeGFaces();

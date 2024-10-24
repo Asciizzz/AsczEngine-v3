@@ -18,9 +18,6 @@ public:
     Vec3f *world;
     Vec3f *normal;
     Vec2f *texture;
-    UInt *wObjId;
-    UInt *nObjId;
-    UInt *tObjId;
 
     ULLInt *faceID;
     Vec3f *bary;
@@ -38,7 +35,6 @@ public:
 __global__ void clearBufferKernel(
     bool *active, float *depth, Vec4f *color,
     Vec3f *world, Vec3f *normal, Vec2f *texture,
-    UInt *wObjId, UInt *nObjId, UInt *tObjId,
     ULLInt *faceID, Vec3f *bary, int size
 );
 

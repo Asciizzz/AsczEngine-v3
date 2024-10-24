@@ -113,7 +113,6 @@ public:
         // Shift the mesh to the origin
         Vec3f shift = Vec3f(-(minX + maxX) / 2, -(minY + maxY) / 2, -(minZ + maxZ) / 2);
         if (!center) shift.y = -minY;
-        mesh.translate(objId, shift);
 
         return mesh;
     }
