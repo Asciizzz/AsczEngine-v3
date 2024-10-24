@@ -44,7 +44,6 @@ void VertexShader::createRuntimeFaces() {
 void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
-    Mesh3D &mesh = grphic.mesh;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
@@ -78,12 +77,11 @@ void VertexShader::createDepthMap() {
 void VertexShader::rasterization() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
-    Mesh3D &mesh = grphic.mesh;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
+        grphic.runtimeFaces, buffer.faceID,
         buffer.world, buffer.normal, buffer.texture, buffer.color,
-        grphic.runtimeFaces, buffer.faceID, buffer.bary,
-        buffer.active, buffer.width, buffer.height
+        buffer.active, buffer.bary, buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
 }
@@ -208,9 +206,9 @@ __global__ void createDepthMapKernel(
 }
 
 __global__ void rasterizationKernel(
+    Face3D *runtimeFaces, ULLInt *buffFaceId,
     Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture, Vec4f *buffColor,
-    Face3D *runtimeFaces, ULLInt *buffFaceId, Vec3f *buffBary,
-    bool *buffActive, int buffWidth, int buffHeight
+    bool *buffActive, Vec3f *buffBary, int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;

@@ -76,7 +76,7 @@ public:
     void operator+=(Mesh3D &mesh);
 };
 
-// Kernel for preparing vertices
+// Kernel for preparing faces
 __global__ void incrementFaceIdxKernel(Vec3ulli *faces, ULLInt offset, ULLInt numFs, ULLInt newNumFs);
 
 #endif

@@ -30,7 +30,7 @@ void Graphic3D::setTileSize(int tw, int th) {
 void Graphic3D::free() {
     mesh.free();
     buffer.free();
-    freeGFaces();
+    freeRuntimeFaces();
     freeFaceStreams();
 }
 
@@ -41,18 +41,18 @@ void Graphic3D::appendMesh(Mesh3D &m, bool del) {
 }
 
 // Graphic faces (runtime)
-void Graphic3D::mallocGFaces() {
+void Graphic3D::mallocRuntimeFaces() {
     cudaMalloc(&d_faceCounter, sizeof(ULLInt));
     // In the worst case scenario, each face when culled can be split into 4 faces
     cudaMalloc(&runtimeFaces, sizeof(Face3D) * mesh.numFs * 4);
 }
-void Graphic3D::freeGFaces() {
+void Graphic3D::freeRuntimeFaces() {
     if (d_faceCounter) cudaFree(d_faceCounter);
     if (runtimeFaces) cudaFree(runtimeFaces);
 }
-void Graphic3D::resizeGFaces() {
-    freeGFaces();
-    mallocGFaces();
+void Graphic3D::resizeRuntimeFaces() {
+    freeRuntimeFaces();
+    mallocRuntimeFaces();
 }
 
 // Face stream for chunking very large number of faces

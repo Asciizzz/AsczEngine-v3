@@ -5,15 +5,6 @@
 #include <Camera3D.cuh>
 #include <Buffer3D.cuh>
 
-// BETA: From mesh data, we will construct primitive data
-struct Face3D {
-    Vec3f world[3];
-    Vec3f normal[3];
-    Vec2f texture[3];
-    Vec4f color[3];
-    Vec4f screen[3];
-};
-
 // BETA: LightSrc
 struct LightSrc {
     Vec3f dir = {-1, -1, -1};
@@ -29,6 +20,14 @@ struct LightSrc {
         str += "| Color: " + std::to_string(color.x) + " " + std::to_string(color.y) + " " + std::to_string(color.z) + "\n";
         return str;
     }
+};
+
+struct Face3D {
+    Vec3f world[3];
+    Vec3f normal[3];
+    Vec2f texture[3];
+    Vec4f color[3];
+    Vec4f screen[3];
 };
 
 class Graphic3D {
@@ -60,14 +59,14 @@ public:
     Mesh3D mesh;
     void appendMesh(Mesh3D &m, bool del=true);
 
-    // Face properties
+    // For runtime faces
     ULLInt faceCounter;
     ULLInt *d_faceCounter;
     Face3D *runtimeFaces;
 
-    void mallocGFaces();
-    void freeGFaces();
-    void resizeGFaces();
+    void mallocRuntimeFaces();
+    void freeRuntimeFaces();
+    void resizeRuntimeFaces();
 
     // Face stream for chunking
     cudaStream_t *faceStreams;

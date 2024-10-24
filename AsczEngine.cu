@@ -209,7 +209,7 @@ int main() {
     GRAPHIC.appendMesh(obj);
     // GRAPHIC.appendMesh(graph);
 
-    GRAPHIC.mallocGFaces();
+    GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
 
     // To avoid floating point errors
@@ -255,7 +255,7 @@ int main() {
                 // Press C to append a cube
                 if (event.key.code == sf::Keyboard::C) {
                     GRAPHIC.appendMesh(cube, false);
-                    GRAPHIC.resizeGFaces();
+                    GRAPHIC.resizeRuntimeFaces();
                     GRAPHIC.resizeFaceStreams();
                 }
             }
