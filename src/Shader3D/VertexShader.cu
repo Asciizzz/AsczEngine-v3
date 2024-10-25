@@ -318,41 +318,41 @@ __global__ void rasterizationKernel(
     float gam = buffBrz[i];
 
     // Get homogenous 1/w
-    float homo1_sw = (1 / runtimeSw[idx0]) * alp + (1 / runtimeSw[idx1]) * bet + (1 / runtimeSw[idx2]) * gam;
+    float homo1divW = (1 / runtimeSw[idx0]) * alp + (1 / runtimeSw[idx1]) * bet + (1 / runtimeSw[idx2]) * gam;
 
     // Set world position
-    float wx_sw = runtimeWx[idx0] * alp / runtimeSw[idx0] + runtimeWx[idx1] * bet / runtimeSw[idx1] + runtimeWx[idx2] * gam / runtimeSw[idx2];
-    float wy_sw = runtimeWy[idx0] * alp / runtimeSw[idx0] + runtimeWy[idx1] * bet / runtimeSw[idx1] + runtimeWy[idx2] * gam / runtimeSw[idx2];
-    float wz_sw = runtimeWz[idx0] * alp / runtimeSw[idx0] + runtimeWz[idx1] * bet / runtimeSw[idx1] + runtimeWz[idx2] * gam / runtimeSw[idx2];
+    float wx_sw = runtimeWx[idx0] / runtimeSw[idx0] * alp + runtimeWx[idx1] / runtimeSw[idx1] * bet + runtimeWx[idx2] / runtimeSw[idx2] * gam;
+    float wy_sw = runtimeWy[idx0] / runtimeSw[idx0] * alp + runtimeWy[idx1] / runtimeSw[idx1] * bet + runtimeWy[idx2] / runtimeSw[idx2] * gam;
+    float wz_sw = runtimeWz[idx0] / runtimeSw[idx0] * alp + runtimeWz[idx1] / runtimeSw[idx1] * bet + runtimeWz[idx2] / runtimeSw[idx2] * gam;
 
-    buffWx[i] = wx_sw / homo1_sw;
-    buffWy[i] = wy_sw / homo1_sw;
-    buffWz[i] = wz_sw / homo1_sw;
+    buffWx[i] = wx_sw / homo1divW;
+    buffWy[i] = wy_sw / homo1divW;
+    buffWz[i] = wz_sw / homo1divW;
 
     // Set texture
-    float tu_sw = runtimeTu[idx0] * alp / runtimeSw[idx0] + runtimeTu[idx1] * bet / runtimeSw[idx1] + runtimeTu[idx2] * gam / runtimeSw[idx2];
-    float tv_sw = runtimeTv[idx0] * alp / runtimeSw[idx0] + runtimeTv[idx1] * bet / runtimeSw[idx1] + runtimeTv[idx2] * gam / runtimeSw[idx2];
+    float tu_sw = runtimeTu[idx0] / runtimeSw[idx0] * alp + runtimeTu[idx1] / runtimeSw[idx1] * bet + runtimeTu[idx2] / runtimeSw[idx2] * gam;
+    float tv_sw = runtimeTv[idx0] / runtimeSw[idx0] * alp + runtimeTv[idx1] / runtimeSw[idx1] * bet + runtimeTv[idx2] / runtimeSw[idx2] * gam;
 
-    buffTu[i] = tu_sw / homo1_sw;
-    buffTv[i] = tv_sw / homo1_sw;
+    buffTu[i] = tu_sw / homo1divW;
+    buffTv[i] = tv_sw / homo1divW;
 
     // Set normal
-    float nx_sw = runtimeNx[idx0] * alp / runtimeSw[idx0] + runtimeNx[idx1] * bet / runtimeSw[idx1] + runtimeNx[idx2] * gam / runtimeSw[idx2];
-    float ny_sw = runtimeNy[idx0] * alp / runtimeSw[idx0] + runtimeNy[idx1] * bet / runtimeSw[idx1] + runtimeNy[idx2] * gam / runtimeSw[idx2];
-    float nz_sw = runtimeNz[idx0] * alp / runtimeSw[idx0] + runtimeNz[idx1] * bet / runtimeSw[idx1] + runtimeNz[idx2] * gam / runtimeSw[idx2];
+    float nx_sw = runtimeNx[idx0] / runtimeSw[idx0] * alp + runtimeNx[idx1] / runtimeSw[idx1] * bet + runtimeNx[idx2] / runtimeSw[idx2] * gam;
+    float ny_sw = runtimeNy[idx0] / runtimeSw[idx0] * alp + runtimeNy[idx1] / runtimeSw[idx1] * bet + runtimeNy[idx2] / runtimeSw[idx2] * gam;
+    float nz_sw = runtimeNz[idx0] / runtimeSw[idx0] * alp + runtimeNz[idx1] / runtimeSw[idx1] * bet + runtimeNz[idx2] / runtimeSw[idx2] * gam;
 
-    buffNx[i] = nx_sw / homo1_sw;
-    buffNy[i] = ny_sw / homo1_sw;
-    buffNz[i] = nz_sw / homo1_sw;
+    buffNx[i] = nx_sw / homo1divW;
+    buffNy[i] = ny_sw / homo1divW;
+    buffNz[i] = nz_sw / homo1divW;
 
     // Set color
-    float cr_sw = runtimeCr[idx0] * alp / runtimeSw[idx0] + runtimeCr[idx1] * bet / runtimeSw[idx1] + runtimeCr[idx2] * gam / runtimeSw[idx2];
-    float cg_sw = runtimeCg[idx0] * alp / runtimeSw[idx0] + runtimeCg[idx1] * bet / runtimeSw[idx1] + runtimeCg[idx2] * gam / runtimeSw[idx2];
-    float cb_sw = runtimeCb[idx0] * alp / runtimeSw[idx0] + runtimeCb[idx1] * bet / runtimeSw[idx1] + runtimeCb[idx2] * gam / runtimeSw[idx2];
-    float ca_sw = runtimeCa[idx0] * alp / runtimeSw[idx0] + runtimeCa[idx1] * bet / runtimeSw[idx1] + runtimeCa[idx2] * gam / runtimeSw[idx2];
+    float cr_sw = runtimeCr[idx0] / runtimeSw[idx0] * alp + runtimeCr[idx1] / runtimeSw[idx1] * bet + runtimeCr[idx2] / runtimeSw[idx2] * gam;
+    float cg_sw = runtimeCg[idx0] / runtimeSw[idx0] * alp + runtimeCg[idx1] / runtimeSw[idx1] * bet + runtimeCg[idx2] / runtimeSw[idx2] * gam;
+    float cb_sw = runtimeCb[idx0] / runtimeSw[idx0] * alp + runtimeCb[idx1] / runtimeSw[idx1] * bet + runtimeCb[idx2] / runtimeSw[idx2] * gam;
+    float ca_sw = runtimeCa[idx0] / runtimeSw[idx0] * alp + runtimeCa[idx1] / runtimeSw[idx1] * bet + runtimeCa[idx2] / runtimeSw[idx2] * gam;
 
-    buffCr[i] = cr_sw / homo1_sw;
-    buffCg[i] = cg_sw / homo1_sw;
-    buffCb[i] = cb_sw / homo1_sw;
-    buffCa[i] = ca_sw / homo1_sw;
+    buffCr[i] = cr_sw / homo1divW;
+    buffCg[i] = cg_sw / homo1divW;
+    buffCb[i] = cb_sw / homo1divW;
+    buffCa[i] = ca_sw / homo1divW;
 }
