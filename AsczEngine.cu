@@ -7,6 +7,59 @@
 
 #include <Playground.cuh>
 
+__global__ void customGraphKernel(
+    float *wx, float *wy, float *wz,
+    float *tu, float *tv,
+    float *nx, float *ny, float *nz,
+    float *cr, float *cg, float *cb, float *ca,
+
+    int numX, int numZ, float moveX, float moveZ
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= numX * numZ) return;
+
+    wy[i] = sin((wx[i] + moveX) / 20) * cos((wz[i] + moveZ) / 20) * 20;
+
+    // Set normal based on the triangle of surrounding points
+    int x = i / numZ;
+    int z = i % numZ;
+
+    int edge = 1;
+    if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
+        nx[i] = 0;
+        ny[i] = 1;
+        nz[i] = 0;
+        return;
+    }
+
+    int idxLeft = x * numZ + z - 1;
+    int idxRight = x * numZ + z + 1;
+    int idxUp = (x - 1) * numZ + z;
+    int idxDown = (x + 1) * numZ + z;
+
+    Vec3f mid = Vec3f(wx[i], wy[i], wz[i]);
+    Vec3f left = Vec3f(wx[idxLeft], wy[idxLeft], wz[idxLeft]);
+    Vec3f right = Vec3f(wx[idxRight], wy[idxRight], wz[idxRight]);
+    Vec3f up = Vec3f(wx[idxUp], wy[idxUp], wz[idxUp]);
+    Vec3f down = Vec3f(wx[idxDown], wy[idxDown], wz[idxDown]);
+
+    Vec3f triNormals[4];
+    triNormals[0] = (mid - left) & (up - left);
+    triNormals[1] = (mid - up) & (right - up);
+    triNormals[2] = (mid - right) & (down - right);
+    triNormals[3] = (mid - down) & (left - down);
+
+    Vec3f avgNormal = Vec3f();
+    for (Vec3f triNormal : triNormals) {
+        avgNormal += triNormal;
+    }
+    avgNormal.norm();
+
+    nx[i] = avgNormal.x;
+    ny[i] = avgNormal.y;
+    nz[i] = avgNormal.z;
+}
+
 int main() {
     // Initialize Default stuff
     FpsHandler &FPS = FpsHandler::instance();
@@ -60,8 +113,6 @@ int main() {
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             numZ++;
 
-            // World pos of the point
-            // float y = sin(x / 50) * cos(z / 50) * 50;
             float y = 0;
 
             maxY = std::max(maxY, y);
@@ -110,26 +161,19 @@ int main() {
         int idxUp = (x - 1) * numZ + z;
         int idxDown = (x + 1) * numZ + z;
 
-        std::vector<int> idxDir = {
-            idxLeft, idxRight, idxUp, idxDown
-        };
-
         // Triangle group: mid left up, mid up right, mid right down, mid down left
         std::vector<Vec3f> triNormals;
 
-        for (int j = 0; j < 4; j++) {
-            int idx = idxDir[j];
-            Vec3f mid = graph.w3f(i);
-            Vec3f left = graph.w3f(idxLeft);
-            Vec3f right = graph.w3f(idxRight);
-            Vec3f up = graph.w3f(idxUp);
-            Vec3f down = graph.w3f(idxDown);
-            
-            if (j == 0) triNormals.push_back((mid - left) & (up - left));
-            if (j == 1) triNormals.push_back((mid - up) & (right - up));
-            if (j == 2) triNormals.push_back((mid - right) & (down - right));
-            if (j == 3) triNormals.push_back((mid - down) & (left - down));
-        }
+        Vec3f mid = graph.w3f(i);
+        Vec3f left = graph.w3f(idxLeft);
+        Vec3f right = graph.w3f(idxRight);
+        Vec3f up = graph.w3f(idxUp);
+        Vec3f down = graph.w3f(idxDown);
+
+        triNormals.push_back((mid - left) & (up - left));
+        triNormals.push_back((mid - up) & (right - up));
+        triNormals.push_back((mid - right) & (down - right));
+        triNormals.push_back((mid - down) & (left - down));
 
         Vec3f avgNormal = Vec3f();
         for (Vec3f triNormal : triNormals) {
@@ -191,6 +235,10 @@ int main() {
     double rainbowG = 0;
     double rainbowB = 0;
     short cycle = 0;
+
+    // Moving graph
+    float moveX = 0;
+    float moveZ = 0;
 
     while (window.isOpen()) {
         // Frame start
@@ -303,6 +351,24 @@ int main() {
 
             GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(0, 0, rot));
         }
+
+        // ========== Playgrounds ==============
+
+        // Move the graph
+        moveX += 10 * FPS.dTimeSec;
+        moveZ += 10 * FPS.dTimeSec;
+
+        // Update the graph
+        Mesh3D &mesh = GRAPHIC.mesh;
+        size_t meshSize = mesh.world.size;
+        size_t gridSize = (meshSize + 255) / 256;
+        customGraphKernel<<<gridSize, 256>>>(
+            mesh.world.x, mesh.world.y, mesh.world.z,
+            mesh.texture.x, mesh.texture.y,
+            mesh.normal.x, mesh.normal.y, mesh.normal.z,
+            mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
+            numX, numZ, moveX, moveZ
+        );
 
         // ========== Render Pipeline ==========
 
