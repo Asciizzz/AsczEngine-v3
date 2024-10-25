@@ -70,57 +70,60 @@ void Mesh3D::free() {
 // Append mesh obj to device mesh
 
 void Mesh3D::operator+=(Mesh &mesh) {
-    Vecptr4ulli newFaces;
-    ULLInt faceSize = mesh.fw.size();
-    newFaces.malloc(faceSize);
+    // Stream for async memory copy
+    cudaStream_t stream;
+    cudaStreamCreate(&stream);
 
-    cudaMemcpy(newFaces.v, mesh.fw.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice);
-    cudaMemcpy(newFaces.t, mesh.ft.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice);
-    cudaMemcpy(newFaces.n, mesh.fn.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice);
-    
     ULLInt offsetV = world.size;
     ULLInt offsetT = texture.size;
     ULLInt offsetN = normal.size;
+
+    Vecptr3f newWorld;
+    Vecptr3f newNormal;
+    Vecptr2f newTexture;
+    Vecptr4f newColor;
+    Vecptr4ulli newFaces;
+    ULLInt worldSize = mesh.wx.size();
+    ULLInt normalSize = mesh.nx.size();
+    ULLInt textureSize = mesh.tu.size();
+    ULLInt colorSize = mesh.cr.size();
+    ULLInt faceSize = mesh.fw.size();
+    newWorld.malloc(worldSize);
+    newNormal.malloc(normalSize);
+    newTexture.malloc(textureSize);
+    newColor.malloc(colorSize);
+    newFaces.malloc(faceSize);
+
+    cudaMemcpyAsync(newWorld.x, mesh.wx.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newWorld.y, mesh.wy.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newWorld.z, mesh.wz.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+
+    cudaMemcpyAsync(newNormal.x, mesh.nx.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newNormal.y, mesh.ny.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newNormal.z, mesh.nz.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+
+    cudaMemcpyAsync(newTexture.x, mesh.tu.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newTexture.y, mesh.tv.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+
+    cudaMemcpyAsync(newColor.x, mesh.cr.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newColor.y, mesh.cg.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newColor.z, mesh.cb.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newColor.w, mesh.ca.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+
+    cudaMemcpyAsync(newFaces.v, mesh.fw.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newFaces.t, mesh.ft.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newFaces.n, mesh.fn.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
 
     ULLInt gridSize = (faceSize + 255) / 256;
     incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.v, offsetV, faceSize);
     incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.t, offsetT, faceSize);
     incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.n, offsetN, faceSize);
-    faces += newFaces;
 
-    Vecptr3f newWorld;
-    ULLInt worldSize = mesh.wx.size();
-    newWorld.malloc(worldSize);
-
-    cudaMemcpy(newWorld.x, mesh.wx.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newWorld.y, mesh.wy.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newWorld.z, mesh.wz.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice);
     world += newWorld;
-
-    Vecptr3f newNormal;
-    ULLInt normalSize = mesh.nx.size();
-    newNormal.malloc(normalSize);
-
-    cudaMemcpy(newNormal.x, mesh.nx.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newNormal.y, mesh.ny.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newNormal.z, mesh.nz.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice);
     normal += newNormal;
-
-    Vecptr2f newTexture;
-    ULLInt textureSize = mesh.tu.size();
-    newTexture.malloc(textureSize);
-    cudaMemcpy(newTexture.x, mesh.tu.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newTexture.y, mesh.tv.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice);
     texture += newTexture;
-
-    Vecptr4f newColor;
-    ULLInt colorSize = mesh.cr.size();
-    newColor.malloc(colorSize);
-    cudaMemcpy(newColor.x, mesh.cr.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newColor.y, mesh.cg.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newColor.z, mesh.cb.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newColor.w, mesh.ca.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice);
     color += newColor;
+    faces += newFaces;
 
     screen.free();
     screen.malloc(world.size);
