@@ -1,4 +1,4 @@
-assets/Shapes/Wall.obj 1
+assets/Shapes/Wall.obj 10
 assets/Models/Miyu.obj 2
 .heavy/Goku.obj 1
 assets/Models/Street.obj 1
