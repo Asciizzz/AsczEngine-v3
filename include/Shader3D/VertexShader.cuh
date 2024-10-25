@@ -39,8 +39,9 @@ __global__ void createRuntimeFacesKernel(
 // Tile-based depth map creation (using nested parallelism, or dynamic parallelism)
 __global__ void createDepthMapKernel(
     float *runtimeSx, float *runtimeSy, float *runtimeSz, float *runtimeSw, ULLInt faceCounter,
-    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
-    int tileNumX, int tileNumY, int tileWidth, int tileHeight
+    bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
+    float *buffBaryX, float *buffBaryY, float *buffBaryZ,
+    int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileWidth, int tileHeight
 );
 
 // Fill the buffer with datas
@@ -49,9 +50,14 @@ __global__ void rasterizationKernel(
     float *runtimeTu, float *runtimeTv,
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
     float *runtimeCr, float *runtimeCg, float *runtimeCb, float *runtimeCa,
-    ULLInt *buffFaceId,
-    Vec3f *buffWorld, Vec2f *buffTexture, Vec3f *buffNormal, Vec4f *buffColor,
-    bool *buffActive, Vec3f *buffBary, int buffWidth, int buffHeight
+
+    bool *buffActive, ULLInt *buffFaceId,
+    float *buffBrx, float *buffBry, float *buffBrz, // Bary
+    float *buffWx, float *buffWy, float *buffWz, // World
+    float *buffTu, float *buffTv, // Texture
+    float *buffNx, float *buffNy, float *buffNz, // Normal
+    float *buffCr, float *buffCg, float *buffCb, float *buffCa, // Color
+    int buffWidth, int buffHeight
 );
 
 #endif

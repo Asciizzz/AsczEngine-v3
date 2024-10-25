@@ -29,9 +29,15 @@ public:
     void free();
     void resize(int width, int height);
 
-    void updateTexture(Vec4f *color, int b_w, int b_h, int p_s);
+    void updateTexture(
+        float *cr, float *cg, float *cb, float *ca,
+        int b_w, int b_h, int p_s
+    );
 };
 
-__global__ void updateTextureKernel(sf::Uint8 *d_sfPixel, Vec4f *color, int b_w, int b_h, int p_s);
+__global__ void updateTextureKernel(
+    sf::Uint8 *d_sfPixel, float *cr, float *cg, float *cb, float *ca,
+    int b_w, int b_h, int p_s
+);
 
 #endif

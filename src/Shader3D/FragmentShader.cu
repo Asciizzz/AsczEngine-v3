@@ -8,7 +8,11 @@ void FragmentShader::phongShading() {
 
     phongShadingKernel<<<buffer.blockNum, buffer.blockSize>>>(
         graphic.light,
-        buffer.active, buffer.color, buffer.world, buffer.normal, buffer.texture,
+        buffer.active,
+        buffer.world.x, buffer.world.y, buffer.world.z,
+        buffer.texture.x, buffer.texture.y,
+        buffer.normal.x, buffer.normal.y, buffer.normal.z,
+        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
         buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
@@ -16,21 +20,23 @@ void FragmentShader::phongShading() {
 
 __global__ void phongShadingKernel(
     LightSrc light,
-    bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
+    bool *buffActive,
+    float *buffWx, float *buffWy, float *buffWz,
+    float *buffTu, float *buffTv,
+    float *buffNx, float *buffNy, float *buffNz,
+    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
     int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
 
-    // Apply colored light
-    buffColor[i].x *= light.color.x;
-    buffColor[i].y *= light.color.y;
-    buffColor[i].z *= light.color.z;
-    buffColor[i].limit(0, 255);
+    buffCr[i] *= light.color.x;
+    buffCg[i] *= light.color.y;
+    buffCb[i] *= light.color.z;
 
     // Find the light direction
     Vec3f lightDir = light.dir * -1;
-    Vec3f n = buffNormal[i];
+    Vec3f n = Vec3f(buffNx[i], buffNy[i], buffNz[i]);
 
     // Calculate the cosine of the angle between the normal and the light direction
     float dot = n * lightDir;
@@ -41,8 +47,12 @@ __global__ void phongShadingKernel(
     float diff = light.ambient * (1 - cosA) + light.specular * cosA;
 
     // Apply the light
-    buffColor[i].x *= diff;
-    buffColor[i].y *= diff;
-    buffColor[i].z *= diff;
-    buffColor[i].limit(0, 255);
+    buffCr[i] *= diff;
+    buffCg[i] *= diff;
+    buffCb[i] *= diff;
+
+    // Limit the color
+    buffCr[i] = fminf(fmaxf(buffCr[i], 0), 255);
+    buffCg[i] = fminf(fmaxf(buffCg[i], 0), 255);
+    buffCb[i] = fminf(fmaxf(buffCb[i], 0), 255);
 }

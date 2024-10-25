@@ -23,14 +23,14 @@ public:
     // Device pointers
     bool *active;
     float *depth;
-    Vec4f *color;
-
-    Vec3f *world;
-    Vec3f *normal;
-    Vec2f *texture;
-
     ULLInt *faceID;
-    Vec3f *bary;
+    Vecptr3f bary;
+
+    Vecptr3f world;
+    Vecptr2f texture;
+    Vecptr3f normal;
+    Vecptr4f color;
+
 
     Buffer3D();
     void resize(int width, int height, int pixelSize=1);
@@ -43,12 +43,19 @@ public:
 };
 
 __global__ void clearBufferKernel(
-    bool *active, float *depth, Vec4f *color,
-    Vec3f *world, Vec3f *normal, Vec2f *texture,
-    ULLInt *faceID, Vec3f *bary, int size
+    bool *active, float *depth, ULLInt *faceID,
+    float *brx, float *bry, float *brz, // Bary
+    float *wx, float *wy, float *wz, // World
+    float *tu, float *tv, // Texture
+    float *nx, float *ny, float *nz, // Normal
+    float *cr, float *cg, float *cb, float *ca, // Color
+    int size
 );
 
 // FUN BUFFER FUNCTIONS
-__global__ void nightSkyKernel(Vec4f *color, int width, int height);
+__global__ void nightSkyKernel(
+    float *cr, float *cg, float *cb, float *ca, // Color
+    int width, int height
+);
 
 #endif

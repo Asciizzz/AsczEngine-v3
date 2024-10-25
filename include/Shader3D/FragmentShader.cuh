@@ -12,7 +12,11 @@ public:
 // Phong Shading
 __global__ void phongShadingKernel(
     LightSrc light,
-    bool *buffActive, Vec4f *buffColor, Vec3f *buffWorld, Vec3f *buffNormal, Vec2f *buffTexture,
+    bool *buffActive,
+    float *buffWx, float *buffWy, float *buffWz,
+    float *buffTu, float *buffTv,
+    float *buffNx, float *buffNy, float *buffNz,
+    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
     int buffWidth, int buffHeight
 );
 

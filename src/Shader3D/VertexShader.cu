@@ -70,7 +70,8 @@ void VertexShader::createDepthMapBeta() {
             grphic.runtimeFaces.sw + i * grphic.chunkSize,
             currentChunkSize,
 
-            buffer.active, buffer.depth, buffer.faceID, buffer.bary,
+            buffer.active, buffer.depth, buffer.faceID,
+            buffer.bary.x, buffer.bary.y, buffer.bary.z,
             buffer.width, buffer.height,
             grphic.tileNumX, grphic.tileNumY,
             grphic.tileWidth, grphic.tileHeight
@@ -92,9 +93,14 @@ void VertexShader::rasterization() {
         grphic.runtimeFaces.tu, grphic.runtimeFaces.tv,
         grphic.runtimeFaces.nx, grphic.runtimeFaces.ny, grphic.runtimeFaces.nz,
         grphic.runtimeFaces.cr, grphic.runtimeFaces.cg, grphic.runtimeFaces.cb, grphic.runtimeFaces.ca,
-        buffer.faceID,
-        buffer.world, buffer.texture, buffer.normal, buffer.color,
-        buffer.active, buffer.bary, buffer.width, buffer.height
+
+        buffer.active, buffer.faceID,
+        buffer.bary.x, buffer.bary.y, buffer.bary.z,
+        buffer.world.x, buffer.world.y, buffer.world.z,
+        buffer.texture.x, buffer.texture.y,
+        buffer.normal.x, buffer.normal.y, buffer.normal.z,
+        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
+        buffer.width, buffer.height
     );
     cudaDeviceSynchronize();
 }
@@ -194,8 +200,9 @@ __global__ void createRuntimeFacesKernel(
 // Depth map creation
 __global__ void createDepthMapKernel(
     float *runtimeSx, float *runtimeSy, float *runtimeSz, float *runtimeSw, ULLInt faceCounter,
-    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
-    int tileNumX, int tileNumY, int tileWidth, int tileHeight
+    bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
+    float *buffBaryX, float *buffBaryY, float *buffBaryZ,
+    int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
     ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -267,7 +274,10 @@ __global__ void createDepthMapKernel(
             buffDepth[bIdx] = zDepth;
             buffActive[bIdx] = true;
             buffFaceId[bIdx] = fIdx;
-            buffBary[bIdx] = bary;
+
+            buffBaryX[bIdx] = bary.x;
+            buffBaryY[bIdx] = bary.y;
+            buffBaryZ[bIdx] = bary.z;
         }
     }
 }
@@ -277,9 +287,14 @@ __global__ void rasterizationKernel(
     float *runtimeTu, float *runtimeTv,
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
     float *runtimeCr, float *runtimeCg, float *runtimeCb, float *runtimeCa,
-    ULLInt *buffFaceId,
-    Vec3f *buffWorld, Vec2f *buffTexture, Vec3f *buffNormal, Vec4f *buffColor,
-    bool *buffActive, Vec3f *buffBary, int buffWidth, int buffHeight
+
+    bool *buffActive, ULLInt *buffFaceId,
+    float *buffBrx, float *buffBry, float *buffBrz, // Bary
+    float *buffWx, float *buffWy, float *buffWz, // World
+    float *buffTu, float *buffTv, // Texture
+    float *buffNx, float *buffNy, float *buffNz, // Normal
+    float *buffCr, float *buffCg, float *buffCb, float *buffCa, // Color
+    int buffWidth, int buffHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
@@ -293,33 +308,27 @@ __global__ void rasterizationKernel(
     ULLInt idx2 = fIdx * 3 + 2;
 
     // Get barycentric coordinates
-    float alp = buffBary[i].x;
-    float bet = buffBary[i].y;
-    float gam = buffBary[i].z;
+    float alp = buffBrx[i];
+    float bet = buffBry[i];
+    float gam = buffBrz[i];
 
     // Set world position
-    Vec3f w0 = Vec3f(runtimeWx[idx0], runtimeWy[idx0], runtimeWz[idx0]);
-    Vec3f w1 = Vec3f(runtimeWx[idx1], runtimeWy[idx1], runtimeWz[idx1]);
-    Vec3f w2 = Vec3f(runtimeWx[idx2], runtimeWy[idx2], runtimeWz[idx2]);
-    buffWorld[i] = w0 * alp + w1 * bet + w2 * gam;
+    buffWx[i] = runtimeWx[idx0] * alp + runtimeWx[idx1] * bet + runtimeWx[idx2] * gam;
+    buffWy[i] = runtimeWy[idx0] * alp + runtimeWy[idx1] * bet + runtimeWy[idx2] * gam;
+    buffWz[i] = runtimeWz[idx0] * alp + runtimeWz[idx1] * bet + runtimeWz[idx2] * gam;
 
     // Set texture
-    Vec2f t0 = Vec2f(runtimeTu[idx0], runtimeTv[idx0]);
-    Vec2f t1 = Vec2f(runtimeTu[idx1], runtimeTv[idx1]);
-    Vec2f t2 = Vec2f(runtimeTu[idx2], runtimeTv[idx2]);
-    buffTexture[i] = t0 * alp + t1 * bet + t2 * gam;
+    buffTu[i] = runtimeTu[idx0] * alp + runtimeTu[idx1] * bet + runtimeTu[idx2] * gam;
+    buffTv[i] = runtimeTv[idx0] * alp + runtimeTv[idx1] * bet + runtimeTv[idx2] * gam;
 
     // Set normal
-    Vec3f n0 = Vec3f(runtimeNx[idx0], runtimeNy[idx0], runtimeNz[idx0]);
-    Vec3f n1 = Vec3f(runtimeNx[idx1], runtimeNy[idx1], runtimeNz[idx1]);
-    Vec3f n2 = Vec3f(runtimeNx[idx2], runtimeNy[idx2], runtimeNz[idx2]);
-    n0.norm(); n1.norm(); n2.norm();
-    buffNormal[i] = n0 * alp + n1 * bet + n2 * gam;
-    buffNormal[i].norm();
+    buffNx[i] = runtimeNx[idx0] * alp + runtimeNx[idx1] * bet + runtimeNx[idx2] * gam;
+    buffNy[i] = runtimeNy[idx0] * alp + runtimeNy[idx1] * bet + runtimeNy[idx2] * gam;
+    buffNz[i] = runtimeNz[idx0] * alp + runtimeNz[idx1] * bet + runtimeNz[idx2] * gam;
 
     // Set color
-    Vec4f c0 = Vec4f(runtimeCr[idx0], runtimeCg[idx0], runtimeCb[idx0], runtimeCa[idx0]);
-    Vec4f c1 = Vec4f(runtimeCr[idx1], runtimeCg[idx1], runtimeCb[idx1], runtimeCa[idx1]);
-    Vec4f c2 = Vec4f(runtimeCr[idx2], runtimeCg[idx2], runtimeCb[idx2], runtimeCa[idx2]);
-    buffColor[i] = c0 * alp + c1 * bet + c2 * gam;
+    buffCr[i] = runtimeCr[idx0] * alp + runtimeCr[idx1] * bet + runtimeCr[idx2] * gam;
+    buffCg[i] = runtimeCg[idx0] * alp + runtimeCg[idx1] * bet + runtimeCg[idx2] * gam;
+    buffCb[i] = runtimeCb[idx0] * alp + runtimeCb[idx1] * bet + runtimeCb[idx2] * gam;
+    buffCa[i] = runtimeCa[idx0] * alp + runtimeCa[idx1] * bet + runtimeCa[idx2] * gam;
 }

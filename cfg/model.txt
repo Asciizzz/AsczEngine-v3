@@ -1,1 +1,1 @@
-assets/Models/MalevolentShrine.obj 1
+assets/Models/Sukuna.obj 1

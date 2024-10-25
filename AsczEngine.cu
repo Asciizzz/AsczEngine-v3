@@ -328,7 +328,10 @@ int main() {
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
         SFTex.updateTexture(
-            GRAPHIC.buffer.color,
+            GRAPHIC.buffer.color.x,
+            GRAPHIC.buffer.color.y,
+            GRAPHIC.buffer.color.z,
+            GRAPHIC.buffer.color.w,
             GRAPHIC.buffer.width,
             GRAPHIC.buffer.height,
             GRAPHIC.pixelSize
