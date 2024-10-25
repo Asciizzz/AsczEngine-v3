@@ -65,7 +65,7 @@ int main() {
     cube.cg = { 0, 255, 0, 255, 0, 255, 0, 255 };
     cube.cb = { 0, 255, 0, 255, 0, 255, 0, 255 };
     cube.ca = { 255, 255, 255, 255, 255, 255, 255, 255 };
-    cube.fw = {
+    cube.fw = { 
         0, 1, 2, 0, 2, 3,
         4, 5, 6, 4, 6, 7,
         0, 4, 7, 0, 7, 3,
@@ -321,7 +321,6 @@ int main() {
         VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
         VertexShader::createDepthMapBeta();
-        // VertexShader::createDepthMap();
         VertexShader::rasterization();
 
         FragmentShader::phongShading();
