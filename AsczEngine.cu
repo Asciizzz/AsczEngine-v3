@@ -39,8 +39,6 @@ int main() {
     // File: <path> <scale>
     std::ifstream file("cfg/model.txt");
     file >> objPath >> objScale;
-
-    // Create a .obj mesh (Work in progress)
     Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
 
     // Graphing calculator for y = f(x, z)
@@ -55,16 +53,16 @@ int main() {
     float minY = INFINITY;
     int numX = 0;
     int numZ = 0;
+    #pragma omp parallel for collapse(2)
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
+        // break;
         numX++;
-        break;
-
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             numZ++;
 
             // World pos of the point
-            float y = sin(x / 5) * cos(z / 5) * 5;
-            // float y = rand() % 30 - 10;
+            // float y = sin(x / 50) * cos(z / 50) * 50;
+            float y = 0;
 
             maxY = std::max(maxY, y);
             minY = std::min(minY, y);
@@ -83,6 +81,7 @@ int main() {
     }
     numZ /= numX;
 
+    #pragma omp parallel for collapse(2)
     for (ULLInt i = 0; i < graph.wx.size(); i++) {
         // Set color based on ratio
         float r = (graph.wx[i] - rangeX.x) / (rangeX.y - rangeX.x);
@@ -144,8 +143,9 @@ int main() {
     }
 
     // Append faces to the grid
-    for (ULLInt x = 0; x < numX; x++) {
-        for (ULLInt z = 0; z < numZ; z++) {
+    #pragma omp parallel collapse(2)
+    for (ULLInt x = 0; x < numX - 1; x++) {
+        for (ULLInt z = 0; z < numZ - 1; z++) {
             ULLInt i = x * numZ + z;
 
             graph.fw.push_back(i);
@@ -154,15 +154,26 @@ int main() {
             graph.fw.push_back(i + 1);
             graph.fw.push_back(i + numZ + 1);
             graph.fw.push_back(i + numZ);
-            
-            graph.fn = graph.fw;
-            graph.ft = graph.fw;
+
+            graph.ft.push_back(i);
+            graph.ft.push_back(i + 1);
+            graph.ft.push_back(i + numZ);
+            graph.ft.push_back(i + 1);
+            graph.ft.push_back(i + numZ + 1);
+            graph.ft.push_back(i + numZ);
+
+            graph.fn.push_back(i);
+            graph.fn.push_back(i + 1);
+            graph.fn.push_back(i + numZ);
+            graph.fn.push_back(i + 1);
+            graph.fn.push_back(i + numZ + 1);
+            graph.fn.push_back(i + numZ);
         }
     }
 
     // Append all the meshes here
-    GRAPHIC.mesh += obj;
-    // GRAPHIC.mesh += graph;
+    // GRAPHIC.mesh += obj;
+    GRAPHIC.mesh += graph;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
@@ -209,6 +220,13 @@ int main() {
 
                     std::ifstream color("cfg/lightColor.txt");
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
+                }
+                
+                // Press T to read texture.txt file and set its prop
+                if (event.key.code == sf::Keyboard::T) {
+                    std::string texturePath = "";
+                    std::ifstream("cfg/texture.txt") >> texturePath;
+                    GRAPHIC.createTexture(texturePath);
                 }
             }
 

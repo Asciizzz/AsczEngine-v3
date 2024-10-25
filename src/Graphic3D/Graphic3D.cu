@@ -63,6 +63,8 @@ void Graphic3D::free() {
     buffer.free();
     freeRuntimeFaces();
     freeFaceStreams();
+
+    freeTexture();
 }
 
 // Graphic faces (runtime)
@@ -127,17 +129,23 @@ void Graphic3D::createTexture(const std::string &path) {
     textureWidth = textureImage.getSize().x;
     textureHeight = textureImage.getSize().y;
 
-    std::cout << "Texture size: " << textureWidth << "x" << textureHeight << std::endl;
-
     std::vector<Vec3f> texture(textureWidth * textureHeight);
 
     for (int y = 0; y < textureHeight; y++) {
         for (int x = 0; x < textureWidth; x++) {
-            sf::Color color = textureImage.getPixel(x, textureHeight - y - 1);
-            texture[x + y * textureWidth] = {float(color.r), float(color.g), float(color.b)};
+            sf::Color color = textureImage.getPixel(x, y);
+            int idx = x + y * textureWidth;
+            texture[idx] = {float(color.r), float(color.g), float(color.b)};
         }
     }
 
+    if (textureSet) freeTexture();
+    else textureSet = true;
+
     cudaMalloc(&d_texture, sizeof(Vec3f) * texture.size());
     cudaMemcpy(d_texture, texture.data(), sizeof(Vec3f) * texture.size(), cudaMemcpyHostToDevice);
+}
+
+void Graphic3D::freeTexture() {
+    if (d_texture) cudaFree(d_texture);
 }
