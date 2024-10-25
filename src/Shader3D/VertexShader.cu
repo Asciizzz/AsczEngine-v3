@@ -69,7 +69,7 @@ void VertexShader::createDepthMapBeta() {
     // 1 million elements per batch
     int chunkNum = (grphic.faceCounter + grphic.chunkSize - 1) / grphic.chunkSize;
 
-    dim3 blockSize(16, 16);
+    dim3 blockSize(4, 4);
 
     for (int i = 0; i < chunkNum; i++) {
         size_t currentChunkSize = (i == chunkNum - 1) ?
@@ -188,7 +188,8 @@ __global__ void createRuntimeFacesKernel(
 // Depth map creation
 __global__ void createDepthMapKernel(
     Face3D *runtimeFaces, ULLInt faceCounter,
-    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary, int buffWidth, int buffHeight,
+    bool *buffActive, float *buffDepth, ULLInt *buffFaceId, Vec3f *buffBary,
+    int buffWidth, int buffHeight,
     int tileNumX, int tileNumY, int tileWidth, int tileHeight
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -225,6 +226,12 @@ __global__ void createDepthMapKernel(
     int maxX = max(max(p0.x, p1.x), p2.x);
     int minY = min(min(p0.y, p1.y), p2.y);
     int maxY = max(max(p0.y, p1.y), p2.y);
+
+    // Clip the bounding box based on the screen
+    minX = max(minX, 0);
+    maxX = min(maxX, buffWidth - 1);
+    minY = max(minY, 0);
+    maxY = min(maxY, buffHeight - 1);
 
     // // If bounding box is outside the tile area, return
     if (minX > bufferMaxX ||
