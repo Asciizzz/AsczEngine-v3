@@ -68,11 +68,11 @@ void Graphic3D::free() {
 void Graphic3D::mallocRuntimeFaces() {
     cudaMalloc(&d_faceCounter, sizeof(ULLInt));
     // In the worst case scenario, each face when culled can be split into 4 faces
-    runtimeFaces.malloc(mesh.faces.size * 4);
+    rtFaces.malloc(mesh.faces.size * 4);
 }
 void Graphic3D::freeRuntimeFaces() {
     if (d_faceCounter) cudaFree(d_faceCounter);
-    runtimeFaces.free();
+    rtFaces.free();
 }
 void Graphic3D::resizeRuntimeFaces() {
     freeRuntimeFaces();

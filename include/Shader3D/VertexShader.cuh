@@ -36,7 +36,7 @@ __global__ void createRuntimeFacesKernel(
     ULLInt *faceCounter
 );
 
-// Tile-based depth map creation (using nested parallelism, or dynamic parallelism)
+// Tile-based depth map creation
 __global__ void createDepthMapKernel(
     float *runtimeSx, float *runtimeSy, float *runtimeSz, float *runtimeSw, ULLInt faceCounter,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId,

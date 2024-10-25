@@ -32,11 +32,11 @@ void VertexShader::createRuntimeFaces() {
         mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
         mesh.faces.v, mesh.faces.t, mesh.faces.n, mesh.faces.size / 3,
 
-        grphic.runtimeFaces.sx, grphic.runtimeFaces.sy, grphic.runtimeFaces.sz, grphic.runtimeFaces.sw,
-        grphic.runtimeFaces.wx, grphic.runtimeFaces.wy, grphic.runtimeFaces.wz,
-        grphic.runtimeFaces.tu, grphic.runtimeFaces.tv,
-        grphic.runtimeFaces.nx, grphic.runtimeFaces.ny, grphic.runtimeFaces.nz,
-        grphic.runtimeFaces.cr, grphic.runtimeFaces.cg, grphic.runtimeFaces.cb, grphic.runtimeFaces.ca,
+        grphic.rtFaces.sx, grphic.rtFaces.sy, grphic.rtFaces.sz, grphic.rtFaces.sw,
+        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
+        grphic.rtFaces.tu, grphic.rtFaces.tv,
+        grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
+        grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
         grphic.d_faceCounter
     );
     cudaDeviceSynchronize();
@@ -64,10 +64,10 @@ void VertexShader::createDepthMapBeta() {
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize, 0, grphic.faceStreams[i]>>>(
-            grphic.runtimeFaces.sx + i * grphic.chunkSize,
-            grphic.runtimeFaces.sy + i * grphic.chunkSize,
-            grphic.runtimeFaces.sz + i * grphic.chunkSize,
-            grphic.runtimeFaces.sw + i * grphic.chunkSize,
+            grphic.rtFaces.sx + i * grphic.chunkSize,
+            grphic.rtFaces.sy + i * grphic.chunkSize,
+            grphic.rtFaces.sz + i * grphic.chunkSize,
+            grphic.rtFaces.sw + i * grphic.chunkSize,
             currentChunkSize,
 
             buffer.active, buffer.depth, buffer.faceID,
@@ -89,10 +89,10 @@ void VertexShader::rasterization() {
     Buffer3D &buffer = grphic.buffer;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        grphic.runtimeFaces.wx, grphic.runtimeFaces.wy, grphic.runtimeFaces.wz,
-        grphic.runtimeFaces.tu, grphic.runtimeFaces.tv,
-        grphic.runtimeFaces.nx, grphic.runtimeFaces.ny, grphic.runtimeFaces.nz,
-        grphic.runtimeFaces.cr, grphic.runtimeFaces.cg, grphic.runtimeFaces.cb, grphic.runtimeFaces.ca,
+        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
+        grphic.rtFaces.tu, grphic.rtFaces.tv,
+        grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
+        grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
 
         buffer.active, buffer.faceID,
         buffer.bary.x, buffer.bary.y, buffer.bary.z,

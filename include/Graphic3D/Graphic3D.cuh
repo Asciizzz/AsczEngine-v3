@@ -64,7 +64,7 @@ public:
     // For runtime faces
     ULLInt faceCounter;
     ULLInt *d_faceCounter;
-    Face3D runtimeFaces;
+    Face3D rtFaces;
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();
