@@ -158,29 +158,6 @@ __global__ void createRuntimeFacesKernel(
     ULLInt fn1 = faceNs[fIdx1];
     ULLInt fn2 = faceNs[fIdx2];
 
-    float sw0 = screenW[fw0];
-    float sw1 = screenW[fw1];
-    float sw2 = screenW[fw2];
-
-    bool inside0 = (
-        screenX[fw0] >= -sw0 && screenX[fw0] <= sw0 &&
-        screenY[fw0] >= -sw0 && screenY[fw0] <= sw0 &&
-        screenZ[fw0] >= 0 && screenZ[fw0] <= sw0
-    );
-    bool inside1 = (
-        screenX[fw1] >= -sw1 && screenX[fw1] <= sw1 &&
-        screenY[fw1] >= -sw1 && screenY[fw1] <= sw1 &&
-        screenZ[fw1] >= 0 && screenZ[fw1] <= sw1
-    );
-    bool inside2 = (
-        screenX[fw2] >= -sw2 && screenX[fw2] <= sw2 &&
-        screenY[fw2] >= -sw2 && screenY[fw2] <= sw2 &&
-        screenZ[fw2] >= 0 && screenZ[fw2] <= sw2
-    );
-
-    // Entirely outside the frustum
-    if (!inside0 && !inside1 && !inside2) return;
-
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
     ULLInt idx2 = idx0 + 2;

@@ -1,5 +1,3 @@
-assets/Models/MalevolentShrine.obj 2
-
 assets/Shapes/Wall.obj 10
 assets/Models/Miyu.obj 2
 .heavy/Goku.obj 1

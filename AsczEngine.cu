@@ -254,6 +254,9 @@ int main() {
     float graphMoveX = 0;
     float graphMoveZ = 0;
 
+    // Other settings
+    bool textureMode = true;
+
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
@@ -284,11 +287,16 @@ int main() {
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
                 }
                 
-                // Press T to read texture.txt file and set its prop
-                if (event.key.code == sf::Keyboard::T) {
+                // Press f2 to read texture.txt file and set its prop
+                if (event.key.code == sf::Keyboard::F2) {
                     std::string texturePath = "";
                     std::ifstream("cfg/texture.txt") >> texturePath;
                     GRAPHIC.createTexture(texturePath);
+                }
+
+                // Press T to toggle texture mode
+                if (event.key.code == sf::Keyboard::T) {
+                    textureMode = !textureMode;
                 }
             }
 
@@ -389,7 +397,7 @@ int main() {
         VertexShader::createDepthMapBeta();
         VertexShader::rasterization();
 
-        // FragmentShader::applyTexture();
+        if (textureMode) FragmentShader::applyTexture();
         FragmentShader::phongShading();
 
         // From buffer to texture
