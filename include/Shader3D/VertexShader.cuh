@@ -30,12 +30,12 @@ __global__ void cameraProjectionKernel(
 
 // Filter visible faces
 __global__ void createRuntimeFacesKernel(
-    float *screenX, float *screenY, float *screenZ, float *screenW,
-    float *worldX, float *worldY, float *worldZ,
-    float *normalX, float *normalY, float *normalZ,
-    float *textureX, float *textureY,
-    float *colorX, float *colorY, float *colorZ, float *colorW,
-    ULLInt *faceWs, ULLInt *faceTs, ULLInt *faceNs, ULLInt numFs,
+    const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
+    const float *worldX, const float *worldY, const float *worldZ,
+    const float *normalX, const float *normalY, const float *normalZ,
+    const float *textureX, const float *textureY,
+    const float *colorX, const float *colorY, const float *colorZ, float *colorW,
+    const ULLInt *faceWs, const ULLInt *faceTs, const ULLInt *faceNs, ULLInt numFs,
 
     float *runtimeSx, float *runtimeSy, float *runtimeSz, float *runtimeSw,
     float *runtimeWx, float *runtimeWy, float *runtimeWz,
@@ -47,7 +47,7 @@ __global__ void createRuntimeFacesKernel(
 
 // Tile-based depth map creation
 __global__ void createDepthMapKernel(
-    float *runtimeSx, float *runtimeSy, float *runtimeSz, float *runtimeSw, ULLInt faceCounter,
+    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw, ULLInt faceCounter,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
     float *buffBaryX, float *buffBaryY, float *buffBaryZ,
     int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileWidth, int tileHeight
@@ -55,13 +55,13 @@ __global__ void createDepthMapKernel(
 
 // Fill the buffer with datas
 __global__ void rasterizationKernel(
-    float *runtimeSw,
-    float *runtimeWx, float *runtimeWy, float *runtimeWz,
-    float *runtimeTu, float *runtimeTv,
-    float *runtimeNx, float *runtimeNy, float *runtimeNz,
-    float *runtimeCr, float *runtimeCg, float *runtimeCb, float *runtimeCa,
+    const float *runtimeSw,
+    const float *runtimeWx, const float *runtimeWy, const float *runtimeWz,
+    const float *runtimeTu, const float *runtimeTv,
+    const float *runtimeNx, const float *runtimeNy, const float *runtimeNz,
+    const float *runtimeCr, const float *runtimeCg, const float *runtimeCb, const float *runtimeCa,
 
-    bool *buffActive, ULLInt *buffFaceId,
+    const bool *buffActive, const ULLInt *buffFaceId,
     float *buffBrx, float *buffBry, float *buffBrz, // Bary
     float *buffWx, float *buffWy, float *buffWz, // World
     float *buffTu, float *buffTv, // Texture
