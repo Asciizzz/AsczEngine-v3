@@ -1,1 +1,1 @@
-assets/Models/Sukuna.obj 1
+assets/Models/Sphere.obj 1
