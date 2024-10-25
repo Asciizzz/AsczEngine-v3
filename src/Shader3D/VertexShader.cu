@@ -89,11 +89,11 @@ void VertexShader::rasterization() {
     Buffer3D &buffer = grphic.buffer;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
+        grphic.rtFaces.sw,
         grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-
         buffer.active, buffer.faceID,
         buffer.bary.x, buffer.bary.y, buffer.bary.z,
         buffer.world.x, buffer.world.y, buffer.world.z,
@@ -116,18 +116,11 @@ __global__ void cameraProjectionKernel(
 
     Vec4f v4(worldX[i], worldY[i], worldZ[i], 1);
     Vec4f t4 = mvp * v4;
-    bool inside = (
-        t4.x >= -t4.w && t4.x <= t4.w &&
-        t4.y >= -t4.w && t4.y <= t4.w &&
-        t4.z >= 0 && t4.z <= t4.w
-    );
 
-    Vec3f t3 = t4.toVec3f(); // Convert to NDC [-1, 1]
-
-    screenX[i] = t3.x;
-    screenY[i] = t3.y;
-    screenZ[i] = t3.z;
-    screenW[i] = inside ? 1 : 0;
+    screenX[i] = t4.x;
+    screenY[i] = t4.y;
+    screenZ[i] = t4.z;
+    screenW[i] = t4.w;
 }
 
 // Create runtime faces
@@ -168,9 +161,25 @@ __global__ void createRuntimeFacesKernel(
     float sw0 = screenW[fw0];
     float sw1 = screenW[fw1];
     float sw2 = screenW[fw2];
-    
+
+    bool inside0 = (
+        screenX[fw0] >= -sw0 && screenX[fw0] <= sw0 &&
+        screenY[fw0] >= -sw0 && screenY[fw0] <= sw0 &&
+        screenZ[fw0] >= 0 && screenZ[fw0] <= sw0
+    );
+    bool inside1 = (
+        screenX[fw1] >= -sw1 && screenX[fw1] <= sw1 &&
+        screenY[fw1] >= -sw1 && screenY[fw1] <= sw1 &&
+        screenZ[fw1] >= 0 && screenZ[fw1] <= sw1
+    );
+    bool inside2 = (
+        screenX[fw2] >= -sw2 && screenX[fw2] <= sw2 &&
+        screenY[fw2] >= -sw2 && screenY[fw2] <= sw2 &&
+        screenZ[fw2] >= 0 && screenZ[fw2] <= sw2
+    );
+
     // Entirely outside the frustum
-    if (sw0 <= 0 && sw1 <= 0 && sw2 <= 0) return;
+    if (!inside0 && !inside1 && !inside2) return;
 
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
@@ -179,7 +188,7 @@ __global__ void createRuntimeFacesKernel(
     runtimeSx[idx0] = screenX[fw0]; runtimeSx[idx1] = screenX[fw1]; runtimeSx[idx2] = screenX[fw2];
     runtimeSy[idx0] = screenY[fw0]; runtimeSy[idx1] = screenY[fw1]; runtimeSy[idx2] = screenY[fw2];
     runtimeSz[idx0] = screenZ[fw0]; runtimeSz[idx1] = screenZ[fw1]; runtimeSz[idx2] = screenZ[fw2];
-    runtimeSw[idx0] = sw0; runtimeSw[idx1] = sw1; runtimeSw[idx2] = sw2;
+    runtimeSw[idx0] = screenW[fw0]; runtimeSw[idx1] = screenW[fw1]; runtimeSw[idx2] = screenW[fw2];
 
     runtimeWx[idx0] = worldX[fw0]; runtimeWx[idx1] = worldX[fw1]; runtimeWx[idx2] = worldX[fw2];
     runtimeWy[idx0] = worldY[fw0]; runtimeWy[idx1] = worldY[fw1]; runtimeWy[idx2] = worldY[fw2];
@@ -214,16 +223,16 @@ __global__ void createDepthMapKernel(
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
 
-    float sx0 = (runtimeSx[idx0] + 1) * buffWidth / 2;
-    float sy0 = (1 - runtimeSy[idx0]) * buffHeight / 2;
-    float sx1 = (runtimeSx[idx1] + 1) * buffWidth / 2;
-    float sy1 = (1 - runtimeSy[idx1]) * buffHeight / 2;
-    float sx2 = (runtimeSx[idx2] + 1) * buffWidth / 2;
-    float sy2 = (1 - runtimeSy[idx2]) * buffHeight / 2;
+    float sx0 = (runtimeSx[idx0] / runtimeSw[idx0] + 1) * buffWidth / 2;
+    float sy0 = (1 - runtimeSy[idx0] / runtimeSw[idx0]) * buffHeight / 2;
+    float sx1 = (runtimeSx[idx1] / runtimeSw[idx1] + 1) * buffWidth / 2;
+    float sy1 = (1 - runtimeSy[idx1] / runtimeSw[idx1]) * buffHeight / 2;
+    float sx2 = (runtimeSx[idx2] / runtimeSw[idx2] + 1) * buffWidth / 2;
+    float sy2 = (1 - runtimeSy[idx2] / runtimeSw[idx2]) * buffHeight / 2;
 
-    float sz0 = runtimeSz[idx0];
-    float sz1 = runtimeSz[idx1];
-    float sz2 = runtimeSz[idx2];
+    float sz0 = runtimeSz[idx0] / runtimeSw[idx0];
+    float sz1 = runtimeSz[idx1] / runtimeSw[idx1];
+    float sz2 = runtimeSz[idx2] / runtimeSw[idx2];
 
     // Buffer bounding box based on the tile
 
@@ -278,6 +287,7 @@ __global__ void createDepthMapKernel(
 }
 
 __global__ void rasterizationKernel(
+    float *runtimeSw,
     float *runtimeWx, float *runtimeWy, float *runtimeWz,
     float *runtimeTu, float *runtimeTv,
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
@@ -312,9 +322,18 @@ __global__ void rasterizationKernel(
     buffWy[i] = runtimeWy[idx0] * alp + runtimeWy[idx1] * bet + runtimeWy[idx2] * gam;
     buffWz[i] = runtimeWz[idx0] * alp + runtimeWz[idx1] * bet + runtimeWz[idx2] * gam;
 
-    // Set texture
-    buffTu[i] = runtimeTu[idx0] * alp + runtimeTu[idx1] * bet + runtimeTu[idx2] * gam;
-    buffTv[i] = runtimeTv[idx0] * alp + runtimeTv[idx1] * bet + runtimeTv[idx2] * gam;
+    // Set texture (with correct perspective correction)
+    float tu_w = runtimeTu[idx0] * alp / runtimeSw[idx0] + runtimeTu[idx1] * bet / runtimeSw[idx1] + runtimeTu[idx2] * gam / runtimeSw[idx2];
+    float tv_w = runtimeTv[idx0] * alp / runtimeSw[idx0] + runtimeTv[idx1] * bet / runtimeSw[idx1] + runtimeTv[idx2] * gam / runtimeSw[idx2];
+
+    float t_w = (1 / runtimeSw[idx0]) * alp + (1 / runtimeSw[idx1]) * bet + (1 / runtimeSw[idx2]) * gam;
+
+    buffTu[i] = tu_w / t_w;
+    buffTv[i] = tv_w / t_w;
+
+    // Ignore this line
+    // buffTu[i] = runtimeTu[idx0] * alp + runtimeTu[idx1] * bet + runtimeTu[idx2] * gam;
+    // buffTv[i] = runtimeTv[idx0] * alp + runtimeTv[idx1] * bet + runtimeTv[idx2] * gam;
 
     // Set normal
     buffNx[i] = runtimeNx[idx0] * alp + runtimeNx[idx1] * bet + runtimeNx[idx2] * gam;

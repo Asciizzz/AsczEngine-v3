@@ -121,7 +121,7 @@ int main() {
     #pragma omp parallel for collapse(2)
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         graphNumX++;
-        // break;
+        break;
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             graphNumZ++;
 
@@ -231,7 +231,7 @@ int main() {
 
     // Append all the meshes here
     GRAPHIC.mesh += graph;
-    // GRAPHIC.mesh += obj;
+    GRAPHIC.mesh += obj;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();

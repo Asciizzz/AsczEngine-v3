@@ -3,6 +3,15 @@
 
 #include <Graphic3D.cuh>
 
+/* IMPORTANT NOTES REGARDING TEXTURE MAP
+
+Instead of interpolating the texture coordinates in the fragment shader,
+We will interpolate u/w and v/w in the vertex shader, and then divide them
+by interpolated 1/w in the fragment shader. This will ensure that the texture
+have a correct perspective correction.
+
+*/
+
 class VertexShader {
 public:
     // Render pipeline
@@ -46,6 +55,7 @@ __global__ void createDepthMapKernel(
 
 // Fill the buffer with datas
 __global__ void rasterizationKernel(
+    float *runtimeSw,
     float *runtimeWx, float *runtimeWy, float *runtimeWz,
     float *runtimeTu, float *runtimeTv,
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
