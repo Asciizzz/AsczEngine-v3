@@ -41,7 +41,7 @@ int main() {
     file >> objPath >> objScale;
 
     // Create a .obj mesh (Work in progress)
-    Mesh obj = Playground::readObjFile(0, objPath, 0);
+    Mesh obj = Playground::readObjFile(objPath, 0, 1, true);
 
     // Graphing calculator for y = f(x, z)
     Mesh graph;

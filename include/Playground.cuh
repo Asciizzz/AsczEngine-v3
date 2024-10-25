@@ -13,7 +13,9 @@
 
 class Playground {
 public:
-    static Mesh readObjFile(UInt objId, std::string path, short fIdxBased=1, bool rainbow=true, bool center=true) {
+    // Note Placement: 0: original, 1: center, 2: floor
+
+    static Mesh readObjFile(std::string path, short fIdxBased=1, short placement=0, bool rainbow=true) {
         std::ifstream file(path);
         if (!file.is_open()) {
             std::cerr << "Error: Could not open file " << path << std::endl;
@@ -115,12 +117,17 @@ public:
                 cb.push_back(b * 255);
                 ca.push_back(255);
 
-                // Shift the mesh to the origin
-                wx[i] -= (minX + maxX) / 2;
-                wy[i] -= (minY + maxY) / 2;
-                wz[i] -= (minZ + maxZ) / 2;
+                // Shift to center of xz plane
+                if (placement > 0) {
+                    wx[i] -= (minX + maxX) / 2;
+                    wz[i] -= (minZ + maxZ) / 2;
+                }
 
-                if (!center) wy[i] = -minY;
+                if (placement == 1) { // Shift to center
+                    wy[i] -= (minY + maxY) / 2;
+                } else if (placement == 2) { // Shift to floor
+                    wy[i] -= minY;
+                }
             } else {
                 // Just set it to white
                 cr.push_back(255);
