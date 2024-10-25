@@ -1,27 +1,17 @@
 #include <VertexShader.cuh>
 
-// Render functions
-
-Vec4f VertexShader::toScreenSpace(Camera3D &camera, Vec3f world, int buffWidth, int buffHeight) {
-    Vec4f v4 = world.toVec4f();
-    Vec4f t4 = camera.mvp * v4;
-    Vec3f t3 = t4.toVec3f(); // Convert to NDC [-1, 1]
-    Vec4f p = t3.toVec4f();
-    p.w = camera.isInsideFrustum(world);
-
-    return p;
-}
-
 // Render pipeline
 
 void VertexShader::cameraProjection() {
     Graphic3D &grphic = Graphic3D::instance();
     Camera3D &camera = grphic.camera;
-    Buffer3D &buffer = grphic.buffer;
     Mesh3D &mesh = grphic.mesh;
 
-    cameraProjectionKernel<<<mesh.blockNumWs, mesh.blockSize>>>(
-        mesh.screen, mesh.world, camera, buffer.width, buffer.height, mesh.numWs
+    size_t gridSize = (mesh.world.size + 256 - 1) / 256;
+    cameraProjectionKernel<<<gridSize, 256>>>(
+        mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
+        mesh.world.x, mesh.world.y, mesh.world.z,
+        camera.mvp, mesh.world.size
     );
     cudaDeviceSynchronize();
 }
@@ -31,9 +21,16 @@ void VertexShader::createRuntimeFaces() {
     Mesh3D &mesh = grphic.mesh;
 
     cudaMemset(grphic.d_faceCounter, 0, sizeof(ULLInt));
-    createRuntimeFacesKernel<<<mesh.blockNumFs, mesh.blockSize>>>(
-        mesh.screen, mesh.world, mesh.normal, mesh.texture, mesh.color,
-        mesh.faceWs, mesh.faceNs, mesh.faceTs, mesh.numFs,
+
+    size_t gridSize = (mesh.faces.size / 3 + 256 - 1) / 256;
+
+    createRuntimeFacesKernel<<<gridSize, 256>>>(
+        mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
+        mesh.world.x, mesh.world.y, mesh.world.z,
+        mesh.normal.x, mesh.normal.y, mesh.normal.z,
+        mesh.texture.x, mesh.texture.y,
+        mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
+        mesh.faces.v, mesh.faces.t, mesh.faces.n, mesh.faces.size / 3,
         grphic.runtimeFaces, grphic.d_faceCounter
     );
     cudaDeviceSynchronize();
@@ -88,42 +85,81 @@ void VertexShader::rasterization() {
 
 // Camera projection (MVP) kernel
 __global__ void cameraProjectionKernel(
-    Vec4f *screen, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
+    float *screenX, float *screenY, float *screenZ, float *screenW,
+    float *worldX, float *worldY, float *worldZ,
+    Mat4f mvp, ULLInt numWs
 ) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= numWs) return;
 
-    Vec4f p = VertexShader::toScreenSpace(camera, world[i], buffWidth, buffHeight);
-    screen[i] = p;
+    Vec4f v4(worldX[i], worldY[i], worldZ[i], 1);
+    Vec4f t4 = mvp * v4;
+
+    Vec3f t3 = t4.toVec3f(); // Convert to NDC [-1, 1]
+    bool inside = (
+        t3.x >= -1 && t3.x <= 1 &&
+        t3.y >= -1 && t3.y <= 1 &&
+        t3.z >= 0 && t3.z <= 1   
+    );
+
+    screenX[i] = t3.x;
+    screenY[i] = t3.y;
+    screenZ[i] = t3.z;
+    screenW[i] = inside ? 1 : 0;
 }
 
 // Create runtime faces
 __global__ void createRuntimeFacesKernel(
-    Vec4f *screen, Vec3f *world, Vec3f *normal, Vec2f *texture, Vec4f *color,
-    Vec3ulli *faceWs, Vec3ulli *faceNs, Vec3ulli *faceTs, ULLInt numFs,
+    float *screenX, float *screenY, float *screenZ, float *screenW,
+    float *worldX, float *worldY, float *worldZ,
+    float *normalX, float *normalY, float *normalZ,
+    float *textureX, float *textureY,
+    float *colorX, float *colorY, float *colorZ, float *colorW,
+
+    ULLInt *faceWs, ULLInt *faceTs, ULLInt *faceNs, ULLInt numFs,
     Face3D *runtimeFaces, ULLInt *faceCounter
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
 
-    Vec3ulli fw = faceWs[fIdx];
-    Vec3ulli fn = faceNs[fIdx];
-    Vec3ulli ft = faceTs[fIdx];
+    ULLInt fw0 = faceWs[fIdx * 3];
+    ULLInt fw1 = faceWs[fIdx * 3 + 1];
+    ULLInt fw2 = faceWs[fIdx * 3 + 2];
 
-    Vec4f p0 = screen[fw.x];
-    Vec4f p1 = screen[fw.y];
-    Vec4f p2 = screen[fw.z];
+    ULLInt ft0 = faceTs[fIdx * 3];
+    ULLInt ft1 = faceTs[fIdx * 3 + 1];
+    ULLInt ft2 = faceTs[fIdx * 3 + 2];
+
+    ULLInt fn0 = faceNs[fIdx * 3];
+    ULLInt fn1 = faceNs[fIdx * 3 + 1];
+    ULLInt fn2 = faceNs[fIdx * 3 + 2];
+
+    Vec4f p0(screenX[fw0], screenY[fw0], screenZ[fw0], screenW[fw0]);
+    Vec4f p1(screenX[fw1], screenY[fw1], screenZ[fw1], screenW[fw1]);
+    Vec4f p2(screenX[fw2], screenY[fw2], screenZ[fw2], screenW[fw2]);
 
     if (p0.w > 0 || p1.w > 0 || p2.w > 0) {
         ULLInt idx = atomicAdd(faceCounter, 1);
 
-        runtimeFaces[idx] = {
-            {world[fw.x], world[fw.y], world[fw.z]},
-            {normal[fn.x], normal[fn.y], normal[fn.z]},
-            {texture[ft.x], texture[ft.y], texture[ft.z]},
-            {color[fw.x], color[fw.y], color[fw.z]},
-            {screen[fw.x], screen[fw.y], screen[fw.z]}
-        };
+        runtimeFaces[idx].world[0] = Vec3f(worldX[fw0], worldY[fw0], worldZ[fw0]);
+        runtimeFaces[idx].world[1] = Vec3f(worldX[fw1], worldY[fw1], worldZ[fw1]);
+        runtimeFaces[idx].world[2] = Vec3f(worldX[fw2], worldY[fw2], worldZ[fw2]);
+
+        runtimeFaces[idx].normal[0] = Vec3f(normalX[fn0], normalY[fn0], normalZ[fn0]);
+        runtimeFaces[idx].normal[1] = Vec3f(normalX[fn1], normalY[fn1], normalZ[fn1]);
+        runtimeFaces[idx].normal[2] = Vec3f(normalX[fn2], normalY[fn2], normalZ[fn2]);
+
+        runtimeFaces[idx].texture[0] = Vec2f(textureX[ft0], textureY[ft0]);
+        runtimeFaces[idx].texture[1] = Vec2f(textureX[ft1], textureY[ft1]);
+        runtimeFaces[idx].texture[2] = Vec2f(textureX[ft2], textureY[ft2]);
+
+        runtimeFaces[idx].color[0] = Vec4f(colorX[fw0], colorY[fw0], colorZ[fw0], colorW[fw0]);
+        runtimeFaces[idx].color[1] = Vec4f(colorX[fw1], colorY[fw1], colorZ[fw1], colorW[fw1]);
+        runtimeFaces[idx].color[2] = Vec4f(colorX[fw2], colorY[fw2], colorZ[fw2], colorW[fw2]);
+
+        runtimeFaces[idx].screen[0] = p0;
+        runtimeFaces[idx].screen[1] = p1;
+        runtimeFaces[idx].screen[2] = p2;
     }
 }
 

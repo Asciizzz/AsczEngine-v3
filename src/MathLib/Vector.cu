@@ -201,3 +201,145 @@ void Vec4f::limit(float min, float max) {
     z = std::max(min, std::min(z, max));
     w = std::max(min, std::min(w, max));
 }
+
+// SoA structure Vecs
+
+void Vecptr2f::malloc(ULLInt size) {
+    this->size = size;
+    cudaMalloc(&x, size * sizeof(float));
+    cudaMalloc(&y, size * sizeof(float));
+}
+void Vecptr2f::free() {
+    this->size = 0;
+    cudaFree(x);
+    cudaFree(y);
+}
+void Vecptr2f::operator+=(Vecptr2f& vec) {
+    Vecptr2f newVec;
+    newVec.malloc(size + vec.size);
+
+    // Copy original data
+    cudaMemcpy(newVec.x, x, size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.y, y, size * sizeof(float), cudaMemcpyDeviceToDevice);
+
+    // Copy new data
+    cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.y + size, vec.y, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+
+    // Free datas
+    free();
+    vec.free();
+
+    // Update
+    *this = newVec;
+}
+
+void Vecptr3f::malloc(ULLInt size) {
+    this->size = size;
+    cudaMalloc(&x, size * sizeof(float));
+    cudaMalloc(&y, size * sizeof(float));
+    cudaMalloc(&z, size * sizeof(float));
+}
+void Vecptr3f::free() {
+    this->size = 0;
+    cudaFree(x);
+    cudaFree(y);
+    cudaFree(z);
+}
+void Vecptr3f::operator+=(Vecptr3f& vec) {
+    Vecptr3f newVec;
+    newVec.malloc(size + vec.size);
+
+    // Copy original data
+    cudaMemcpy(newVec.x, x, size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.y, y, size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.z, z, size * sizeof(float), cudaMemcpyDeviceToDevice);
+
+    // Copy new data
+    cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.y + size, vec.y, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.z + size, vec.z, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+
+    // Free datas
+    free();
+    vec.free();
+
+    // Update
+    *this = newVec;
+}
+
+void Vecptr4f::malloc(ULLInt size) {
+    this->size = size;
+    cudaMalloc(&x, size * sizeof(float));
+    cudaMalloc(&y, size * sizeof(float));
+    cudaMalloc(&z, size * sizeof(float));
+    cudaMalloc(&w, size * sizeof(float));
+}
+void Vecptr4f::free() {
+    this->size = 0;
+    cudaFree(x);
+    cudaFree(y);
+    cudaFree(z);
+    cudaFree(w);
+}
+void Vecptr4f::operator+=(Vecptr4f& vec) {
+    Vecptr4f newVec;
+    newVec.malloc(size + vec.size);
+
+    // Copy original data
+    cudaMemcpy(newVec.x, x, size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.y, y, size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.z, z, size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.w, w, size * sizeof(float), cudaMemcpyDeviceToDevice);
+
+    // Copy new data
+    cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.y + size, vec.y, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.z + size, vec.z, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.w + size, vec.w, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+
+    // Free datas
+    free();
+    vec.free();
+
+    // Update
+    *this = newVec;
+}
+
+void Vecptr4ulli::malloc(ULLInt size) {
+    this->size = size;
+    cudaMalloc(&v, size * sizeof(ULLInt));
+    cudaMalloc(&t, size * sizeof(ULLInt));
+    cudaMalloc(&n, size * sizeof(ULLInt));
+    cudaMalloc(&o, size * sizeof(ULLInt));
+}
+void Vecptr4ulli::free() {
+    this->size = 0;
+    cudaFree(v);
+    cudaFree(t);
+    cudaFree(n);
+    cudaFree(o);
+}
+void Vecptr4ulli::operator+=(Vecptr4ulli& vec) {
+    Vecptr4ulli newVec;
+    newVec.malloc(size + vec.size);
+
+    // Copy original data
+    cudaMemcpy(newVec.v, v, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.t, t, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.n, n, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.o, o, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+
+    // Copy new data
+    cudaMemcpy(newVec.v + size, vec.v, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.t + size, vec.t, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.n + size, vec.n, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.o + size, vec.o, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+
+    // Free datas
+    free();
+    vec.free();
+
+    // Update
+    *this = newVec;
+}

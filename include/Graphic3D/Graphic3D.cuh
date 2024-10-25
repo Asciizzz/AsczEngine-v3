@@ -55,9 +55,8 @@ public:
     // Free everything
     void free();
 
-    // Mesh3D and its properties
+    // Mesh3D
     Mesh3D mesh;
-    void appendMesh(Mesh3D &m, bool del=true);
 
     // For runtime faces
     ULLInt faceCounter;

@@ -5,11 +5,6 @@
 
 class VertexShader {
 public:
-    // Render functions
-    __host__ __device__ static Vec4f toScreenSpace(
-        Camera3D &camera, Vec3f world, int buffWidth, int buffHeight
-    );
-
     // Render pipeline
     static void cameraProjection();
     static void createRuntimeFaces();
@@ -19,13 +14,20 @@ public:
 
 // Camera projection (MVP) kernel
 __global__ void cameraProjectionKernel(
-    Vec4f *screen, Vec3f *world, Camera3D camera, int buffWidth, int buffHeight, ULLInt numWs
+    float *screenX, float *screenY, float *screenZ, float *screenW,
+    float *worldX, float *worldY, float *worldZ,
+    Mat4f mvp, ULLInt numWs
 );
 
 // Filter visible faces
 __global__ void createRuntimeFacesKernel(
-    Vec4f *screen, Vec3f *world, Vec3f *normal, Vec2f *texture, Vec4f *color,
-    Vec3ulli *faceWs, Vec3ulli *faceNs, Vec3ulli *faceTs, ULLInt numFs,
+    float *screenX, float *screenY, float *screenZ, float *screenW,
+    float *worldX, float *worldY, float *worldZ,
+    float *normalX, float *normalY, float *normalZ,
+    float *textureX, float *textureY,
+    float *colorX, float *colorY, float *colorZ, float *colorW,
+
+    ULLInt *faceWs, ULLInt *faceTs, ULLInt *faceNs, ULLInt numFs,
     Face3D *runtimeFaces, ULLInt *faceCounter
 );
 

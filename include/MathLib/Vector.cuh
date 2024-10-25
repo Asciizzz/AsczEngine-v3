@@ -10,11 +10,13 @@
 #define ULInt unsigned long int
 #define ULLInt unsigned long long int
 #define UInts std::vector<UInt>
+#define ULLInts std::vector<ULLInt>
 
 #define Vecs2f std::vector<Vec2f>
 #define Vecs3f std::vector<Vec3f>
 #define Vecs4f std::vector<Vec4f>
 #define Vecs3ulli std::vector<Vec3ulli>
+#define Vecs4ulli std::vector<Vec4ulli>
 
 #define M_PI 3.14159265358979323846 // 180 degrees
 #define M_PI_2 1.57079632679489661923 // 90 degrees
@@ -105,6 +107,45 @@ struct Vec4f {
     __host__ __device__ Vec4f operator/(const float scl);
 
     __host__ __device__ void limit(float min, float max); // Limit the vector
+};
+
+// SoA structure Vecs
+
+struct Vecptr2f {
+    float *x, *y;
+    ULLInt size;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Vecptr2f &vec);
+};
+struct Vecptr3f {
+    float *x, *y, *z;
+    ULLInt size;
+
+    void malloc(ULLInt size);
+    void free();
+
+    void operator+=(Vecptr3f &vec);
+};
+struct Vecptr4f {
+    float *x, *y, *z, *w;
+    ULLInt size;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Vecptr4f &vec);
+};
+
+// Mainly used for faces
+struct Vecptr4ulli {
+    // Vertex, texture, normal, and objId
+    ULLInt *v, *t, *n, *o;
+    ULLInt size;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Vecptr4ulli &vec);
 };
 
 #endif

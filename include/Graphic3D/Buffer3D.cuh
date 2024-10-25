@@ -4,6 +4,16 @@
 #include <Matrix.cuh>
 #include <cuda_runtime.h>
 
+/* Note:
+
+Buffer is allowed to use AoS memory layout because it is
+relatively small, restricted to the size of the screen.
+
+Slight memory overhead is acceptable for the sake of
+simplicity and readability.
+
+*/
+
 class Buffer3D {
 public:
     int width, height, size;

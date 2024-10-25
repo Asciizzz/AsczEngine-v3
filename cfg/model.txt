@@ -1,1 +1,1 @@
-assets/Heavy/Pool.obj 1
+assets/Models/City/Building001.obj 1
