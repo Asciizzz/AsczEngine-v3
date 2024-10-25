@@ -45,10 +45,31 @@ void VertexShader::createDepthMap() {
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
+    dim3 blockSize(8, 32);
+
+    size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
+    size_t blockNumFace = (grphic.faceCounter + blockSize.y - 1) / blockSize.y;
+    dim3 blockNum(blockNumTile, blockNumFace);
+
+    createDepthMapKernel<<<blockNum, blockSize>>>(
+        grphic.runtimeFaces, grphic.faceCounter,
+        buffer.active, buffer.depth, buffer.faceID, buffer.bary,
+        buffer.width, buffer.height, grphic.tileNumX, grphic.tileNumY,
+        grphic.tileWidth, grphic.tileHeight
+    );
+}
+
+void VertexShader::createDepthMapBeta() {
+    Graphic3D &grphic = Graphic3D::instance();
+    Buffer3D &buffer = grphic.buffer;
+
+    buffer.clearBuffer();
+    buffer.nightSky(); // Cool effect
+
     // 1 million elements per batch
     int chunkNum = (grphic.faceCounter + grphic.chunkSize - 1) / grphic.chunkSize;
 
-    dim3 blockSize(8, 32);
+    dim3 blockSize(16, 16);
 
     for (int i = 0; i < chunkNum; i++) {
         size_t currentChunkSize = (i == chunkNum - 1) ?
@@ -60,7 +81,8 @@ void VertexShader::createDepthMap() {
         createDepthMapKernel<<<blockNum, blockSize, 0, grphic.faceStreams[i]>>>(
             grphic.runtimeFaces + i * grphic.chunkSize, currentChunkSize,
             buffer.active, buffer.depth, buffer.faceID, buffer.bary,
-            buffer.width, buffer.height, grphic.tileNumX, grphic.tileNumY,
+            buffer.width, buffer.height,
+            grphic.tileNumX, grphic.tileNumY,
             grphic.tileWidth, grphic.tileHeight
         );
     }
@@ -179,7 +201,7 @@ __global__ void createDepthMapKernel(
     Vec4f p2 = runtimeFaces[fIdx].screen[2];
 
     // Entirely outside the frustum
-    if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
+    if (p0.w != 1 && p1.w != 1 && p2.w != 1) return;
 
     p0.x = (p0.x + 1) * buffWidth / 2;
     p0.y = (1 - p0.y) * buffHeight / 2;
@@ -204,7 +226,7 @@ __global__ void createDepthMapKernel(
     int minY = min(min(p0.y, p1.y), p2.y);
     int maxY = max(max(p0.y, p1.y), p2.y);
 
-    // If bounding box is outside the tile area, return
+    // // If bounding box is outside the tile area, return
     if (minX > bufferMaxX ||
         maxX < bufferMinX ||
         minY > bufferMaxY ||
@@ -219,10 +241,9 @@ __global__ void createDepthMapKernel(
     for (int x = minX; x <= maxX; x++)
     for (int y = minY; y <= maxY; y++) {
         int bIdx = x + y * buffWidth;
-        if (bIdx >= buffWidth * buffHeight) continue;
 
         Vec3f bary = Vec3f::bary(
-            Vec2f(x + .5f, y + .5f),
+            Vec2f(x, y),
             Vec2f(p0.x, p0.y),
             Vec2f(p1.x, p1.y),
             Vec2f(p2.x, p2.y)
@@ -233,8 +254,8 @@ __global__ void createDepthMapKernel(
         float zDepth = bary.x * p0.z + bary.y * p1.z + bary.z * p2.z;
 
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
-            buffActive[bIdx] = true;
             buffDepth[bIdx] = zDepth;
+            buffActive[bIdx] = true;
             buffFaceId[bIdx] = fIdx;
             buffBary[bIdx] = bary;
         }

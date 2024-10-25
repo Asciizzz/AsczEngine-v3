@@ -9,6 +9,7 @@ public:
     static void cameraProjection();
     static void createRuntimeFaces();
     static void createDepthMap();
+    static void createDepthMapBeta();
     static void rasterization();
 };
 

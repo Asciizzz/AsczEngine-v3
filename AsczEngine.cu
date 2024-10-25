@@ -49,6 +49,13 @@ int main() {
     cube.wx = { -c, c, c, -c, -c, c, c, -c };
     cube.wy = { -c, -c, c, c, -c, -c, c, c };
     cube.wz = { -c, -c, -c, -c, c, c, c, c };
+
+    for (int i = 0; i < 8; i++) {
+        cube.wx[i] += 10;
+        cube.wy[i] += 10;
+        cube.wz[i] += 10;
+    }
+
     cube.nx = { -c, c, c, -c, -c, c, c, -c };
     cube.ny = { -c, -c, c, c, -c, -c, c, c };
     cube.nz = { -c, -c, -c, -c, c, c, c, c };
@@ -76,9 +83,6 @@ int main() {
     Vec2f rangeX(-200, 200);
     Vec2f rangeZ(-200, 200);
     Vec2f step(1, 1);
-
-    int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
-    int sizeZ = (rangeZ.y - rangeZ.x) / step.y + 1;
 
     float maxY = -INFINITY;
     float minY = INFINITY;
@@ -173,16 +177,16 @@ int main() {
     }
 
     // Append faces to the grid
-    for (ULLInt x = 0; x < sizeX - 1; x++) {
-        for (ULLInt z = 0; z < sizeZ - 1; z++) {
-            ULLInt i = x * sizeZ + z;
+    for (ULLInt x = 0; x < numX; x++) {
+        for (ULLInt z = 0; z < numZ; z++) {
+            ULLInt i = x * numZ + z;
 
             graph.fw.push_back(i);
             graph.fw.push_back(i + 1);
-            graph.fw.push_back(i + sizeZ);
+            graph.fw.push_back(i + numZ);
             graph.fw.push_back(i + 1);
-            graph.fw.push_back(i + sizeZ + 1);
-            graph.fw.push_back(i + sizeZ);
+            graph.fw.push_back(i + numZ + 1);
+            graph.fw.push_back(i + numZ);
             
             graph.fn = graph.fw;
             graph.ft = graph.fw;
@@ -192,6 +196,7 @@ int main() {
     // Append all the meshes here
     GRAPHIC.mesh += obj;
     // GRAPHIC.mesh += graph;
+    // GRAPHIC.mesh += cube;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
@@ -315,6 +320,7 @@ int main() {
 
         VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
+        // VertexShader::createDepthMapBeta();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
