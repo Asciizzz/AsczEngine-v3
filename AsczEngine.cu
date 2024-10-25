@@ -94,6 +94,13 @@ int main() {
     Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
     #pragma omp parallel for
     for (size_t i = 0; i < obj.wx.size(); i++) {
+        // Rotate in the x axis by 90 degrees
+        Vec3f v = obj.w3f(i);
+        v.rotate(Vec3f(0), Vec3f(-M_PI / 2, 0, 0));
+        obj.wx[i] = v.x;
+        obj.wy[i] = v.y;
+        obj.wz[i] = v.z;
+
         obj.wx[i] *= objScale;
         obj.wy[i] *= objScale;
         obj.wz[i] *= objScale;
@@ -113,8 +120,8 @@ int main() {
     int graphNumZ = 0;
     #pragma omp parallel for collapse(2)
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
-        // break;
         graphNumX++;
+        break;
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             graphNumZ++;
 
@@ -137,7 +144,7 @@ int main() {
     }
     graphNumZ /= graphNumX;
 
-        #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2)
     for (ULLInt i = 0; i < graph.wx.size(); i++) {
         // Set color based on ratio
         float r = (graph.wx[i] - rangeX.x) / (rangeX.y - rangeX.x);
