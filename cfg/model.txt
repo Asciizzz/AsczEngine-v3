@@ -1,1 +1,4 @@
-assets/Models/Sphere.obj 1
+.test/Test.obj 1
+assets/Models/Sukuna.obj 1
+.heavy/Goku.obj 1
+assets/Models/Street.obj 1

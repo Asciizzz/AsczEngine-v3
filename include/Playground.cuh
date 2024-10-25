@@ -13,7 +13,7 @@
 
 class Playground {
 public:
-    static Mesh readObjFile(UInt objId, std::string path, bool rainbow=false, bool center=true) {
+    static Mesh readObjFile(UInt objId, std::string path, short fIdxBased=1, bool rainbow=true, bool center=true) {
         std::ifstream file(path);
         if (!file.is_open()) {
             std::cerr << "Error: Could not open file " << path << std::endl;
@@ -85,13 +85,13 @@ public:
                 ss2 >> v.y; ss2.ignore(1); ss2 >> t.y; ss2.ignore(1); ss2 >> n.y;
                 ss3 >> v.z; ss3.ignore(1); ss3 >> t.z; ss3.ignore(1); ss3 >> n.z;
 
-                v -= 1; t -= 1; n -= 1;
+                v -= fIdxBased; t -= fIdxBased; n -= fIdxBased;
 
                 if (vtn4 != "") {
                     ULLInt v4, t4, n4;
                     std::stringstream ss4(vtn4);
                     ss4 >> v4; ss4.ignore(1); ss4 >> t4; ss4.ignore(1); ss4 >> n4;
-                    v4 -= 1; t4 -= 1; n4 -= 1;
+                    v4 -= fIdxBased; t4 -= fIdxBased; n4 -= fIdxBased;
 
                     fw.push_back(v.x); fw.push_back(v.z); fw.push_back(v4);
                     fn.push_back(n.x); fn.push_back(n.z); fn.push_back(n4);

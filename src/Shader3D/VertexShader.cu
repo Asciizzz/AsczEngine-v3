@@ -168,7 +168,8 @@ __global__ void createRuntimeFacesKernel(
     float sw0 = screenW[fw0];
     float sw1 = screenW[fw1];
     float sw2 = screenW[fw2];
-
+    
+    // Entirely outside the frustum
     if (sw0 <= 0 && sw1 <= 0 && sw2 <= 0) return;
 
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
@@ -213,19 +214,16 @@ __global__ void createDepthMapKernel(
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
 
-    Vec4f p0 = Vec4f(runtimeSx[idx0], runtimeSy[idx0], runtimeSz[idx0], runtimeSw[idx0]);
-    Vec4f p1 = Vec4f(runtimeSx[idx1], runtimeSy[idx1], runtimeSz[idx1], runtimeSw[idx1]);
-    Vec4f p2 = Vec4f(runtimeSx[idx2], runtimeSy[idx2], runtimeSz[idx2], runtimeSw[idx2]);
+    float sx0 = (runtimeSx[idx0] + 1) * buffWidth / 2;
+    float sy0 = (1 - runtimeSy[idx0]) * buffHeight / 2;
+    float sx1 = (runtimeSx[idx1] + 1) * buffWidth / 2;
+    float sy1 = (1 - runtimeSy[idx1]) * buffHeight / 2;
+    float sx2 = (runtimeSx[idx2] + 1) * buffWidth / 2;
+    float sy2 = (1 - runtimeSy[idx2]) * buffHeight / 2;
 
-    // Entirely outside the frustum
-    if (p0.w != 1 && p1.w != 1 && p2.w != 1) return;
-
-    p0.x = (p0.x + 1) * buffWidth / 2;
-    p0.y = (1 - p0.y) * buffHeight / 2;
-    p1.x = (p1.x + 1) * buffWidth / 2;
-    p1.y = (1 - p1.y) * buffHeight / 2;
-    p2.x = (p2.x + 1) * buffWidth / 2;
-    p2.y = (1 - p2.y) * buffHeight / 2;
+    float sz0 = runtimeSz[idx0];
+    float sz1 = runtimeSz[idx1];
+    float sz2 = runtimeSz[idx2];
 
     // Buffer bounding box based on the tile
 
@@ -238,10 +236,10 @@ __global__ void createDepthMapKernel(
     int bufferMaxY = bufferMinY + tileHeight;
 
     // Bounding box
-    int minX = min(min(p0.x, p1.x), p2.x);
-    int maxX = max(max(p0.x, p1.x), p2.x);
-    int minY = min(min(p0.y, p1.y), p2.y);
-    int maxY = max(max(p0.y, p1.y), p2.y);
+    int minX = min(min(sx0, sx1), sx2);
+    int maxX = max(max(sx0, sx1), sx2);
+    int minY = min(min(sy0, sy1), sy2);
+    int maxY = max(max(sy0, sy1), sy2);
 
     // // If bounding box is outside the tile area, return
     if (minX > bufferMaxX ||
@@ -261,14 +259,14 @@ __global__ void createDepthMapKernel(
 
         Vec3f bary = Vec3f::bary(
             Vec2f(x, y),
-            Vec2f(p0.x, p0.y),
-            Vec2f(p1.x, p1.y),
-            Vec2f(p2.x, p2.y)
+            Vec2f(sx0, sy0),
+            Vec2f(sx1, sy1),
+            Vec2f(sx2, sy2)
         );
 
         if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;
 
-        float zDepth = bary.x * p0.z + bary.y * p1.z + bary.z * p2.z;
+        float zDepth = bary.x * sz0 + bary.y * sz1 + bary.z * sz2;
 
         if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
             buffDepth[bIdx] = zDepth;

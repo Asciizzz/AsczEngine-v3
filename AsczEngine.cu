@@ -41,40 +41,7 @@ int main() {
     file >> objPath >> objScale;
 
     // Create a .obj mesh (Work in progress)
-    Mesh obj = Playground::readObjFile(0, objPath, true);
-
-    // Testing the beta mesh
-    float c = 10;
-    Mesh cube;
-    cube.wx = { -c, c, c, -c, -c, c, c, -c };
-    cube.wy = { -c, -c, c, c, -c, -c, c, c };
-    cube.wz = { -c, -c, -c, -c, c, c, c, c };
-
-    for (int i = 0; i < 8; i++) {
-        cube.wx[i] += 10;
-        cube.wy[i] += 10;
-        cube.wz[i] += 10;
-    }
-
-    cube.nx = { -c, c, c, -c, -c, c, c, -c };
-    cube.ny = { -c, -c, c, c, -c, -c, c, c };
-    cube.nz = { -c, -c, -c, -c, c, c, c, c };
-    cube.tu = { 0, 1, 1, 0, 0, 1, 1, 0 };
-    cube.tv = { 0, 0, 1, 1, 0, 0, 1, 1 };
-    cube.cr = { 255, 0, 255, 0, 255, 0, 255, 0 };
-    cube.cg = { 0, 255, 0, 255, 0, 255, 0, 255 };
-    cube.cb = { 0, 255, 0, 255, 0, 255, 0, 255 };
-    cube.ca = { 255, 255, 255, 255, 255, 255, 255, 255 };
-    cube.fw = { 
-        0, 1, 2, 0, 2, 3,
-        4, 5, 6, 4, 6, 7,
-        0, 4, 7, 0, 7, 3,
-        1, 5, 6, 1, 6, 2,
-        0, 1, 5, 0, 5, 4,
-        3, 2, 6, 3, 6, 7
-    };
-    cube.ft = cube.fw;
-    cube.fn = cube.fw;
+    Mesh obj = Playground::readObjFile(0, objPath, 0);
 
     // Graphing calculator for y = f(x, z)
     Mesh graph;
@@ -196,7 +163,6 @@ int main() {
     // Append all the meshes here
     GRAPHIC.mesh += obj;
     // GRAPHIC.mesh += graph;
-    // GRAPHIC.mesh += cube;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
