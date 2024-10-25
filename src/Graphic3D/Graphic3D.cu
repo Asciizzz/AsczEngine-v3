@@ -115,3 +115,27 @@ __device__ bool atomicMinFloat(float* addr, float value) {
 
     return __int_as_float(old) > value;
 }
+
+// BETA: Texture mapping
+void Graphic3D::createTexture(const std::string &path) {
+    if (!textureImage.loadFromFile(path)) {
+        throw std::runtime_error("Failed to load texture image.");
+    }
+
+    textureWidth = textureImage.getSize().x;
+    textureHeight = textureImage.getSize().y;
+
+    std::cout << "Texture size: " << textureWidth << "x" << textureHeight << std::endl;
+
+    std::vector<Vec3f> texture(textureWidth * textureHeight);
+
+    for (int y = 0; y < textureHeight; y++) {
+        for (int x = 0; x < textureWidth; x++) {
+            sf::Color color = textureImage.getPixel(x, textureHeight - y - 1);
+            texture[x + y * textureWidth] = {float(color.r), float(color.g), float(color.b)};
+        }
+    }
+
+    cudaMalloc(&d_texture, sizeof(Vec3f) * texture.size());
+    cudaMemcpy(d_texture, texture.data(), sizeof(Vec3f) * texture.size(), cudaMemcpyHostToDevice);
+}

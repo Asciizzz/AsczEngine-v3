@@ -1,31 +1,71 @@
 #include <FragmentShader.cuh>
 
-// Phong Shading
+// ======================== Static functions ========================
+
+void FragmentShader::applyTexture() { // Beta
+    Graphic3D &graphic = Graphic3D::instance();
+    Buffer3D &buffer = graphic.buffer;
+
+    applyTextureKernel<<<buffer.blockNum, buffer.blockSize>>>(
+        buffer.active,
+        buffer.texture.x, buffer.texture.y,
+        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
+        buffer.width, buffer.height,
+
+        graphic.d_texture, graphic.textureWidth, graphic.textureHeight
+    );
+    cudaDeviceSynchronize();
+}
 
 void FragmentShader::phongShading() {
     Graphic3D &graphic = Graphic3D::instance();
     Buffer3D &buffer = graphic.buffer;
 
     phongShadingKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        graphic.light,
         buffer.active,
         buffer.world.x, buffer.world.y, buffer.world.z,
         buffer.texture.x, buffer.texture.y,
         buffer.normal.x, buffer.normal.y, buffer.normal.z,
         buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
-        buffer.width, buffer.height
+        buffer.width, buffer.height,
+
+        graphic.light
     );
     cudaDeviceSynchronize();
 }
 
+// ======================== Kernels ========================
+
+__global__ void applyTextureKernel( // Beta
+    bool *buffActive, float *buffTu, float *buffTv,
+    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
+    int buffWidth, int buffHeight,
+    Vec3f *texture, int textureWidth, int textureHeight
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+
+    int x = buffTu[i] * textureWidth;
+    int y = buffTv[i] * textureHeight;
+    int tIdx = x + y * textureWidth;
+
+    if (tIdx >= textureWidth * textureHeight ||
+        tIdx < 0) return;
+
+    buffCr[i] = texture[tIdx].x;
+    buffCg[i] = texture[tIdx].y;
+    buffCb[i] = texture[tIdx].z;
+}
+
 __global__ void phongShadingKernel(
-    LightSrc light,
     bool *buffActive,
     float *buffWx, float *buffWy, float *buffWz,
     float *buffTu, float *buffTv,
     float *buffNx, float *buffNy, float *buffNz,
     float *buffCr, float *buffCg, float *buffCb, float *buffCa,
-    int buffWidth, int buffHeight
+    int buffWidth, int buffHeight,
+
+    LightSrc light
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;

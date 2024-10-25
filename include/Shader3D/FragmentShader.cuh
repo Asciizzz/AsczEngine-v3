@@ -5,19 +5,26 @@
 
 class FragmentShader {
 public:
-    // Shading
+    static void applyTexture(); // Beta
     static void phongShading();
 };
 
-// Phong Shading
+__global__ void applyTextureKernel( // Beta
+    bool *buffActive, float *buffTu, float *buffTv,
+    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
+    int buffWidth, int buffHeight,
+    Vec3f *texture, int textureWidth, int textureHeight
+);
+
 __global__ void phongShadingKernel(
-    LightSrc light,
     bool *buffActive,
     float *buffWx, float *buffWy, float *buffWz,
     float *buffTu, float *buffTv,
     float *buffNx, float *buffNy, float *buffNz,
     float *buffCr, float *buffCg, float *buffCb, float *buffCa,
-    int buffWidth, int buffHeight
+    int buffWidth, int buffHeight,
+
+    LightSrc light
 );
 
 #endif

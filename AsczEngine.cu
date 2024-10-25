@@ -167,6 +167,8 @@ int main() {
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
 
+    GRAPHIC.createTexture("assets/Textures/ThisIsSoAss.png");
+
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
     float fovDeg = 90;
@@ -289,6 +291,7 @@ int main() {
         VertexShader::createDepthMapBeta();
         VertexShader::rasterization();
 
+        FragmentShader::applyTexture();
         FragmentShader::phongShading();
 
         // From buffer to texture
