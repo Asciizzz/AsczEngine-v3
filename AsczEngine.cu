@@ -320,8 +320,7 @@ int main() {
 
         VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
-        // VertexShader::createDepthMapBeta();
-        VertexShader::createDepthMap();
+        VertexShader::createDepthMapBeta();
         VertexShader::rasterization();
 
         FragmentShader::phongShading();

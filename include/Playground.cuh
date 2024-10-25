@@ -7,6 +7,8 @@
 #include <sstream>
 #include <string>
 
+#include <omp.h>
+
 // Create a function that would read an .obj file and return a Mesh3D object
 
 class Playground {
@@ -30,8 +32,15 @@ public:
         float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
         float maxX = -INFINITY, maxY = -INFINITY, maxZ = -INFINITY;
 
+        std::vector<std::string> lines;
+
         while (std::getline(file, line)) {
-            std::stringstream ss(line);
+            lines.push_back(line);
+        }
+
+        #pragma omp parallel for
+        for (size_t i = 0; i < lines.size(); i++) {
+            std::stringstream ss(lines[i]);
             std::string type;
             ss >> type;
 

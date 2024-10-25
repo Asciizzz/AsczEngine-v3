@@ -1,5 +1,35 @@
 #include <Graphic3D.cuh>
 
+// Face3D
+
+void Face3D::malloc(ULLInt size) {
+    cudaMalloc(&wx, sizeof(float) * size);
+    cudaMalloc(&wy, sizeof(float) * size);
+    cudaMalloc(&wz, sizeof(float) * size);
+    cudaMalloc(&nx, sizeof(float) * size);
+    cudaMalloc(&ny, sizeof(float) * size);
+    cudaMalloc(&nz, sizeof(float) * size);
+    cudaMalloc(&tu, sizeof(float) * size);
+    cudaMalloc(&tv, sizeof(float) * size);
+    cudaMalloc(&cr, sizeof(float) * size);
+    cudaMalloc(&cg, sizeof(float) * size);
+    cudaMalloc(&cb, sizeof(float) * size);
+    cudaMalloc(&ca, sizeof(float) * size);
+    cudaMalloc(&sx, sizeof(float) * size);
+    cudaMalloc(&sy, sizeof(float) * size);
+    cudaMalloc(&sz, sizeof(float) * size);
+    cudaMalloc(&sw, sizeof(float) * size);
+}
+void Face3D::free() {
+    if (wx) cudaFree(wx); if (wy) cudaFree(wy); if (wz) cudaFree(wz);
+    if (nx) cudaFree(nx); if (ny) cudaFree(ny); if (nz) cudaFree(nz);
+    if (tu) cudaFree(tu); if (tv) cudaFree(tv);
+    if (cr) cudaFree(cr); if (cg) cudaFree(cg); if (cb) cudaFree(cb); if (ca) cudaFree(ca);
+    if (sx) cudaFree(sx); if (sy) cudaFree(sy); if (sz) cudaFree(sz); if (sw) cudaFree(sw);
+}
+
+// Graphic stuff below
+
 void Graphic3D::setResolution(float w, float h, float ps) {
     pixelSize = ps;
     res = {w, h};
@@ -38,11 +68,11 @@ void Graphic3D::free() {
 void Graphic3D::mallocRuntimeFaces() {
     cudaMalloc(&d_faceCounter, sizeof(ULLInt));
     // In the worst case scenario, each face when culled can be split into 4 faces
-    cudaMalloc(&runtimeFaces, sizeof(Face3D) * mesh.faces.size * 4);
+    runtimeFaces.malloc(mesh.faces.size * 4);
 }
 void Graphic3D::freeRuntimeFaces() {
     if (d_faceCounter) cudaFree(d_faceCounter);
-    if (runtimeFaces) cudaFree(runtimeFaces);
+    runtimeFaces.free();
 }
 void Graphic3D::resizeRuntimeFaces() {
     freeRuntimeFaces();

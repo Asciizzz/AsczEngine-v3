@@ -23,11 +23,14 @@ struct LightSrc {
 };
 
 struct Face3D {
-    Vec3f world[3];
-    Vec3f normal[3];
-    Vec2f texture[3];
-    Vec4f color[3];
-    Vec4f screen[3];
+    float *wx, *wy, *wz;
+    float *nx, *ny, *nz;
+    float *tu, *tv;
+    float *cr, *cg, *cb, *ca;
+    float *sx, *sy, *sz, *sw;
+
+    void malloc(ULLInt size);
+    void free();
 };
 
 class Graphic3D {
@@ -61,7 +64,7 @@ public:
     // For runtime faces
     ULLInt faceCounter;
     ULLInt *d_faceCounter;
-    Face3D *runtimeFaces;
+    Face3D runtimeFaces;
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();
