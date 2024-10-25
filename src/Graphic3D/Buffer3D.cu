@@ -17,9 +17,6 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
     cudaMalloc(&world, size * sizeof(Vec3f));
     cudaMalloc(&normal, size * sizeof(Vec3f));
     cudaMalloc(&texture, size * sizeof(Vec2f));
-    cudaMalloc(&wObjId, size * sizeof(UInt));
-    cudaMalloc(&nObjId, size * sizeof(UInt));
-    cudaMalloc(&tObjId, size * sizeof(UInt));
 
     cudaMalloc(&faceID, size * sizeof(ULLInt));
     cudaMalloc(&bary, size * sizeof(Vec3f));
@@ -32,9 +29,6 @@ void Buffer3D::free() {
     if (world) cudaFree(world);
     if (normal) cudaFree(normal);
     if (texture) cudaFree(texture);
-    if (wObjId) cudaFree(wObjId);
-    if (nObjId) cudaFree(nObjId);
-    if (tObjId) cudaFree(tObjId);
     if (faceID) cudaFree(faceID);
     if (bary) cudaFree(bary);
 }
@@ -43,7 +37,6 @@ void Buffer3D::clearBuffer() {
     clearBufferKernel<<<blockNum, blockSize>>>(
         active, depth, color,
         world, normal, texture,
-        wObjId, nObjId, tObjId,
         faceID, bary, size
     );
     cudaDeviceSynchronize();
@@ -53,7 +46,6 @@ void Buffer3D::clearBuffer() {
 __global__ void clearBufferKernel(
     bool *active, float *depth, Vec4f *color,
     Vec3f *world, Vec3f *normal, Vec2f *texture,
-    UInt *wObjId, UInt *nObjId, UInt *tObjId,
     ULLInt *faceID, Vec3f *bary, int size
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -66,9 +58,6 @@ __global__ void clearBufferKernel(
     world[i] = Vec3f(); // Limbo
     normal[i] = Vec3f(); // Limbo
     texture[i] = Vec2f(); // Limbo
-    wObjId[i] = NULL; // No mesh
-    nObjId[i] = NULL; // No mesh
-    tObjId[i] = NULL; // No mesh
 
     faceID[i] = NULL; // No face
     bary[i] = Vec3f(); // Limbo

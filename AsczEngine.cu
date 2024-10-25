@@ -41,82 +41,48 @@ int main() {
     file >> objPath >> objScale;
 
     // Create a .obj mesh (Work in progress)
-    Mesh3D obj = Playground::readObjFile(0, objPath, true);
-    obj.scale(Vec3f(), Vec3f(objScale));
-    // obj.rotate(0, Vec3f(), Vec3f(0, 0, 0));
+    Mesh obj = Playground::readObjFile(0, objPath, true);
 
-    Vecs3f cubeWorld = {
-        Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
-        Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
-        Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
-        Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
-    };
-    Vecs3f cubeNormal = {
-        Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
-        Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
-        Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
-        Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
-    };
-    Vecs2f cubeTexture = {
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1),
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1)
-    };
-    Vecs4f cubeColor = {
-        Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
-        Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
-        Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-        Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
-    };
-    Vecs3ulli cubeFaces = {
-        Vec3ulli(0, 1, 2), Vec3ulli(0, 2, 3),
-        Vec3ulli(4, 5, 6), Vec3ulli(4, 6, 7),
-        Vec3ulli(0, 4, 7), Vec3ulli(0, 7, 3),
-        Vec3ulli(1, 5, 6), Vec3ulli(1, 6, 2),
-        Vec3ulli(0, 1, 5), Vec3ulli(0, 5, 4),
-        Vec3ulli(3, 2, 6), Vec3ulli(3, 6, 7)
-    };
-    Mesh3D cube(1, cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
-    cube.scale(Vec3f(), Vec3f(4));
+    // Testing the beta mesh
+    float c = 10;
+    Mesh cube;
+    cube.wx = { -c, c, c, -c, -c, c, c, -c };
+    cube.wy = { -c, -c, c, c, -c, -c, c, c };
+    cube.wz = { -c, -c, -c, -c, c, c, c, c };
 
-    // Create a white wall behind the cube
-    float wallSize = 10;
-    Vecs3f wallWorld = {
-        Vec3f(-wallSize, -wallSize, wallSize), Vec3f(wallSize, -wallSize, wallSize),
-        Vec3f(wallSize, wallSize, wallSize), Vec3f(-wallSize, wallSize, wallSize)
+    for (int i = 0; i < 8; i++) {
+        cube.wx[i] += 10;
+        cube.wy[i] += 10;
+        cube.wz[i] += 10;
+    }
+
+    cube.nx = { -c, c, c, -c, -c, c, c, -c };
+    cube.ny = { -c, -c, c, c, -c, -c, c, c };
+    cube.nz = { -c, -c, -c, -c, c, c, c, c };
+    cube.tu = { 0, 1, 1, 0, 0, 1, 1, 0 };
+    cube.tv = { 0, 0, 1, 1, 0, 0, 1, 1 };
+    cube.cr = { 255, 0, 255, 0, 255, 0, 255, 0 };
+    cube.cg = { 0, 255, 0, 255, 0, 255, 0, 255 };
+    cube.cb = { 0, 255, 0, 255, 0, 255, 0, 255 };
+    cube.ca = { 255, 255, 255, 255, 255, 255, 255, 255 };
+    cube.fw = { 
+        0, 1, 2, 0, 2, 3,
+        4, 5, 6, 4, 6, 7,
+        0, 4, 7, 0, 7, 3,
+        1, 5, 6, 1, 6, 2,
+        0, 1, 5, 0, 5, 4,
+        3, 2, 6, 3, 6, 7
     };
-    Vecs3f wallNormal = { // Facing towards the cube
-        Vec3f(0, 0, -1), Vec3f(0, 0, -1),
-        Vec3f(0, 0, -1), Vec3f(0, 0, -1)
-    };
-    Vecs2f wallTexture = {
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1)
-    };
-    Vecs4f wallColor = {
-        Vec4f(255, 125, 125, 255), Vec4f(125, 255, 125, 255),
-        Vec4f(125, 125, 255, 255), Vec4f(255, 255, 125, 255)
-    };
-    Vecs3ulli wallFaces = {
-        Vec3ulli(0, 1, 2), Vec3ulli(0, 2, 3)
-    };
-    Mesh3D wall(2, wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
+    cube.ft = cube.fw;
+    cube.fn = cube.fw;
 
     // Graphing calculator for y = f(x, z)
-    Vecs3f world;
-    Vecs3f normal;
-    Vecs2f texture;
-    Vecs4f color;
-    Vecs3ulli faces;
+    Mesh graph;
 
     // Append points to the grid
-    Vec2f rangeX(-500, 500);
-    Vec2f rangeZ(-500, 500);
+    Vec2f rangeX(-200, 200);
+    Vec2f rangeZ(-200, 200);
     Vec2f step(1, 1);
-
-    int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
-    int sizeZ = (rangeZ.y - rangeZ.x) / step.y + 1;
 
     float maxY = -INFINITY;
     float minY = INFINITY;
@@ -124,42 +90,52 @@ int main() {
     int numZ = 0;
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         numX++;
+        break;
 
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             numZ++;
 
             // World pos of the point
-            float y = sin(x / 50) * cos(z / 50) * 50;
+            float y = sin(x / 5) * cos(z / 5) * 5;
             // float y = rand() % 30 - 10;
 
             maxY = std::max(maxY, y);
             minY = std::min(minY, y);
 
-            world.push_back(Vec3f(x, y, z));
+            graph.wx.push_back(x);
+            graph.wy.push_back(y);
+            graph.wz.push_back(z);
 
             // x and z ratio (0 - 1)
             float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
             // Texture
-            texture.push_back(Vec2f(ratioX, ratioZ));
+            graph.tu.push_back(ratioX);
+            graph.tv.push_back(ratioZ);
         }
     }
     numZ /= numX;
 
-    for (ULLInt i = 0; i < world.size(); i++) {
+    for (ULLInt i = 0; i < graph.wx.size(); i++) {
         // Set color based on ratio
-        float r = (world[i].x - rangeX.x) / (rangeX.y - rangeX.x);
-        float g = (world[i].y - minY) / (maxY - minY);
-        float b = (world[i].z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-        color.push_back(Vec4f(255 - r * 255, g * 255, b * 255, 255));
+        float r = (graph.wx[i] - rangeX.x) / (rangeX.y - rangeX.x);
+        float g = (graph.wy[i] - minY) / (maxY - minY);
+        float b = (graph.wz[i] - rangeZ.x) / (rangeZ.y - rangeZ.x);
+
+        graph.cr.push_back(255 - r * 255);
+        graph.cg.push_back(g * 255);
+        graph.cb.push_back(b * 255);
+        graph.ca.push_back(255);
 
         // Set normal based on the triangle of surrounding points
         int x = i / numZ;
         int z = i % numZ;
 
-        int edge = 8;
+        int edge = 1;
         if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
-            normal.push_back(Vec3f(0, 1, 0));
+            graph.nx.push_back(0);
+            graph.ny.push_back(1);
+            graph.nz.push_back(0);
             continue;
         }
 
@@ -177,12 +153,12 @@ int main() {
 
         for (int j = 0; j < 4; j++) {
             int idx = idxDir[j];
-            Vec3f mid = world[i];
-            Vec3f left = world[idxLeft];
-            Vec3f right = world[idxRight];
-            Vec3f up = world[idxUp];
-            Vec3f down = world[idxDown];
-
+            Vec3f mid = graph.w3f(i);
+            Vec3f left = graph.w3f(idxLeft);
+            Vec3f right = graph.w3f(idxRight);
+            Vec3f up = graph.w3f(idxUp);
+            Vec3f down = graph.w3f(idxDown);
+            
             if (j == 0) triNormals.push_back((mid - left) & (up - left));
             if (j == 1) triNormals.push_back((mid - up) & (right - up));
             if (j == 2) triNormals.push_back((mid - right) & (down - right));
@@ -194,25 +170,35 @@ int main() {
             avgNormal += triNormal;
         }
         avgNormal.norm();
-        normal.push_back(avgNormal);
+
+        graph.nx.push_back(avgNormal.x);
+        graph.ny.push_back(avgNormal.y);
+        graph.nz.push_back(avgNormal.z);
     }
 
     // Append faces to the grid
-    for (ULLInt x = 0; x < sizeX - 1; x++) {
-        for (ULLInt z = 0; z < sizeZ - 1; z++) {
-            ULLInt i = x * sizeZ + z;
-            faces.push_back(Vec3ulli(i, i + 1, i + sizeZ));
-            faces.push_back(Vec3ulli(i + 1, i + sizeZ + 1, i + sizeZ));
+    for (ULLInt x = 0; x < numX; x++) {
+        for (ULLInt z = 0; z < numZ; z++) {
+            ULLInt i = x * numZ + z;
+
+            graph.fw.push_back(i);
+            graph.fw.push_back(i + 1);
+            graph.fw.push_back(i + numZ);
+            graph.fw.push_back(i + 1);
+            graph.fw.push_back(i + numZ + 1);
+            graph.fw.push_back(i + numZ);
+            
+            graph.fn = graph.fw;
+            graph.ft = graph.fw;
         }
     }
 
-    Mesh3D graph(3, world, normal, texture, color, faces);
-
     // Append all the meshes here
-    GRAPHIC.appendMesh(obj);
-    // GRAPHIC.appendMesh(graph);
+    GRAPHIC.mesh += obj;
+    // GRAPHIC.mesh += graph;
+    // GRAPHIC.mesh += cube;
 
-    GRAPHIC.mallocGFaces();
+    GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
 
     // To avoid floating point errors
@@ -253,14 +239,6 @@ int main() {
 
                     std::ifstream color("cfg/lightColor.txt");
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
-                }
-
-                // Press C to append a cube
-                if (event.key.code == sf::Keyboard::C) {
-                    GRAPHIC.appendMesh(cube, false);
-                    cube.translate(Vec3f(0, 0, 8));
-                    GRAPHIC.resizeGFaces();
-                    GRAPHIC.resizeFaceStreams();
                 }
             }
 
@@ -320,7 +298,6 @@ int main() {
             float rot = M_PI / 3 * FPS.dTimeSec;
             if (k_ctrl) rot *= -1;
             if (k_shift) rot *= 3;
-            GRAPHIC.mesh.rotate(0, Vec3f(), Vec3f(0, rot, 0));
         }
         // Press Q to rotate light source in x axis
         if (k_q) {
@@ -342,15 +319,12 @@ int main() {
         // ========== Render Pipeline ==========
 
         VertexShader::cameraProjection();
-        VertexShader::filterVisibleFaces();
-        VertexShader::frustumCulling();
+        VertexShader::createRuntimeFaces();
+        // VertexShader::createDepthMapBeta();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
         FragmentShader::phongShading();
-
-        // Custom Fragment Shader
-        FragmentShader::customFragmentShader();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
@@ -390,7 +364,8 @@ int main() {
             " x " + std::to_string(height) +
             " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
             "| Tile Size: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight) + "\n" +
-            "| Visible Face: " + std::to_string(GRAPHIC.numVisibFs) + " / " + std::to_string(GRAPHIC.mesh.numFs),
+            "| Visible Face: " + std::to_string(GRAPHIC.faceCounter) +
+            " / " + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );
         LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));

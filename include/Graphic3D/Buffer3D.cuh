@@ -4,6 +4,16 @@
 #include <Matrix.cuh>
 #include <cuda_runtime.h>
 
+/* Note:
+
+Buffer is allowed to use AoS memory layout because it is
+relatively small, restricted to the size of the screen.
+
+Slight memory overhead is acceptable for the sake of
+simplicity and readability.
+
+*/
+
 class Buffer3D {
 public:
     int width, height, size;
@@ -18,9 +28,6 @@ public:
     Vec3f *world;
     Vec3f *normal;
     Vec2f *texture;
-    UInt *wObjId;
-    UInt *nObjId;
-    UInt *tObjId;
 
     ULLInt *faceID;
     Vec3f *bary;
@@ -38,7 +45,6 @@ public:
 __global__ void clearBufferKernel(
     bool *active, float *depth, Vec4f *color,
     Vec3f *world, Vec3f *normal, Vec2f *texture,
-    UInt *wObjId, UInt *nObjId, UInt *tObjId,
     ULLInt *faceID, Vec3f *bary, int size
 );
 

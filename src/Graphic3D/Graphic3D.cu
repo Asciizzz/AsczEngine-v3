@@ -30,39 +30,28 @@ void Graphic3D::setTileSize(int tw, int th) {
 void Graphic3D::free() {
     mesh.free();
     buffer.free();
-    freeGFaces();
+    freeRuntimeFaces();
     freeFaceStreams();
 }
 
-// Append Mesh3D
-void Graphic3D::appendMesh(Mesh3D &m, bool del) {
-    mesh += m;
-    if (del) m.free();
-}
-
 // Graphic faces (runtime)
-void Graphic3D::mallocGFaces() {
-    cudaMalloc(&d_numVisibFs, sizeof(ULLInt));
-    cudaMalloc(&visibFWs, sizeof(Vec4ulli) * mesh.numFs);
-
-    cudaMalloc(&d_numCullFs, sizeof(ULLInt));
-    cudaMalloc(&cullFWs, sizeof(Vec4ulli) * mesh.numFs * 4);
+void Graphic3D::mallocRuntimeFaces() {
+    cudaMalloc(&d_faceCounter, sizeof(ULLInt));
+    // In the worst case scenario, each face when culled can be split into 4 faces
+    cudaMalloc(&runtimeFaces, sizeof(Face3D) * mesh.faces.size * 4);
 }
-void Graphic3D::freeGFaces() {
-    if (d_numVisibFs) cudaFree(d_numVisibFs);
-    if (visibFWs) cudaFree(visibFWs);
-
-    if (d_numCullFs) cudaFree(d_numCullFs);
-    if (cullFWs) cudaFree(cullFWs);
+void Graphic3D::freeRuntimeFaces() {
+    if (d_faceCounter) cudaFree(d_faceCounter);
+    if (runtimeFaces) cudaFree(runtimeFaces);
 }
-void Graphic3D::resizeGFaces() {
-    freeGFaces();
-    mallocGFaces();
+void Graphic3D::resizeRuntimeFaces() {
+    freeRuntimeFaces();
+    mallocRuntimeFaces();
 }
 
 // Face stream for chunking very large number of faces
 void Graphic3D::mallocFaceStreams() {
-    chunkNum = (mesh.numFs * 4 + chunkSize - 1) / chunkSize;
+    chunkNum = (mesh.faces.size + chunkSize - 1) / chunkSize;
 
     // Stream for asynchronous execution (very helpful)
     faceStreams = (cudaStream_t*)malloc(chunkNum * sizeof(cudaStream_t));
@@ -71,13 +60,13 @@ void Graphic3D::mallocFaceStreams() {
     }
 }
 void Graphic3D::freeFaceStreams() {
-    for (int i = 0; i < chunkSize; i++) {
-        if (faceStreams) cudaStreamDestroy(faceStreams[i]);
-    }
-    if (faceStreams) delete[] faceStreams;
+    // for (int i = 0; i < chunkSize; i++) {
+    //     if (faceStreams) cudaStreamDestroy(faceStreams[i]);
+    // }
+    // if (faceStreams) delete[] faceStreams;
 }
 void Graphic3D::resizeFaceStreams() {
-    int newChunkNum = (mesh.numFs + chunkSize - 1) / chunkSize;
+    int newChunkNum = (mesh.faces.size + chunkSize - 1) / chunkSize;
     if (newChunkNum == chunkNum) return;
 
     freeFaceStreams();

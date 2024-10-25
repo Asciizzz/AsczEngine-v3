@@ -1,17 +1,6 @@
 #ifndef GRAPHIC3D_CUH
 #define GRAPHIC3D_CUH
 
-/* This is a class that contains:
-
-Mesh3D
-Camera3D
-Buffer3D
-Projection
-
-We will not put any data into the Shader classes
-
-*/
-
 #include <Mesh3D.cuh> 
 #include <Camera3D.cuh>
 #include <Buffer3D.cuh>
@@ -31,6 +20,14 @@ struct LightSrc {
         str += "| Color: " + std::to_string(color.x) + " " + std::to_string(color.y) + " " + std::to_string(color.z) + "\n";
         return str;
     }
+};
+
+struct Face3D {
+    Vec3f world[3];
+    Vec3f normal[3];
+    Vec2f texture[3];
+    Vec4f color[3];
+    Vec4f screen[3];
 };
 
 class Graphic3D {
@@ -58,27 +55,21 @@ public:
     // Free everything
     void free();
 
-    // Mesh3D and its properties
+    // Mesh3D
     Mesh3D mesh;
-    void appendMesh(Mesh3D &m, bool del=true);
 
-    // Face properties
+    // For runtime faces
+    ULLInt faceCounter;
+    ULLInt *d_faceCounter;
+    Face3D *runtimeFaces;
 
-    ULLInt numVisibFs;
-    ULLInt *d_numVisibFs;
-    Vec4ulli *visibFWs;
-
-    ULLInt numCullFs; // Worst case scenerio: 1 face => 4 faces
-    ULLInt *d_numCullFs;
-    Vec4ulli *cullFWs;
-
-    void mallocGFaces();
-    void freeGFaces();
-    void resizeGFaces();
+    void mallocRuntimeFaces();
+    void freeRuntimeFaces();
+    void resizeRuntimeFaces();
 
     // Face stream for chunking
     cudaStream_t *faceStreams;
-    size_t chunkSize = 5e5;
+    size_t chunkSize = 5e6;
     int chunkNum;
     void mallocFaceStreams();
     void freeFaceStreams();

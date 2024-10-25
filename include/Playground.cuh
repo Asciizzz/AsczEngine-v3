@@ -11,7 +11,7 @@
 
 class Playground {
 public:
-    static Mesh3D readObjFile(UInt objId, std::string path, bool rainbow=false, bool center=true) {
+    static Mesh readObjFile(UInt objId, std::string path, bool rainbow=false, bool center=true) {
         std::ifstream file(path);
         if (!file.is_open()) {
             std::cerr << "Error: Could not open file " << path << std::endl;
@@ -19,13 +19,12 @@ public:
         }
 
         std::string line;
-        Vecs3f world;
-        Vecs3f normal;
-        Vecs2f texture;
-        Vecs4f color;
-        Vecs3ulli faceWs;
-        Vecs3ulli faceNs;
-        Vecs3ulli faceTs;
+
+        std::vector<float> wx, wy, wz;
+        std::vector<float> nx, ny, nz;
+        std::vector<float> tu, tv;
+        std::vector<float> cr, cg, cb, ca;
+        std::vector<ULLInt> fw, ft, fn;
 
         // We will use these value to shift the mesh to the origin
         float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
@@ -48,15 +47,20 @@ public:
                 maxY = std::max(maxY, v.y);
                 maxZ = std::max(maxZ, v.z);
 
-                world.push_back(v);
+                wx.push_back(v.x);
+                wy.push_back(v.y);
+                wz.push_back(v.z);
             } else if (type == "vn") {
                 Vec3f n;
                 ss >> n.x >> n.y >> n.z;
-                normal.push_back(n);
+                nx.push_back(n.x);
+                ny.push_back(n.y);
+                nz.push_back(n.z);
             } else if (type == "vt") {
                 Vec2f t;
                 ss >> t.x >> t.y;
-                texture.push_back(t);
+                tu.push_back(t.x);
+                tv.push_back(t.y);
             } else if (type == "f") {
                 /* Note:
                 Faces index in .obj files are 1-based
@@ -80,40 +84,50 @@ public:
                     ss4 >> v4; ss4.ignore(1); ss4 >> t4; ss4.ignore(1); ss4 >> n4;
                     v4 -= 1; t4 -= 1; n4 -= 1;
 
-                    // Create an additional face to triangulate the quad
-                    faceWs.push_back(Vec3ulli(v.x, v.z, v4));
-                    faceNs.push_back(Vec3ulli(n.x, n.z, n4));
-                    faceTs.push_back(Vec3ulli(t.x, t.z, t4));
+                    fw.push_back(v.x); fw.push_back(v.z); fw.push_back(v4);
+                    fn.push_back(n.x); fn.push_back(n.z); fn.push_back(n4);
+                    ft.push_back(t.x); ft.push_back(t.z); ft.push_back(t4);
                 }
 
-                faceWs.push_back(v);
-                faceNs.push_back(n);
-                faceTs.push_back(t);
+                fw.push_back(v.x); fw.push_back(v.y); fw.push_back(v.z);
+                fn.push_back(n.x); fn.push_back(n.y); fn.push_back(n.z);
+                ft.push_back(t.x); ft.push_back(t.y); ft.push_back(t.z);
             }
         }
 
-        for (Vec3f &v : world) {
+        for (size_t i = 0; i < wx.size(); i++) {
             if (rainbow) {
                 // Set the color based on the ratio of x, y, and z
-                float r = (v.x - minX) / (maxX - minX);
-                float g = (v.y - minY) / (maxY - minY);
-                float b = (v.z - minZ) / (maxZ - minZ);
-                color.push_back(Vec4f(255 - r * 255, g * 255, b * 255, 255));
+                float r = (wx[i] - minX) / (maxX - minX);
+                float g = (wy[i] - minY) / (maxY - minY);
+                float b = (wz[i] - minZ) / (maxZ - minZ);
+                cr.push_back(255 - r * 255);
+                cg.push_back(g * 255);
+                cb.push_back(b * 255);
+                ca.push_back(255);
+
+                // Shift the mesh to the origin
+                wx[i] -= (minX + maxX) / 2;
+                wy[i] -= (minY + maxY) / 2;
+                wz[i] -= (minZ + maxZ) / 2;
+
+                if (!center) wy[i] = -minY;
             } else {
                 // Just set it to white
-                color.push_back(Vec4f(255, 255, 255, 255));
+                cr.push_back(255);
+                cg.push_back(255);
+                cb.push_back(255);
+                ca.push_back(255);
             }
         }
 
-        Mesh3D mesh = Mesh3D(
-            objId, world, normal, texture, color,
-            faceWs, faceNs, faceTs    
-        );
-
-        // Shift the mesh to the origin
-        Vec3f shift = Vec3f(-(minX + maxX) / 2, -(minY + maxY) / 2, -(minZ + maxZ) / 2);
-        if (!center) shift.y = -minY;
-        mesh.translate(objId, shift);
+        Mesh mesh = {
+            wx, wy, wz,
+            nx, ny, nz,
+            tu, tv,
+            cr, cg, cb, ca,
+            fw, ft, fn
+        };
 
         return mesh;
     }

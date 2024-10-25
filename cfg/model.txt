@@ -1,1 +1,1 @@
-assets/Models/MalevolentShrine.obj 10
+assets/Models/Sphere.obj 1
