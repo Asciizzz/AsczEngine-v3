@@ -94,13 +94,13 @@ __global__ void cameraProjectionKernel(
 
     Vec4f v4(worldX[i], worldY[i], worldZ[i], 1);
     Vec4f t4 = mvp * v4;
+    bool inside = (
+        t4.x >= -t4.w && t4.x <= t4.w &&
+        t4.y >= -t4.w && t4.y <= t4.w &&
+        t4.z >= 0 && t4.z <= t4.w
+    );
 
     Vec3f t3 = t4.toVec3f(); // Convert to NDC [-1, 1]
-    bool inside = (
-        t3.x >= -1 && t3.x <= 1 &&
-        t3.y >= -1 && t3.y <= 1 &&
-        t3.z >= 0 && t3.z <= 1   
-    );
 
     screenX[i] = t3.x;
     screenY[i] = t3.y;
@@ -138,29 +138,29 @@ __global__ void createRuntimeFacesKernel(
     Vec4f p1(screenX[fw1], screenY[fw1], screenZ[fw1], screenW[fw1]);
     Vec4f p2(screenX[fw2], screenY[fw2], screenZ[fw2], screenW[fw2]);
 
-    if (p0.w > 0 || p1.w > 0 || p2.w > 0) {
-        ULLInt idx = atomicAdd(faceCounter, 1);
+    if (p0.w <= 0 && p1.w <= 0 && p2.w <= 0) return;
 
-        runtimeFaces[idx].world[0] = Vec3f(worldX[fw0], worldY[fw0], worldZ[fw0]);
-        runtimeFaces[idx].world[1] = Vec3f(worldX[fw1], worldY[fw1], worldZ[fw1]);
-        runtimeFaces[idx].world[2] = Vec3f(worldX[fw2], worldY[fw2], worldZ[fw2]);
+    ULLInt idx = atomicAdd(faceCounter, 1);
 
-        runtimeFaces[idx].normal[0] = Vec3f(normalX[fn0], normalY[fn0], normalZ[fn0]);
-        runtimeFaces[idx].normal[1] = Vec3f(normalX[fn1], normalY[fn1], normalZ[fn1]);
-        runtimeFaces[idx].normal[2] = Vec3f(normalX[fn2], normalY[fn2], normalZ[fn2]);
+    runtimeFaces[idx].world[0] = Vec3f(worldX[fw0], worldY[fw0], worldZ[fw0]);
+    runtimeFaces[idx].world[1] = Vec3f(worldX[fw1], worldY[fw1], worldZ[fw1]);
+    runtimeFaces[idx].world[2] = Vec3f(worldX[fw2], worldY[fw2], worldZ[fw2]);
 
-        runtimeFaces[idx].texture[0] = Vec2f(textureX[ft0], textureY[ft0]);
-        runtimeFaces[idx].texture[1] = Vec2f(textureX[ft1], textureY[ft1]);
-        runtimeFaces[idx].texture[2] = Vec2f(textureX[ft2], textureY[ft2]);
+    runtimeFaces[idx].normal[0] = Vec3f(normalX[fn0], normalY[fn0], normalZ[fn0]);
+    runtimeFaces[idx].normal[1] = Vec3f(normalX[fn1], normalY[fn1], normalZ[fn1]);
+    runtimeFaces[idx].normal[2] = Vec3f(normalX[fn2], normalY[fn2], normalZ[fn2]);
 
-        runtimeFaces[idx].color[0] = Vec4f(colorX[fw0], colorY[fw0], colorZ[fw0], colorW[fw0]);
-        runtimeFaces[idx].color[1] = Vec4f(colorX[fw1], colorY[fw1], colorZ[fw1], colorW[fw1]);
-        runtimeFaces[idx].color[2] = Vec4f(colorX[fw2], colorY[fw2], colorZ[fw2], colorW[fw2]);
+    runtimeFaces[idx].texture[0] = Vec2f(textureX[ft0], textureY[ft0]);
+    runtimeFaces[idx].texture[1] = Vec2f(textureX[ft1], textureY[ft1]);
+    runtimeFaces[idx].texture[2] = Vec2f(textureX[ft2], textureY[ft2]);
 
-        runtimeFaces[idx].screen[0] = p0;
-        runtimeFaces[idx].screen[1] = p1;
-        runtimeFaces[idx].screen[2] = p2;
-    }
+    runtimeFaces[idx].color[0] = Vec4f(colorX[fw0], colorY[fw0], colorZ[fw0], colorW[fw0]);
+    runtimeFaces[idx].color[1] = Vec4f(colorX[fw1], colorY[fw1], colorZ[fw1], colorW[fw1]);
+    runtimeFaces[idx].color[2] = Vec4f(colorX[fw2], colorY[fw2], colorZ[fw2], colorW[fw2]);
+
+    runtimeFaces[idx].screen[0] = p0;
+    runtimeFaces[idx].screen[1] = p1;
+    runtimeFaces[idx].screen[2] = p2;
 }
 
 // Depth map creation

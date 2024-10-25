@@ -3,23 +3,23 @@
 // Mesh object
 
 Mesh::Mesh(
-    Vecs3f world, Vecs3f normal, Vecs2f texture, Vecs4f color,
-    ULLInts faceWs, ULLInts faceTs, ULLInts faceNs
-) : world(world), normal(normal), texture(texture), color(color),
-    faceWs(faceWs), faceTs(faceTs), faceNs(faceNs),
-    numWs(world.size()),
-    numNs(normal.size()),
-    numTs(texture.size()),
-    numFs(faceWs.size() / 3) {}
+    std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
+    std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
+    std::vector<float> tu, std::vector<float> tv,
+    std::vector<float> cr, std::vector<float> cg, std::vector<float> cb, std::vector<float> ca,
+    std::vector<ULLInt> fw, std::vector<ULLInt> ft, std::vector<ULLInt> fn
+) : wx(wx), wy(wy), wz(wz), nx(nx), ny(ny), nz(nz), tu(tu), tv(tv),
+    cr(cr), cg(cg), cb(cb), ca(ca), fw(fw), ft(ft), fn(fn) {}
 
-Mesh::Mesh(
-    Vecs3f world, Vecs3f normal, Vecs2f texture, Vecs4f color, ULLInts faceSame
-) : world(world), normal(normal), texture(texture), color(color),
-    faceWs(faceSame), faceTs(faceSame), faceNs(faceSame),
-    numWs(world.size()),
-    numNs(normal.size()),
-    numTs(texture.size()),
-    numFs(faceSame.size() / 3) {}
+Mesh::Mesh() {}
+
+Vec3f Mesh::w3f(ULLInt i) { return Vec3f(wx[i], wy[i], wz[i]); }
+Vec3f Mesh::n3f(ULLInt i) { return Vec3f(nx[i], ny[i], nz[i]); }
+Vec2f Mesh::t2f(ULLInt i) { return Vec2f(tu[i], tv[i]); }
+Vec4f Mesh::c4f(ULLInt i) { return Vec4f(cr[i], cg[i], cb[i], ca[i]); }
+Vec3ulli Mesh::fw3ulli(ULLInt i) { return Vec3ulli(fw[i]); }
+Vec3ulli Mesh::ft3ulli(ULLInt i) { return Vec3ulli(ft[i]); }
+Vec3ulli Mesh::fn3ulli(ULLInt i) { return Vec3ulli(fn[i]); }
 
 // Mesh3D
 
@@ -43,7 +43,7 @@ void Mesh3D::freeVertices() {
     color.free();
     screen.free();
 }
-void Mesh3D::resizeVertices(ULLInt numWs, ULLInt numNs, ULLInt numTs) {
+void Mesh3D::resizeVertices(ULLInt numWs, ULLInt numTs, ULLInt numNs) {
     freeVertices();
     mallocVertices(numWs, numNs, numTs);
 }
@@ -70,92 +70,56 @@ void Mesh3D::free() {
 // Append mesh obj to device mesh
 
 void Mesh3D::operator+=(Mesh &mesh) {
-    // Append faces
     Vecptr4ulli newFaces;
-    newFaces.malloc(mesh.numFs * 3);
-    for (ULLInt i = 0; i < mesh.numFs * 3; i++) {
-        cudaMemcpy(&newFaces.v[i], &mesh.faceWs[i], sizeof(ULLInt), cudaMemcpyHostToDevice);
-        cudaMemcpy(&newFaces.t[i], &mesh.faceTs[i], sizeof(ULLInt), cudaMemcpyHostToDevice);
-        cudaMemcpy(&newFaces.n[i], &mesh.faceNs[i], sizeof(ULLInt), cudaMemcpyHostToDevice);
-        cudaMemcpy(&newFaces.o[i], 0, sizeof(ULLInt), cudaMemcpyHostToDevice);
-    }
+    ULLInt faceSize = mesh.fw.size();
+    newFaces.malloc(faceSize);
 
-    // Increment face indices
+    cudaMemcpy(newFaces.v, mesh.fw.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice);
+    cudaMemcpy(newFaces.t, mesh.ft.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice);
+    cudaMemcpy(newFaces.n, mesh.fn.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice);
+    
     ULLInt offsetV = world.size;
     ULLInt offsetT = texture.size;
     ULLInt offsetN = normal.size;
 
-    ULLInt gridSize = (mesh.numFs * 3 + 255) / 256;
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.v, offsetV, mesh.numFs * 3);
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.t, offsetT, mesh.numFs * 3);
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.n, offsetN, mesh.numFs * 3);
-
+    ULLInt gridSize = (faceSize + 255) / 256;
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.v, offsetV, faceSize);
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.t, offsetT, faceSize);
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.n, offsetN, faceSize);
     faces += newFaces;
 
-    // Append vertices
     Vecptr3f newWorld;
-    Vecptr3f newNormal;
-    Vecptr2f newTexture;
-    Vecptr4f newColor;
-    Vecptr4f newScreen;
-    newWorld.malloc(mesh.numWs);
-    newNormal.malloc(mesh.numNs);
-    newTexture.malloc(mesh.numTs);
-    newColor.malloc(mesh.numWs);
-    newScreen.malloc(mesh.numWs);
+    ULLInt worldSize = mesh.wx.size();
+    newWorld.malloc(worldSize);
 
-    // NOTE: THE ENTIRE PROCESS BELOW IS INCREDIBLY SLOW
-
-    std::vector<float> worldX(mesh.numWs);
-    std::vector<float> worldY(mesh.numWs);
-    std::vector<float> worldZ(mesh.numWs);
-    for (ULLInt i = 0; i < mesh.numWs; i++) {
-        worldX[i] = mesh.world[i].x;
-        worldY[i] = mesh.world[i].y;
-        worldZ[i] = mesh.world[i].z;
-    }
-    cudaMemcpy(newWorld.x, worldX.data(), mesh.numWs * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newWorld.y, worldY.data(), mesh.numWs * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newWorld.z, worldZ.data(), mesh.numWs * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newWorld.x, mesh.wx.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newWorld.y, mesh.wy.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newWorld.z, mesh.wz.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice);
     world += newWorld;
 
-    std::vector<float> normalX(mesh.numNs);
-    std::vector<float> normalY(mesh.numNs);
-    std::vector<float> normalZ(mesh.numNs);
-    for (ULLInt i = 0; i < mesh.numNs; i++) {
-        normalX[i] = mesh.normal[i].x;
-        normalY[i] = mesh.normal[i].y;
-        normalZ[i] = mesh.normal[i].z;
-    }
-    cudaMemcpy(newNormal.x, normalX.data(), mesh.numNs * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newNormal.y, normalY.data(), mesh.numNs * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newNormal.z, normalZ.data(), mesh.numNs * sizeof(float), cudaMemcpyHostToDevice);
+    Vecptr3f newNormal;
+    ULLInt normalSize = mesh.nx.size();
+    newNormal.malloc(normalSize);
+
+    cudaMemcpy(newNormal.x, mesh.nx.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newNormal.y, mesh.ny.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newNormal.z, mesh.nz.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice);
     normal += newNormal;
 
-    std::vector<float> textureX(mesh.numTs);
-    std::vector<float> textureY(mesh.numTs);
-    for (ULLInt i = 0; i < mesh.numTs; i++) {
-        textureX[i] = mesh.texture[i].x;
-        textureY[i] = mesh.texture[i].y;
-    }
-    cudaMemcpy(newTexture.x, textureX.data(), mesh.numTs * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newTexture.y, textureY.data(), mesh.numTs * sizeof(float), cudaMemcpyHostToDevice);
+    Vecptr2f newTexture;
+    ULLInt textureSize = mesh.tu.size();
+    newTexture.malloc(textureSize);
+    cudaMemcpy(newTexture.x, mesh.tu.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newTexture.y, mesh.tv.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice);
     texture += newTexture;
 
-    std::vector<float> colorX(mesh.numWs);
-    std::vector<float> colorY(mesh.numWs);
-    std::vector<float> colorZ(mesh.numWs);
-    std::vector<float> colorW(mesh.numWs);
-    for (ULLInt i = 0; i < mesh.numWs; i++) {
-        colorX[i] = mesh.color[i].x;
-        colorY[i] = mesh.color[i].y;
-        colorZ[i] = mesh.color[i].z;
-        colorW[i] = mesh.color[i].w;
-    }
-    cudaMemcpy(newColor.x, colorX.data(), mesh.numWs * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newColor.y, colorY.data(), mesh.numWs * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newColor.z, colorZ.data(), mesh.numWs * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(newColor.w, colorW.data(), mesh.numWs * sizeof(float), cudaMemcpyHostToDevice);
+    Vecptr4f newColor;
+    ULLInt colorSize = mesh.cr.size();
+    newColor.malloc(colorSize);
+    cudaMemcpy(newColor.x, mesh.cr.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newColor.y, mesh.cg.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newColor.z, mesh.cb.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(newColor.w, mesh.ca.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice);
     color += newColor;
 
     screen.free();

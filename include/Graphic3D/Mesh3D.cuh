@@ -20,26 +20,29 @@ We will have 4 arrays for vertex data:
 
 #define Meshs3D std::vector<Mesh3D>
 
-// Lame host mesh
 struct Mesh {
-    ULLInt numWs, numNs, numTs;
-    Vecs3f world;
-    Vecs3f normal;
-    Vecs2f texture;
-    Vecs4f color;
-
-    ULLInt numFs;
-    ULLInts faceWs;
-    ULLInts faceNs;
-    ULLInts faceTs;
+    std::vector<float> wx, wy, wz;
+    std::vector<float> nx, ny, nz;
+    std::vector<float> tu, tv;
+    std::vector<float> cr, cg, cb, ca;
+    std::vector<ULLInt> fw, ft, fn;
 
     Mesh(
-        Vecs3f world, Vecs3f normal, Vecs2f texture, Vecs4f color,
-        ULLInts faceWs, ULLInts faceTs, ULLInts faceNs
+        std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
+        std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
+        std::vector<float> tu, std::vector<float> tv,
+        std::vector<float> cr, std::vector<float> colorG, std::vector<float> colorB, std::vector<float> colorA,
+        std::vector<ULLInt> fw, std::vector<ULLInt> ft, std::vector<ULLInt> fn
     );
-    Mesh(
-        Vecs3f world, Vecs3f normal, Vecs2f texture, Vecs4f color, ULLInts faceSame
-    );
+    Mesh();
+
+    Vec3f w3f(ULLInt i);
+    Vec3f n3f(ULLInt i);
+    Vec2f t2f(ULLInt i);
+    Vec4f c4f(ULLInt i);
+    Vec3ulli fw3ulli(ULLInt i);
+    Vec3ulli ft3ulli(ULLInt i);
+    Vec3ulli fn3ulli(ULLInt i);
 };
 
 // Cool device mesh (for parallel processing)
@@ -56,11 +59,11 @@ public:
     // Every 3 indices is a face
     Vecptr4ulli faces;
 
-    Mesh3D(ULLInt numWs=0, ULLInt numNs=0, ULLInt numTs=0, ULLInt numFs=0);
+    Mesh3D(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
 
-    void mallocVertices(ULLInt numWs=0, ULLInt numNs=0, ULLInt numTs=0);
+    void mallocVertices(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0);
     void freeVertices();
-    void resizeVertices(ULLInt numWs, ULLInt numNs, ULLInt numTs);
+    void resizeVertices(ULLInt numWs, ULLInt numTs, ULLInt numNs);
 
     void mallocFaces(ULLInt numFs=0);
     void freeFaces();

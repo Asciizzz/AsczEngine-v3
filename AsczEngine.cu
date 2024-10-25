@@ -5,10 +5,7 @@
 #include <FragmentShader.cuh>
 #include <SFMLTexture.cuh>
 
-#include <fstream>
-#include <sstream>
-#include <string>
-// #include <Playground.cuh>
+#include <Playground.cuh>
 
 int main() {
     // Initialize Default stuff
@@ -44,33 +41,24 @@ int main() {
     file >> objPath >> objScale;
 
     // Create a .obj mesh (Work in progress)
-    // Mesh3D obj = Playground::readObjFile(0, objPath, true);
+    Mesh obj = Playground::readObjFile(0, objPath, true);
 
-    Vecs3f cubeWorld = {
-        Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
-        Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
-        Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
-        Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
-    };
-    Vecs3f cubeNormal = {
-        Vec3f(-1, -1, -1), Vec3f(1, -1, -1),
-        Vec3f(1, 1, -1), Vec3f(-1, 1, -1),
-        Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
-        Vec3f(1, 1, 1), Vec3f(-1, 1, 1)
-    };
-    Vecs2f cubeTexture = {
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1),
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1)
-    };
-    Vecs4f cubeColor = {
-        Vec4f(255, 0, 0, 255), Vec4f(0, 255, 0, 255),
-        Vec4f(255, 255, 0, 255), Vec4f(0, 0, 255, 255), 
-        Vec4f(0, 255, 255, 255), Vec4f(255, 0, 255, 255),
-        Vec4f(255, 125, 0, 255), Vec4f(125, 0, 255, 255)
-    };
-    ULLInts cubeFaces = {
+    // Testing the beta mesh
+    float c = 10;
+    Mesh cube;
+    cube.wx = { -c, c, c, -c, -c, c, c, -c };
+    cube.wy = { -c, -c, c, c, -c, -c, c, c };
+    cube.wz = { -c, -c, -c, -c, c, c, c, c };
+    cube.nx = { -c, c, c, -c, -c, c, c, -c };
+    cube.ny = { -c, -c, c, c, -c, -c, c, c };
+    cube.nz = { -c, -c, -c, -c, c, c, c, c };
+    cube.tu = { 0, 1, 1, 0, 0, 1, 1, 0 };
+    cube.tv = { 0, 0, 1, 1, 0, 0, 1, 1 };
+    cube.cr = { 255, 0, 255, 0, 255, 0, 255, 0 };
+    cube.cg = { 0, 255, 0, 255, 0, 255, 0, 255 };
+    cube.cb = { 0, 255, 0, 255, 0, 255, 0, 255 };
+    cube.ca = { 255, 255, 255, 255, 255, 255, 255, 255 };
+    cube.fw = { 
         0, 1, 2, 0, 2, 3,
         4, 5, 6, 4, 6, 7,
         0, 4, 7, 0, 7, 3,
@@ -78,41 +66,15 @@ int main() {
         0, 1, 5, 0, 5, 4,
         3, 2, 6, 3, 6, 7
     };
-    Mesh cube(cubeWorld, cubeNormal, cubeTexture, cubeColor, cubeFaces);
-
-    // Create a white wall behind the cube
-    float wallSize = 10;
-    Vecs3f wallWorld = {
-        Vec3f(-wallSize, -wallSize, wallSize), Vec3f(wallSize, -wallSize, wallSize),
-        Vec3f(wallSize, wallSize, wallSize), Vec3f(-wallSize, wallSize, wallSize)
-    };
-    Vecs3f wallNormal = { // Facing towards the cube
-        Vec3f(0, 0, -1), Vec3f(0, 0, -1),
-        Vec3f(0, 0, -1), Vec3f(0, 0, -1)
-    };
-    Vecs2f wallTexture = {
-        Vec2f(0, 0), Vec2f(1, 0),
-        Vec2f(1, 1), Vec2f(0, 1)
-    };
-    Vecs4f wallColor = {
-        Vec4f(255, 125, 125, 255), Vec4f(125, 255, 125, 255),
-        Vec4f(125, 125, 255, 255), Vec4f(255, 255, 125, 255)
-    };
-    ULLInts wallFaces = {
-        0, 1, 2, 0, 2, 3
-    };
-    Mesh wall(wallWorld, wallNormal, wallTexture, wallColor, wallFaces);
+    cube.ft = cube.fw;
+    cube.fn = cube.fw;
 
     // Graphing calculator for y = f(x, z)
-    Vecs3f world;
-    Vecs3f normal;
-    Vecs2f texture;
-    Vecs4f color;
-    ULLInts faces;
+    Mesh graph;
 
     // Append points to the grid
-    Vec2f rangeX(-20, 20);
-    Vec2f rangeZ(-20, 20);
+    Vec2f rangeX(-200, 200);
+    Vec2f rangeZ(-200, 200);
     Vec2f step(1, 1);
 
     int sizeX = (rangeX.y - rangeX.x) / step.x + 1;
@@ -124,6 +86,7 @@ int main() {
     int numZ = 0;
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         numX++;
+        break;
 
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
             numZ++;
@@ -135,23 +98,30 @@ int main() {
             maxY = std::max(maxY, y);
             minY = std::min(minY, y);
 
-            world.push_back(Vec3f(x, y, z));
+            graph.wx.push_back(x);
+            graph.wy.push_back(y);
+            graph.wz.push_back(z);
 
             // x and z ratio (0 - 1)
             float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
             float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
             // Texture
-            texture.push_back(Vec2f(ratioX, ratioZ));
+            graph.tu.push_back(ratioX);
+            graph.tv.push_back(ratioZ);
         }
     }
     numZ /= numX;
 
-    for (ULLInt i = 0; i < world.size(); i++) {
+    for (ULLInt i = 0; i < graph.wx.size(); i++) {
         // Set color based on ratio
-        float r = (world[i].x - rangeX.x) / (rangeX.y - rangeX.x);
-        float g = (world[i].y - minY) / (maxY - minY);
-        float b = (world[i].z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-        color.push_back(Vec4f(255 - r * 255, g * 255, b * 255, 255));
+        float r = (graph.wx[i] - rangeX.x) / (rangeX.y - rangeX.x);
+        float g = (graph.wy[i] - minY) / (maxY - minY);
+        float b = (graph.wz[i] - rangeZ.x) / (rangeZ.y - rangeZ.x);
+
+        graph.cr.push_back(255 - r * 255);
+        graph.cg.push_back(g * 255);
+        graph.cb.push_back(b * 255);
+        graph.ca.push_back(255);
 
         // Set normal based on the triangle of surrounding points
         int x = i / numZ;
@@ -159,7 +129,9 @@ int main() {
 
         int edge = 1;
         if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
-            normal.push_back(Vec3f(0, 1, 0));
+            graph.nx.push_back(0);
+            graph.ny.push_back(1);
+            graph.nz.push_back(0);
             continue;
         }
 
@@ -177,12 +149,12 @@ int main() {
 
         for (int j = 0; j < 4; j++) {
             int idx = idxDir[j];
-            Vec3f mid = world[i];
-            Vec3f left = world[idxLeft];
-            Vec3f right = world[idxRight];
-            Vec3f up = world[idxUp];
-            Vec3f down = world[idxDown];
-
+            Vec3f mid = graph.w3f(i);
+            Vec3f left = graph.w3f(idxLeft);
+            Vec3f right = graph.w3f(idxRight);
+            Vec3f up = graph.w3f(idxUp);
+            Vec3f down = graph.w3f(idxDown);
+            
             if (j == 0) triNormals.push_back((mid - left) & (up - left));
             if (j == 1) triNormals.push_back((mid - up) & (right - up));
             if (j == 2) triNormals.push_back((mid - right) & (down - right));
@@ -194,7 +166,10 @@ int main() {
             avgNormal += triNormal;
         }
         avgNormal.norm();
-        normal.push_back(avgNormal);
+
+        graph.nx.push_back(avgNormal.x);
+        graph.ny.push_back(avgNormal.y);
+        graph.nz.push_back(avgNormal.z);
     }
 
     // Append faces to the grid
@@ -202,20 +177,21 @@ int main() {
         for (ULLInt z = 0; z < sizeZ - 1; z++) {
             ULLInt i = x * sizeZ + z;
 
-            faces.push_back(i);
-            faces.push_back(i + 1);
-            faces.push_back(i + sizeZ);
-            faces.push_back(i + 1);
-            faces.push_back(i + sizeZ + 1);
-            faces.push_back(i + sizeZ);
+            graph.fw.push_back(i);
+            graph.fw.push_back(i + 1);
+            graph.fw.push_back(i + sizeZ);
+            graph.fw.push_back(i + 1);
+            graph.fw.push_back(i + sizeZ + 1);
+            graph.fw.push_back(i + sizeZ);
+            
+            graph.fn = graph.fw;
+            graph.ft = graph.fw;
         }
     }
 
-    Mesh graph(world, normal, texture, color, faces);
-
     // Append all the meshes here
-    GRAPHIC.mesh += graph;
-    // GRAPHIC.appendMesh(graph);
+    GRAPHIC.mesh += obj;
+    // GRAPHIC.mesh += graph;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();

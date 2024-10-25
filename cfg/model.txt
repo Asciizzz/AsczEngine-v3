@@ -1,1 +1,1 @@
-assets/Models/City/Building001.obj 1
+assets/Models/MalevolentShrine.obj 1
