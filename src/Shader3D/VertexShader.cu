@@ -258,10 +258,7 @@ __global__ void createDepthMapKernel(
         int bIdx = x + y * buffWidth;
 
         Vec3f bary = Vec3f::bary(
-            Vec2f(x + .5f, y + .5f),
-            Vec2f(sx0, sy0),
-            Vec2f(sx1, sy1),
-            Vec2f(sx2, sy2)
+            Vec2f(x, y), Vec2f(sx0, sy0), Vec2f(sx1, sy1), Vec2f(sx2, sy2)
         );
 
         if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;
@@ -323,6 +320,8 @@ __global__ void rasterizationKernel(
     buffNx[i] = runtimeNx[idx0] * alp + runtimeNx[idx1] * bet + runtimeNx[idx2] * gam;
     buffNy[i] = runtimeNy[idx0] * alp + runtimeNy[idx1] * bet + runtimeNy[idx2] * gam;
     buffNz[i] = runtimeNz[idx0] * alp + runtimeNz[idx1] * bet + runtimeNz[idx2] * gam;
+    float mag = sqrt(buffNx[i] * buffNx[i] + buffNy[i] * buffNy[i] + buffNz[i] * buffNz[i]);
+    buffNx[i] /= mag; buffNy[i] /= mag; buffNz[i] /= mag;
 
     // Set color
     buffCr[i] = runtimeCr[idx0] * alp + runtimeCr[idx1] * bet + runtimeCr[idx2] * gam;

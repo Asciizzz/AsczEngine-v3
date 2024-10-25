@@ -5,8 +5,6 @@
 #include <Camera3D.cuh>
 #include <Buffer3D.cuh>
 
-#include <SFML/Graphics.hpp>
-
 // BETA: LightSrc
 struct LightSrc {
     Vec3f dir = {-1, -1, -1};
@@ -88,7 +86,6 @@ public:
     LightSrc light;
 
     // BETA: Texture mapping
-    sf::Image textureImage;
     int textureWidth, textureHeight;
     Vec3f *d_texture; // Device texture
 

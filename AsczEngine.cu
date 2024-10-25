@@ -167,7 +167,9 @@ int main() {
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
 
-    GRAPHIC.createTexture("assets/Textures/ThisIsSoAss.png");
+    std::string texturePath = "";
+    std::ifstream("cfg/texture.txt") >> texturePath;
+    GRAPHIC.createTexture(texturePath);
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision

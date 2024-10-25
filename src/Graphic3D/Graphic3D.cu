@@ -1,5 +1,6 @@
 #include <Graphic3D.cuh>
 
+#include <SFML/Graphics.hpp>
 // Face3D
 
 void Face3D::malloc(ULLInt size) {
@@ -118,6 +119,7 @@ __device__ bool atomicMinFloat(float* addr, float value) {
 
 // BETA: Texture mapping
 void Graphic3D::createTexture(const std::string &path) {
+    sf::Image textureImage;
     if (!textureImage.loadFromFile(path)) {
         throw std::runtime_error("Failed to load texture image.");
     }
