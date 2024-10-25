@@ -9,14 +9,13 @@
 
 __global__ void customGraphKernel(
     float *wx, float *wy, float *wz,
-    float *tu, float *tv,
     float *nx, float *ny, float *nz,
-    float *cr, float *cg, float *cb, float *ca,
 
-    int numX, int numZ, float moveX, float moveZ
+    int numX, int numZ, int pointCount,
+    float moveX, float moveZ
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numX * numZ) return;
+    if (i >= pointCount) return;
 
     wy[i] = sin((wx[i] + moveX) / 20) * cos((wz[i] + moveZ) / 20) * 20;
 
@@ -93,6 +92,12 @@ int main() {
     std::ifstream file("cfg/model.txt");
     file >> objPath >> objScale;
     Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
+    #pragma omp parallel for
+    for (size_t i = 0; i < obj.wx.size(); i++) {
+        obj.wx[i] *= objScale;
+        obj.wy[i] *= objScale;
+        obj.wz[i] *= objScale;
+    }
 
     // Graphing calculator for y = f(x, z)
     Mesh graph;
@@ -102,21 +107,21 @@ int main() {
     Vec2f rangeZ(-200, 200);
     Vec2f step(1, 1);
 
-    float maxY = -INFINITY;
-    float minY = INFINITY;
-    int numX = 0;
-    int numZ = 0;
+    float graphMaxY = -INFINITY;
+    float graphMinY = INFINITY;
+    int graphNumX = 0;
+    int graphNumZ = 0;
     #pragma omp parallel for collapse(2)
     for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
         // break;
-        numX++;
+        graphNumX++;
         for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
-            numZ++;
+            graphNumZ++;
 
             float y = 0;
 
-            maxY = std::max(maxY, y);
-            minY = std::min(minY, y);
+            graphMaxY = std::max(graphMaxY, y);
+            graphMinY = std::min(graphMinY, y);
 
             graph.wx.push_back(x);
             graph.wy.push_back(y);
@@ -130,13 +135,13 @@ int main() {
             graph.tv.push_back(ratioZ);
         }
     }
-    numZ /= numX;
+    graphNumZ /= graphNumX;
 
-    #pragma omp parallel for collapse(2)
+        #pragma omp parallel for collapse(2)
     for (ULLInt i = 0; i < graph.wx.size(); i++) {
         // Set color based on ratio
         float r = (graph.wx[i] - rangeX.x) / (rangeX.y - rangeX.x);
-        float g = (graph.wy[i] - minY) / (maxY - minY);
+        float g = (graph.wy[i] - graphMinY) / (graphMaxY - graphMinY);
         float b = (graph.wz[i] - rangeZ.x) / (rangeZ.y - rangeZ.x);
 
         graph.cr.push_back(255 - r * 255);
@@ -145,21 +150,21 @@ int main() {
         graph.ca.push_back(255);
 
         // Set normal based on the triangle of surrounding points
-        int x = i / numZ;
-        int z = i % numZ;
+        int x = i / graphNumZ;
+        int z = i % graphNumZ;
 
         int edge = 1;
-        if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
+        if (x < edge || x >= graphNumX - edge || z < edge || z >= graphNumZ - edge) {
             graph.nx.push_back(0);
             graph.ny.push_back(1);
             graph.nz.push_back(0);
             continue;
         }
 
-        int idxLeft = x * numZ + z - 1;
-        int idxRight = x * numZ + z + 1;
-        int idxUp = (x - 1) * numZ + z;
-        int idxDown = (x + 1) * numZ + z;
+        int idxLeft = x * graphNumZ + z - 1;
+        int idxRight = x * graphNumZ + z + 1;
+        int idxUp = (x - 1) * graphNumZ + z;
+        int idxDown = (x + 1) * graphNumZ + z;
 
         // Triangle group: mid left up, mid up right, mid right down, mid down left
         std::vector<Vec3f> triNormals;
@@ -188,36 +193,38 @@ int main() {
 
     // Append faces to the grid
     #pragma omp parallel collapse(2)
-    for (ULLInt x = 0; x < numX - 1; x++) {
-        for (ULLInt z = 0; z < numZ - 1; z++) {
-            ULLInt i = x * numZ + z;
+    for (ULLInt x = 0; x < graphNumX - 1; x++) {
+        for (ULLInt z = 0; z < graphNumZ - 1; z++) {
+            ULLInt i = x * graphNumZ + z;
 
             graph.fw.push_back(i);
             graph.fw.push_back(i + 1);
-            graph.fw.push_back(i + numZ);
+            graph.fw.push_back(i + graphNumZ);
             graph.fw.push_back(i + 1);
-            graph.fw.push_back(i + numZ + 1);
-            graph.fw.push_back(i + numZ);
+            graph.fw.push_back(i + graphNumZ + 1);
+            graph.fw.push_back(i + graphNumZ);
 
             graph.ft.push_back(i);
             graph.ft.push_back(i + 1);
-            graph.ft.push_back(i + numZ);
+            graph.ft.push_back(i + graphNumZ);
             graph.ft.push_back(i + 1);
-            graph.ft.push_back(i + numZ + 1);
-            graph.ft.push_back(i + numZ);
+            graph.ft.push_back(i + graphNumZ + 1);
+            graph.ft.push_back(i + graphNumZ);
 
             graph.fn.push_back(i);
             graph.fn.push_back(i + 1);
-            graph.fn.push_back(i + numZ);
+            graph.fn.push_back(i + graphNumZ);
             graph.fn.push_back(i + 1);
-            graph.fn.push_back(i + numZ + 1);
-            graph.fn.push_back(i + numZ);
+            graph.fn.push_back(i + graphNumZ + 1);
+            graph.fn.push_back(i + graphNumZ);
         }
     }
 
+    size_t graphPointCount = graph.wx.size();
+
     // Append all the meshes here
-    // GRAPHIC.mesh += obj;
     GRAPHIC.mesh += graph;
+    GRAPHIC.mesh += obj;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
@@ -237,8 +244,8 @@ int main() {
     short cycle = 0;
 
     // Moving graph
-    float moveX = 0;
-    float moveZ = 0;
+    float graphMoveX = 0;
+    float graphMoveZ = 0;
 
     while (window.isOpen()) {
         // Frame start
@@ -355,8 +362,8 @@ int main() {
         // ========== Playgrounds ==============
 
         // Move the graph
-        moveX += 10 * FPS.dTimeSec;
-        moveZ += 10 * FPS.dTimeSec;
+        graphMoveX += 10 * FPS.dTimeSec;
+        graphMoveZ += 12 * FPS.dTimeSec;
 
         // Update the graph
         Mesh3D &mesh = GRAPHIC.mesh;
@@ -364,10 +371,8 @@ int main() {
         size_t gridSize = (meshSize + 255) / 256;
         customGraphKernel<<<gridSize, 256>>>(
             mesh.world.x, mesh.world.y, mesh.world.z,
-            mesh.texture.x, mesh.texture.y,
             mesh.normal.x, mesh.normal.y, mesh.normal.z,
-            mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
-            numX, numZ, moveX, moveZ
+            graphNumX, graphNumZ, graphPointCount, graphMoveX, graphMoveZ
         );
 
         // ========== Render Pipeline ==========
