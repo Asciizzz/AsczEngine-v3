@@ -40,7 +40,7 @@ public:
             lines.push_back(line);
         }
 
-        #pragma omp parallel for
+        #pragma omp parallel for collapse(2)
         for (size_t i = 0; i < lines.size(); i++) {
             std::stringstream ss(lines[i]);
             std::string type;
@@ -64,6 +64,7 @@ public:
             } else if (type == "vn") {
                 Vec3f n;
                 ss >> n.x >> n.y >> n.z;
+
                 nx.push_back(n.x);
                 ny.push_back(n.y);
                 nz.push_back(n.z);
@@ -73,36 +74,35 @@ public:
                 tu.push_back(t.x);
                 tv.push_back(t.y);
             } else if (type == "f") {
-                /* Note:
-                Faces index in .obj files are 1-based
-                Faces format: f v1/t1/n1 v2/t2/n2 v3/t3/n3
-                */
+                std::vector<ULLInt> vs, ts, ns;
+                while (ss.good()) {
+                    std::string vtn;
+                    ss >> vtn;
 
-                std::string vtn1, vtn2, vtn3, vtn4 = "";
-                ss >> vtn1 >> vtn2 >> vtn3 >> vtn4;
+                    ULLInt v, t, n;
+                    std::stringstream ss2(vtn);
+                    ss2 >> v; ss2.ignore(1); ss2 >> t; ss2.ignore(1); ss2 >> n;
 
-                Vec3ulli v, t, n;
-                std::stringstream ss1(vtn1), ss2(vtn2), ss3(vtn3);
-                ss1 >> v.x; ss1.ignore(1); ss1 >> t.x; ss1.ignore(1); ss1 >> n.x;
-                ss2 >> v.y; ss2.ignore(1); ss2 >> t.y; ss2.ignore(1); ss2 >> n.y;
-                ss3 >> v.z; ss3.ignore(1); ss3 >> t.z; ss3.ignore(1); ss3 >> n.z;
-
-                v -= fIdxBased; t -= fIdxBased; n -= fIdxBased;
-
-                if (vtn4 != "") {
-                    ULLInt v4, t4, n4;
-                    std::stringstream ss4(vtn4);
-                    ss4 >> v4; ss4.ignore(1); ss4 >> t4; ss4.ignore(1); ss4 >> n4;
-                    v4 -= fIdxBased; t4 -= fIdxBased; n4 -= fIdxBased;
-
-                    fw.push_back(v.x); fw.push_back(v.z); fw.push_back(v4);
-                    fn.push_back(n.x); fn.push_back(n.z); fn.push_back(n4);
-                    ft.push_back(t.x); ft.push_back(t.z); ft.push_back(t4);
+                    vs.push_back(v - fIdxBased);
+                    ts.push_back(t - fIdxBased);
+                    ns.push_back(n - fIdxBased);
                 }
 
-                fw.push_back(v.x); fw.push_back(v.y); fw.push_back(v.z);
-                fn.push_back(n.x); fn.push_back(n.y); fn.push_back(n.z);
-                ft.push_back(t.x); ft.push_back(t.y); ft.push_back(t.z);
+                /* For n points, we will construct n - 2 triangles
+                
+                Example: (A B C D E F):
+                - Use A as anchor point
+                    => (A B C), (A C D), (A D E), (A E F)
+
+                Note:  .obj files are assumed to organized the points
+                        in a clockwise (or counter-clockwise) order
+                */
+
+                for (int i = 1; i < vs.size() - 1; i++) {
+                    fw.push_back(vs[0]); fw.push_back(vs[i]); fw.push_back(vs[i + 1]);
+                    ft.push_back(ts[0]); ft.push_back(ts[i]); ft.push_back(ts[i + 1]);
+                    fn.push_back(ns[0]); fn.push_back(ns[i]); fn.push_back(ns[i + 1]);
+                }
             }
         }
 

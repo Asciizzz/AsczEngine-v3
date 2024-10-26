@@ -1,4 +1,4 @@
+assets/Models/Anime/Goku.obj 1
 assets/Models/Weapon/Awp.obj 1
-.heavy/Goku.obj 1
-assets/Shapes/Wall.obj 1
-assets/Models/Miyu.obj 2
+assets/Models/Shapes/Wall.obj 1
+assets/Models/Anime/Miyu.obj 2
