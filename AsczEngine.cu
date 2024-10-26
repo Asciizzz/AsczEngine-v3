@@ -388,7 +388,7 @@ int main() {
             gifTime = 0;
             gifFrame++;
 
-            // GRAPHIC.createTexture(gifPath);
+            GRAPHIC.createTexture(gifPath);
 
             if (gifFrame >= gifMaxFrame) {
                 gifFrame = 0;

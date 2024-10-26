@@ -64,6 +64,8 @@ public:
             } else if (type == "vn") {
                 Vec3f n;
                 ss >> n.x >> n.y >> n.z;
+                float mag = sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
+                n.x /= mag; n.y /= mag; n.z /= mag;
 
                 nx.push_back(n.x);
                 ny.push_back(n.y);
@@ -73,6 +75,13 @@ public:
                 ss >> t.x >> t.y;
                 tu.push_back(t.x);
                 tv.push_back(t.y);
+            } else if (type == "vc") { // NOTE: This is not in a standard .obj file format
+                Vec4f c;
+                ss >> c.x >> c.y >> c.z >> c.w;
+                cr.push_back(c.x * 255);
+                cg.push_back(c.y * 255);
+                cb.push_back(c.z * 255);
+                ca.push_back(c.w * 255);
             } else if (type == "f") {
                 std::vector<ULLInt> vs, ts, ns;
                 while (ss.good()) {
@@ -106,34 +115,37 @@ public:
             }
         }
 
-        for (size_t i = 0; i < wx.size(); i++) {
-            if (rainbow) {
-                // Set the color based on the ratio of x, y, and z
-                float r = (wx[i] - minX) / (maxX - minX);
-                float g = (wy[i] - minY) / (maxY - minY);
-                float b = (wz[i] - minZ) / (maxZ - minZ);
-                cr.push_back(255 - r * 255);
-                cg.push_back(g * 255);
-                cb.push_back(b * 255);
-                ca.push_back(255);
+        if (cr.size() == 0) {
+            #pragma omp parallel
+            for (size_t i = 0; i < wx.size(); i++) {
+                if (rainbow) {
+                    // Set the color based on the ratio of x, y, and z
+                    float r = (wx[i] - minX) / (maxX - minX);
+                    float g = (wy[i] - minY) / (maxY - minY);
+                    float b = (wz[i] - minZ) / (maxZ - minZ);
+                    cr.push_back(255 - r * 255);
+                    cg.push_back(g * 255);
+                    cb.push_back(b * 255);
+                    ca.push_back(255);
 
-                // Shift to center of xz plane
-                if (placement > 0) {
-                    wx[i] -= (minX + maxX) / 2;
-                    wz[i] -= (minZ + maxZ) / 2;
-                }
+                    // Shift to center of xz plane
+                    if (placement > 0) {
+                        wx[i] -= (minX + maxX) / 2;
+                        wz[i] -= (minZ + maxZ) / 2;
+                    }
 
-                if (placement == 1) { // Shift to center
-                    wy[i] -= (minY + maxY) / 2;
-                } else if (placement == 2) { // Shift to floor
-                    wy[i] -= minY;
+                    if (placement == 1) { // Shift to center
+                        wy[i] -= (minY + maxY) / 2;
+                    } else if (placement == 2) { // Shift to floor
+                        wy[i] -= minY;
+                    }
+                } else {
+                    // Just set it to white
+                    cr.push_back(255);
+                    cg.push_back(255);
+                    cb.push_back(255);
+                    ca.push_back(255);
                 }
-            } else {
-                // Just set it to white
-                cr.push_back(255);
-                cg.push_back(255);
-                cb.push_back(255);
-                ca.push_back(255);
             }
         }
 
