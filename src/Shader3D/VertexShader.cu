@@ -158,6 +158,15 @@ __global__ void createRuntimeFacesKernel(
     ULLInt fn1 = faceNs[fIdx1];
     ULLInt fn2 = faceNs[fIdx2];
 
+    // If all x > w or all x < -w or all y > w or all y < -w or all z > w or all z < 0, ignore the face
+    bool outsideLeft = screenX[fw0] > screenW[fw0] && screenX[fw1] > screenW[fw1] && screenX[fw2] > screenW[fw2];
+    bool outsideRight = screenX[fw0] < -screenW[fw0] && screenX[fw1] < -screenW[fw1] && screenX[fw2] < -screenW[fw2];
+    bool outsideTop = screenY[fw0] > screenW[fw0] && screenY[fw1] > screenW[fw1] && screenY[fw2] > screenW[fw2];
+    bool outsideBottom = screenY[fw0] < -screenW[fw0] && screenY[fw1] < -screenW[fw1] && screenY[fw2] < -screenW[fw2];
+    bool outsideFar = screenZ[fw0] > screenW[fw0] && screenZ[fw1] > screenW[fw1] && screenZ[fw2] > screenW[fw2];
+    bool outsideNear = screenZ[fw0] < 0 && screenZ[fw1] < 0 && screenZ[fw2] < 0;
+    if (outsideLeft || outsideRight || outsideTop || outsideBottom || outsideFar || outsideNear) return;
+
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
     ULLInt idx2 = idx0 + 2;
