@@ -240,7 +240,9 @@ __global__ void applyShadowMapKernel(
     float sfz = buffWz[i];
 
     // Create slight offset based on the normal direction with the light
-    sfz += (Vec3f(buffNx[i], buffNy[i], buffNz[i]) * Vec3f(0, 0, 1)) * 0.5;
+    sfx += buffNx[i] * 0.8;
+    sfy += buffNy[i] * 0.8;
+    sfz += buffNz[i] * 0.8;
 
     int sx = int(sfx);
     int sy = int(sfy);
