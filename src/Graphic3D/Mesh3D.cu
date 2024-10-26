@@ -17,9 +17,6 @@ Vec3f Mesh::w3f(ULLInt i) { return Vec3f(wx[i], wy[i], wz[i]); }
 Vec3f Mesh::n3f(ULLInt i) { return Vec3f(nx[i], ny[i], nz[i]); }
 Vec2f Mesh::t2f(ULLInt i) { return Vec2f(tu[i], tv[i]); }
 Vec4f Mesh::c4f(ULLInt i) { return Vec4f(cr[i], cg[i], cb[i], ca[i]); }
-Vec3ulli Mesh::fw3ulli(ULLInt i) { return Vec3ulli(fw[i]); }
-Vec3ulli Mesh::ft3ulli(ULLInt i) { return Vec3ulli(ft[i]); }
-Vec3ulli Mesh::fn3ulli(ULLInt i) { return Vec3ulli(fn[i]); }
 
 void Mesh::translate(Vec3f t) {
     #pragma omp parallel for

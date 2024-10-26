@@ -158,14 +158,14 @@ __global__ void createRuntimeFacesKernel(
     ULLInt fn1 = faceNs[fIdx1];
     ULLInt fn2 = faceNs[fIdx2];
 
-    // If all x > w or all x < -w or all y > w or all y < -w or all z > w or all z < 0, ignore the face
-    bool outsideLeft = screenX[fw0] > screenW[fw0] && screenX[fw1] > screenW[fw1] && screenX[fw2] > screenW[fw2];
-    bool outsideRight = screenX[fw0] < -screenW[fw0] && screenX[fw1] < -screenW[fw1] && screenX[fw2] < -screenW[fw2];
-    bool outsideTop = screenY[fw0] > screenW[fw0] && screenY[fw1] > screenW[fw1] && screenY[fw2] > screenW[fw2];
-    bool outsideBottom = screenY[fw0] < -screenW[fw0] && screenY[fw1] < -screenW[fw1] && screenY[fw2] < -screenW[fw2];
-    bool outsideFar = screenZ[fw0] > screenW[fw0] && screenZ[fw1] > screenW[fw1] && screenZ[fw2] > screenW[fw2];
-    bool outsideNear = screenZ[fw0] < 0 && screenZ[fw1] < 0 && screenZ[fw2] < 0;
-    if (outsideLeft || outsideRight || outsideTop || outsideBottom || outsideFar || outsideNear) return;
+    // All vertices lie on one side of the frustum's planes
+    bool allOutLeft = screenX[fw0] > screenW[fw0] && screenX[fw1] > screenW[fw1] && screenX[fw2] > screenW[fw2];
+    bool allOutRight = screenX[fw0] < -screenW[fw0] && screenX[fw1] < -screenW[fw1] && screenX[fw2] < -screenW[fw2];
+    bool allOutTop = screenY[fw0] > screenW[fw0] && screenY[fw1] > screenW[fw1] && screenY[fw2] > screenW[fw2];
+    bool allOutBottom = screenY[fw0] < -screenW[fw0] && screenY[fw1] < -screenW[fw1] && screenY[fw2] < -screenW[fw2];
+    bool allOutFar = screenZ[fw0] > screenW[fw0] && screenZ[fw1] > screenW[fw1] && screenZ[fw2] > screenW[fw2];
+    bool allOutNear = screenZ[fw0] < 0 && screenZ[fw1] < 0 && screenZ[fw2] < 0;
+    if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutFar || allOutNear) return;
 
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
@@ -237,7 +237,7 @@ __global__ void createDepthMapKernel(
     int minY = min(min(sy0, sy1), sy2);
     int maxY = max(max(sy0, sy1), sy2);
 
-    // If bounding box is outside the tile area, return
+    // If bounding box not in tile area, return
     if (minX > bufferMaxX ||
         maxX < bufferMinX ||
         minY > bufferMaxY ||

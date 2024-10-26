@@ -41,9 +41,6 @@ struct Mesh {
     Vec3f n3f(ULLInt i);
     Vec2f t2f(ULLInt i);
     Vec4f c4f(ULLInt i);
-    Vec3ulli fw3ulli(ULLInt i);
-    Vec3ulli ft3ulli(ULLInt i);
-    Vec3ulli fn3ulli(ULLInt i);
 
     // Transformations
     void translate(Vec3f t);

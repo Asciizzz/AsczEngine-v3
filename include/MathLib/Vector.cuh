@@ -15,8 +15,6 @@
 #define Vecs2f std::vector<Vec2f>
 #define Vecs3f std::vector<Vec3f>
 #define Vecs4f std::vector<Vec4f>
-#define Vecs3ulli std::vector<Vec3ulli>
-#define Vecs4ulli std::vector<Vec4ulli>
 
 #define M_PI 3.14159265358979323846 // 180 degrees
 #define M_PI_2 1.57079632679489661923 // 90 degrees
@@ -34,23 +32,6 @@ struct Vec2f {
     __host__ __device__ Vec2f operator-(const float t);
     __host__ __device__ Vec2f operator*(const float scl);
     __host__ __device__ Vec2f operator/(const float scl);
-};
-
-struct Vec3ulli { // For faces indices
-    ULLInt x, y, z;
-    __host__ __device__ Vec3ulli();
-    __host__ __device__ Vec3ulli(ULLInt x, ULLInt y, ULLInt z);
-    __host__ __device__ Vec3ulli(ULLInt a);
-
-    __host__ __device__ void operator+=(ULLInt t);
-    __host__ __device__ void operator-=(ULLInt t);
-};
-
-struct Vec4ulli {
-    ULLInt x, y, z, w;
-    __host__ __device__ Vec4ulli();
-    __host__ __device__ Vec4ulli(ULLInt x, ULLInt y, ULLInt z, ULLInt w);
-    __host__ __device__ Vec4ulli(ULLInt a);
 };
 
 struct Vec4f; // Forward declaration

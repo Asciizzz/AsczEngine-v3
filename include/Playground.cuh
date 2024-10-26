@@ -62,7 +62,7 @@ public:
                 Vec3f n;
                 ss >> n.x >> n.y >> n.z;
                 float mag = sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
-                n.x /= mag; n.y /= mag; n.z /= mag;
+                n.norm();
 
                 nx.push_back(n.x);
                 ny.push_back(n.y);

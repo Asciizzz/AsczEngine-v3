@@ -23,22 +23,6 @@ Vec2f Vec2f::operator/(const float scl) {
     return Vec2f(x / scl, y / scl);
 }
 
-// VEC3ulli (unsigned long long int)
-Vec3ulli::Vec3ulli() : x(0), y(0), z(0) {}
-Vec3ulli::Vec3ulli(ULLInt x, ULLInt y, ULLInt z) : x(x), y(y), z(z) {}
-Vec3ulli::Vec3ulli(ULLInt a) : x(a), y(a), z(a) {}
-void Vec3ulli::operator+=(ULLInt t) {
-    x += t; y += t; z += t;
-}
-void Vec3ulli::operator-=(ULLInt t) {
-    x -= t; y -= t; z -= t;
-}
-
-// VEC4ulli
-Vec4ulli::Vec4ulli() : x(0), y(0), z(0), w(0) {}
-Vec4ulli::Vec4ulli(ULLInt x, ULLInt y, ULLInt z, ULLInt w) : x(x), y(y), z(z), w(w) {}
-Vec4ulli::Vec4ulli(ULLInt a) : x(a), y(a), z(a), w(a) {}
-
 // VEC3f
 Vec3f::Vec3f() : x(0), y(0), z(0) {}
 Vec3f::Vec3f(float x, float y, float z) : x(x), y(y), z(z) {}
