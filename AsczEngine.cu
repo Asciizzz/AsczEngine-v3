@@ -96,7 +96,7 @@ int main() {
     for (size_t i = 0; i < obj.wx.size(); i++) {
         // Rotate in the z axis by 180 degrees
         Vec3f v = obj.w3f(i);
-        // v.rotate(Vec3f(0), Vec3f(0, M_PI, 0));
+        v.rotate(Vec3f(0), Vec3f(M_PI, 0, 0));
         obj.wx[i] = v.x;
         obj.wy[i] = v.y;
         obj.wz[i] = v.z;

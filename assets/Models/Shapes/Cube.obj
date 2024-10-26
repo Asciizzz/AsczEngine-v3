@@ -21,6 +21,7 @@ vn 1 1 1
 vn -1 1 1
 
 # Colors (NOT IN STANDARD OBJ FORMAT)
+# r g b a
 
 vc 1 0 0 1
 vc 0 1 0 1
