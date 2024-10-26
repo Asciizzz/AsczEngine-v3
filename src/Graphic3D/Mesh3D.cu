@@ -21,6 +21,49 @@ Vec3ulli Mesh::fw3ulli(ULLInt i) { return Vec3ulli(fw[i]); }
 Vec3ulli Mesh::ft3ulli(ULLInt i) { return Vec3ulli(ft[i]); }
 Vec3ulli Mesh::fn3ulli(ULLInt i) { return Vec3ulli(fn[i]); }
 
+void Mesh::translate(Vec3f t) {
+    #pragma omp parallel for
+    for (ULLInt i = 0; i < wx.size(); i++) {
+        wx[i] += t.x; wy[i] += t.y; wz[i] += t.z;
+    }
+}
+void Mesh::rotate(Vec3f origin, Vec3f rot, bool rotNormal) {
+    #pragma omp parallel for
+    for (ULLInt i = 0; i < wx.size(); i++) {
+        Vec3f p = Vec3f(wx[i], wy[i], wz[i]);
+        p.rotate(origin, rot);
+
+        wx[i] = p.x; wy[i] = p.y; wz[i] = p.z;
+    }
+
+    if (!rotNormal) return;
+    #pragma omp parallel for
+    for (ULLInt i = 0; i < nx.size(); i++) {
+        Vec3f n = Vec3f(nx[i], ny[i], nz[i]);
+        n.rotate(Vec3f(0, 0, 0), rot);
+
+        nx[i] = n.x; ny[i] = n.y; nz[i] = n.z;
+    }
+}
+void Mesh::scale(Vec3f origin, Vec3f scl, bool sclNormal) {
+    #pragma omp parallel for
+    for (ULLInt i = 0; i < wx.size(); i++) {
+        Vec3f p = Vec3f(wx[i], wy[i], wz[i]);
+        p.scale(origin, scl);
+
+        wx[i] = p.x; wy[i] = p.y; wz[i] = p.z;
+    }
+
+    if (!sclNormal) return;
+    #pragma omp parallel for
+    for (ULLInt i = 0; i < nx.size(); i++) {
+        Vec3f n = Vec3f(nx[i], ny[i], nz[i]);
+        n.scale(Vec3f(0, 0, 0), scl);
+
+        nx[i] = n.x; ny[i] = n.y; nz[i] = n.z;
+    }
+}
+
 // Mesh3D
 
 Mesh3D::Mesh3D(ULLInt numWs, ULLInt numNs, ULLInt numTs, ULLInt numFs) {

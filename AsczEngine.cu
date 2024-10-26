@@ -227,7 +227,7 @@ int main() {
 
     size_t graphPointCount = graph.wx.size();
 
-        // A wall span x, y, z +- wallSize
+    // A wall span x +- wallSize, y +- wallSize
     float wallSize = 2;
     Mesh wall;
     wall.wx = { -wallSize, -wallSize, wallSize, wallSize };
@@ -246,15 +246,21 @@ int main() {
     wall.ft = { 0, 1, 2, 0, 2, 3 };
     wall.fn = { 0, 1, 2, 0, 2, 3 };
 
+    // A cube span x +- 1, y +- 1, z +- 1
+    Mesh cube = Playground::readObjFile("assets/Models/Shapes/Cube.obj", 1, 1, true);
+    cube.scale(Vec3f(), Vec3f(.4));
+    cube.translate(Vec3f(.4, 0, -2));
+
     // Append all the meshes here
     GRAPHIC.mesh += graph;
     GRAPHIC.mesh += obj;
     GRAPHIC.mesh += wall;
+    GRAPHIC.mesh += cube;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
 
-    GRAPHIC.createShadowMap(6400, 6400, 80, 80);
+    GRAPHIC.createShadowMap(800, 800, 80, 80);
 
     std::string texturePath = "";
     std::ifstream("cfg/texture.txt") >> texturePath;

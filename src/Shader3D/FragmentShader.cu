@@ -240,9 +240,9 @@ __global__ void applyShadowMapKernel(
     float sfz = buffWz[i];
 
     // Create slight offset based on the normal direction
-    sfx += buffNx[i] * 0.01;
-    sfy += buffNy[i] * 0.01;
-    sfz += buffNz[i] * 0.01;
+    sfx += buffNx[i] * 0.5;
+    sfy += buffNy[i] * 0.5;
+    sfz += buffNz[i] * 0.5;
 
     int sx = int(sfx);
     int sy = int(sfy);
@@ -256,7 +256,7 @@ __global__ void applyShadowMapKernel(
     if (sfz <= shadowDepth[sIdx] + 0.001) return;
 
     // Apply the shadow
-    buffCr[i] *= 0.1;
-    buffCg[i] *= 0.1;
-    buffCb[i] *= 0.1;
+    buffCr[i] *= 0.3;
+    buffCg[i] *= 0.3;
+    buffCb[i] *= 0.3;
 }

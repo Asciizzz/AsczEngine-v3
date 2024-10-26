@@ -36,6 +36,7 @@ struct Mesh {
     );
     Mesh();
 
+    // Return vertex data
     Vec3f w3f(ULLInt i);
     Vec3f n3f(ULLInt i);
     Vec2f t2f(ULLInt i);
@@ -43,6 +44,11 @@ struct Mesh {
     Vec3ulli fw3ulli(ULLInt i);
     Vec3ulli ft3ulli(ULLInt i);
     Vec3ulli fn3ulli(ULLInt i);
+
+    // Transformations
+    void translate(Vec3f t);
+    void rotate(Vec3f origin, Vec3f rot, bool rotNormal=true);
+    void scale(Vec3f origin, Vec3f scl, bool sclNormal=true);
 };
 
 // Cool device mesh (for parallel processing)
