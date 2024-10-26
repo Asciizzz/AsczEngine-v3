@@ -257,6 +257,11 @@ int main() {
     // Other settings
     bool textureMode = true;
 
+    int gifFrame = 0;
+    int gifMaxFrame = 26;
+    float gifTime = 0;
+    float gifMaxTime = 0.03;
+
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
@@ -351,12 +356,6 @@ int main() {
             CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
 
-        // Press R to rotate the object
-        if (k_r) {
-            float rot = M_PI / 3 * FPS.dTimeSec;
-            if (k_ctrl) rot *= -1;
-            if (k_shift) rot *= 3;
-        }
         // Press Q to rotate light source in x axis
         if (k_q) {
             float rot = M_PI / 3 * FPS.dTimeSec;
@@ -375,6 +374,26 @@ int main() {
         }
 
         // ========== Playgrounds ==============
+
+        // 3 digit frame number (add additional 0s if needed)
+        std::string frameStr;
+        if (gifFrame < 10) frameStr = "00" + std::to_string(gifFrame);
+        else if (gifFrame < 100) frameStr = "0" + std::to_string(gifFrame);
+        else frameStr = std::to_string(gifFrame);
+
+        std::string gifPath = "assets/Gif/frame_" + frameStr + ".png";
+        if (gifTime < gifMaxTime) {
+            gifTime += FPS.dTimeSec;
+        } else {
+            gifTime = 0;
+            gifFrame++;
+
+            GRAPHIC.createTexture(gifPath);
+
+            if (gifFrame >= gifMaxFrame) {
+                gifFrame = 0;
+            }
+        }
 
         // Move the graph
         graphMoveX += 10 * FPS.dTimeSec;
