@@ -7,6 +7,56 @@
 
 #include <Playground.cuh>
 
+__global__ void customGraphKernel(
+    float *wx, float *wy, float *wz,
+    float *nx, float *ny, float *nz,
+
+    int numX, int numZ, int pointCount,
+    float moveX, float moveZ
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= pointCount) return;
+
+    wy[i] = sin((wx[i] + moveX) / 20) * cos((wz[i] + moveZ) / 20) * 20;
+
+    // Set normal based on the triangle of surrounding points
+    int x = i / numZ;
+    int z = i % numZ;
+
+    int edge = 1;
+    if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
+        nx[i] = 0; ny[i] = 1; nz[i] = 0;
+        return;
+    }
+
+    int idxLeft = x * numZ + z - 1;
+    int idxRight = x * numZ + z + 1;
+    int idxUp = (x - 1) * numZ + z;
+    int idxDown = (x + 1) * numZ + z;
+
+    Vec3f mid = Vec3f(wx[i], wy[i], wz[i]);
+    Vec3f left = Vec3f(wx[idxLeft], wy[idxLeft], wz[idxLeft]);
+    Vec3f right = Vec3f(wx[idxRight], wy[idxRight], wz[idxRight]);
+    Vec3f up = Vec3f(wx[idxUp], wy[idxUp], wz[idxUp]);
+    Vec3f down = Vec3f(wx[idxDown], wy[idxDown], wz[idxDown]);
+
+    Vec3f triNormals[4];
+    triNormals[0] = (mid - left) & (up - left);
+    triNormals[1] = (mid - up) & (right - up);
+    triNormals[2] = (mid - right) & (down - right);
+    triNormals[3] = (mid - down) & (left - down);
+
+    Vec3f avgNormal = Vec3f();
+    for (Vec3f triNormal : triNormals) {
+        avgNormal += triNormal;
+    }
+    avgNormal.norm();
+
+    nx[i] = avgNormal.x;
+    ny[i] = avgNormal.y;
+    nz[i] = avgNormal.z;
+}
+
 int main() {
     // Initialize Default stuff
     FpsHandler &FPS = FpsHandler::instance();
@@ -54,11 +104,147 @@ int main() {
         obj.wz[i] *= objScale;
     }
 
+    // Graphing calculator for y = f(x, z)
+    Mesh graph;
+
+    // Append points to the grid
+    Vec2f rangeX(-200, 200);
+    Vec2f rangeZ(-200, 200);
+    Vec2f step(1, 1);
+
+    float graphMaxY = -INFINITY;
+    float graphMinY = INFINITY;
+    int graphNumX = 0;
+    int graphNumZ = 0;
+    #pragma omp parallel for collapse(2)
+    for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
+        graphNumX++;
+        break;
+        for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
+            graphNumZ++;
+
+            float y = 0;
+
+            graphMaxY = std::max(graphMaxY, y);
+            graphMinY = std::min(graphMinY, y);
+
+            graph.wx.push_back(x);
+            graph.wy.push_back(y);
+            graph.wz.push_back(z);
+
+            // x and z ratio (0 - 1)
+            float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
+            float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
+            // Texture
+            graph.tu.push_back(ratioX);
+            graph.tv.push_back(ratioZ);
+        }
+    }
+    graphNumZ /= graphNumX;
+
+    #pragma omp parallel for collapse(2)
+    for (ULLInt i = 0; i < graph.wx.size(); i++) {
+        // Set color based on ratio
+        float r = (graph.wx[i] - rangeX.x) / (rangeX.y - rangeX.x);
+        float g = (graph.wy[i] - graphMinY) / (graphMaxY - graphMinY);
+        float b = (graph.wz[i] - rangeZ.x) / (rangeZ.y - rangeZ.x);
+
+        graph.cr.push_back(255 - r * 255);
+        graph.cg.push_back(g * 255);
+        graph.cb.push_back(b * 255);
+        graph.ca.push_back(255);
+
+        // Set normal based on the triangle of surrounding points
+        int x = i / graphNumZ;
+        int z = i % graphNumZ;
+
+        int edge = 1;
+        if (x < edge || x >= graphNumX - edge || z < edge || z >= graphNumZ - edge) {
+            graph.nx.push_back(0);
+            graph.ny.push_back(1);
+            graph.nz.push_back(0);
+            continue;
+        }
+
+        int idxLeft = x * graphNumZ + z - 1;
+        int idxRight = x * graphNumZ + z + 1;
+        int idxUp = (x - 1) * graphNumZ + z;
+        int idxDown = (x + 1) * graphNumZ + z;
+
+        // Triangle group: mid left up, mid up right, mid right down, mid down left
+        std::vector<Vec3f> triNormals;
+
+        Vec3f mid = graph.w3f(i);
+        Vec3f left = graph.w3f(idxLeft);
+        Vec3f right = graph.w3f(idxRight);
+        Vec3f up = graph.w3f(idxUp);
+        Vec3f down = graph.w3f(idxDown);
+
+        triNormals.push_back((mid - left) & (up - left));
+        triNormals.push_back((mid - up) & (right - up));
+        triNormals.push_back((mid - right) & (down - right));
+        triNormals.push_back((mid - down) & (left - down));
+
+        Vec3f avgNormal = Vec3f();
+        for (Vec3f triNormal : triNormals) {
+            avgNormal += triNormal;
+        }
+        avgNormal.norm();
+
+        graph.nx.push_back(avgNormal.x);
+        graph.ny.push_back(avgNormal.y);
+        graph.nz.push_back(avgNormal.z);
+    }
+
+    // Append faces to the grid
+    #pragma omp parallel collapse(2)
+    for (ULLInt x = 0; x < graphNumX - 1; x++) {
+        for (ULLInt z = 0; z < graphNumZ - 1; z++) {
+            ULLInt i = x * graphNumZ + z;
+
+            graph.fw.push_back(i);
+            graph.fw.push_back(i + 1);
+            graph.fw.push_back(i + graphNumZ);
+            graph.fw.push_back(i + 1);
+            graph.fw.push_back(i + graphNumZ + 1);
+            graph.fw.push_back(i + graphNumZ);
+
+            graph.ft.push_back(i);
+            graph.ft.push_back(i + 1);
+            graph.ft.push_back(i + graphNumZ);
+            graph.ft.push_back(i + 1);
+            graph.ft.push_back(i + graphNumZ + 1);
+            graph.ft.push_back(i + graphNumZ);
+
+            graph.fn.push_back(i);
+            graph.fn.push_back(i + 1);
+            graph.fn.push_back(i + graphNumZ);
+            graph.fn.push_back(i + 1);
+            graph.fn.push_back(i + graphNumZ + 1);
+            graph.fn.push_back(i + graphNumZ);
+        }
+    }
+
+    size_t graphPointCount = graph.wx.size();
+
     // A wall span x +- wallSize, y +- wallSize
     float wallSize = 2;
-    Mesh wall = Playground::readObjFile("assets/Models/Shapes/Wall.obj", 1, 1, true);
-    wall.scale(Vec3f(), Vec3f(wallSize));
-    wall.translate(Vec3f(0, 0, wallSize));
+    Mesh wall;
+    wall.wx = { -wallSize, -wallSize, wallSize, wallSize };
+    wall.wy = { -wallSize, wallSize, wallSize, -wallSize };
+    wall.wz = { wallSize, wallSize, wallSize, wallSize };
+    wall.tu = { 0, 1, 1, 0 };
+    wall.tv = { 0, 0, 1, 1 };
+    wall.nx = { 0, 0, 0, 0 };
+    wall.ny = { 0, 0, 0, 0 };
+    wall.nz = { -1, -1, -1, -1 };
+    wall.cr = { 255, 255, 255, 255 };
+    wall.cg = { 255, 255, 255, 255 };
+    wall.cb = { 255, 255, 255, 255 };
+    wall.ca = { 255, 255, 255, 255 };
+    wall.fw = { 0, 1, 2, 0, 2, 3 };
+    wall.ft = { 0, 1, 2, 0, 2, 3 };
+    wall.fn = { 0, 1, 2, 0, 2, 3 };
 
     // A cube span x +- 1, y +- 1, z +- 1
     Mesh cube = Playground::readObjFile("assets/Models/Shapes/Cube.obj", 1, 1, true);
@@ -66,6 +252,7 @@ int main() {
     cube.translate(Vec3f(.4, 0, -2));
 
     // Append all the meshes here
+    GRAPHIC.mesh += graph;
     GRAPHIC.mesh += obj;
     GRAPHIC.mesh += wall;
     GRAPHIC.mesh += cube;
@@ -227,12 +414,26 @@ int main() {
             gifTime = 0;
             gifFrame++;
 
-            GRAPHIC.createTexture(gifPath);
+            // GRAPHIC.createTexture(gifPath);
 
             if (gifFrame >= gifMaxFrame) {
                 gifFrame = 0;
             }
         }
+
+        // Move the graph
+        graphMoveX += 10 * FPS.dTimeSec;
+        graphMoveZ += 12 * FPS.dTimeSec;
+
+        // Update the graph
+        Mesh3D &mesh = GRAPHIC.mesh;
+        size_t meshSize = mesh.world.size;
+        size_t gridSize = (meshSize + 255) / 256;
+        customGraphKernel<<<gridSize, 256>>>(
+            mesh.world.x, mesh.world.y, mesh.world.z,
+            mesh.normal.x, mesh.normal.y, mesh.normal.z,
+            graphNumX, graphNumZ, graphPointCount, graphMoveX, graphMoveZ
+        );
 
         // ========== Render Pipeline ==========
 
