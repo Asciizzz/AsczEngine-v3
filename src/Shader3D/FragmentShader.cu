@@ -46,15 +46,17 @@ void FragmentShader::resetShadowMap() {
 
 void FragmentShader::createShadowMap() {
     Graphic3D &grphic = Graphic3D::instance();
+    Mesh3D &mesh = grphic.mesh;
 
-    dim3 blockSize(16, 16);
+    dim3 blockSize(8, 32);
 
     size_t blockNumTile = (grphic.shdwTileNum + blockSize.x - 1) / blockSize.x;
-    size_t blockNumFace = (grphic.faceCounter + blockSize.y - 1) / blockSize.y;
+    size_t blockNumFace = (mesh.faces.size / 3 + blockSize.y - 1) / blockSize.y;
     dim3 blockNum(blockNumTile, blockNumFace);
 
     createShadowMapKernel<<<blockNum, blockSize>>>(
-        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz, grphic.faceCounter,
+        mesh.world.x, mesh.world.y, mesh.world.z,
+        mesh.faces.v, mesh.faces.size / 3,
         grphic.shadowDepth, grphic.shdwWidth, grphic.shdwHeight,
         grphic.shdwTileNumX, grphic.shdwTileNumY, grphic.shdwTileSizeX, grphic.shdwTileSizeY
     );
@@ -150,30 +152,35 @@ __global__ void resetShadowMapKernel(
 }
 
 __global__ void createShadowMapKernel(
-    float *runtimeWx, float *runtimeWy, float *runtimeWz, ULLInt faceCounter,
+    const float *worldX, const float *worldY, const float *worldZ,
+    const ULLInt *faceWs, ULLInt numFs,
     float *shadowDepth, int shdwWidth, int shdwHeight,
     int shdwTileNumX, int shdwTileNumY, int shdwTileSizeX, int shdwTileSizeY
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
     ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (tIdx >= shdwTileNumX * shdwTileNumY || fIdx >= faceCounter) return;
+    if (tIdx >= shdwTileNumX * shdwTileNumY || fIdx >= numFs) return;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
 
-    float sx0 = (runtimeWx[idx0] / 20 + 1) * shdwWidth / 2;
-    float sx1 = (runtimeWx[idx1] / 20 + 1) * shdwWidth / 2;
-    float sx2 = (runtimeWx[idx2] / 20 + 1) * shdwWidth / 2;
+    ULLInt fw0 = faceWs[idx0];
+    ULLInt fw1 = faceWs[idx1];
+    ULLInt fw2 = faceWs[idx2];
 
-    float sy0 = (runtimeWy[idx0] / 20 + 1) * shdwHeight / 2;
-    float sy1 = (runtimeWy[idx1] / 20 + 1) * shdwHeight / 2;
-    float sy2 = (runtimeWy[idx2] / 20 + 1) * shdwHeight / 2;
+    float sx0 = (worldX[fw0] / 20 + 1) * shdwWidth / 2;
+    float sx1 = (worldX[fw1] / 20 + 1) * shdwWidth / 2;
+    float sx2 = (worldX[fw2] / 20 + 1) * shdwWidth / 2;
 
-    float sz0 = runtimeWz[idx0];
-    float sz1 = runtimeWz[idx1];
-    float sz2 = runtimeWz[idx2];
+    float sy0 = (worldY[fw0] / 20 + 1) * shdwHeight / 2;
+    float sy1 = (worldY[fw1] / 20 + 1) * shdwHeight / 2;
+    float sy2 = (worldY[fw2] / 20 + 1) * shdwHeight / 2;
+
+    float sz0 = worldZ[fw0];
+    float sz1 = worldZ[fw1];
+    float sz2 = worldZ[fw2];
 
     int tX = tIdx % shdwTileNumX;
     int tY = tIdx / shdwTileNumX;

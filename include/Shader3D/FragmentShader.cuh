@@ -40,7 +40,8 @@ __global__ void resetShadowMapKernel(
     float *shadowDepth, int shdwWidth, int shdwHeight
 );
 __global__ void createShadowMapKernel(
-    float *runtimeWx, float *runtimeWy, float *runtimeWz, ULLInt faceCounter,
+    const float *worldX, const float *worldY, const float *worldZ,
+    const ULLInt *faceWs, ULLInt numFs,
     float *shadowDepth, int shdwWidth, int shdwHeight,
     int shdwTileNumX, int shdwTileNumY, int shdwTileSizeX, int shdwTileSizeY
 );

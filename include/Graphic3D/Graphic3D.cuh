@@ -7,7 +7,7 @@
 
 // BETA: LightSrc
 struct LightSrc {
-    Vec3f dir = {0, 0, -1};
+    Vec3f dir = {0, 0, 1};
     float ambient = 0.1;
     float specular = 1.2;
     Vec3f color = {1, 1, 1};
