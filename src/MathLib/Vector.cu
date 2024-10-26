@@ -112,6 +112,7 @@ Vec3f Vec3f::translate(Vec3f& vec, const Vec3f& t) {
 Vec3f Vec3f::rotate(Vec3f& vec, const Vec3f& origin, const Vec3f& rot) {
     // Translate to origin
     Vec3f diff = vec - origin;
+    Vec4f diff4 = diff.toVec4f();
 
     float cosX = cos(rot.x), sinX = sin(rot.x);
     float cosY = cos(rot.y), sinY = sin(rot.y);
@@ -136,9 +137,13 @@ Vec3f Vec3f::rotate(Vec3f& vec, const Vec3f& origin, const Vec3f& rot) {
         {0, 0, 1, 0},
         {0, 0, 0, 1}
     };
-    Mat4f rMat = Mat4f(rX) * Mat4f(rY) * Mat4f(rZ);
 
-    Vec4f rVec4 = rMat * diff.toVec4f();
+    Mat4f rMatX = Mat4f(rX);
+    Mat4f rMatY = Mat4f(rY);
+    Mat4f rMatZ = Mat4f(rZ);
+
+    Vec4f rVec4 = rMatZ * (rMatY * (rMatX * diff4));
+
     Vec3f rVec3 = rVec4.toVec3f();
     rVec3 += origin;
 

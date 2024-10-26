@@ -40,7 +40,9 @@ void Mesh::rotate(Vec3f origin, Vec3f rot, bool rotNormal) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < nx.size(); i++) {
         Vec3f n = Vec3f(nx[i], ny[i], nz[i]);
-        n.rotate(Vec3f(0, 0, 0), rot);
+        n.rotate(Vec3f(), rot);
+
+        n /= n.mag(); // Normalize
 
         nx[i] = n.x; ny[i] = n.y; nz[i] = n.z;
     }
@@ -58,7 +60,9 @@ void Mesh::scale(Vec3f origin, Vec3f scl, bool sclNormal) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < nx.size(); i++) {
         Vec3f n = Vec3f(nx[i], ny[i], nz[i]);
-        n.scale(Vec3f(0, 0, 0), scl);
+        n.scale(Vec3f(), scl);
+
+        n /= n.mag(); // Normalize
 
         nx[i] = n.x; ny[i] = n.y; nz[i] = n.z;
     }
