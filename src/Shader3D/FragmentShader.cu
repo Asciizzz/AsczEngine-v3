@@ -239,24 +239,23 @@ __global__ void applyShadowMapKernel(
     float sfy = (buffWy[i] / 20 + 1) * shdwHeight / 2;
     float sfz = buffWz[i];
 
-    // Create slight offset based on the normal direction
-    sfx += buffNx[i] * 0.5;
-    sfy += buffNy[i] * 0.5;
-    sfz += buffNz[i] * 0.5;
+    // Create slight offset based on the normal direction with the light
+    sfz += (Vec3f(buffNx[i], buffNy[i], buffNz[i]) * Vec3f(0, 0, 1)) * 0.5;
 
     int sx = int(sfx);
     int sy = int(sfy);
 
-    if (sx < 0 || sx >= shdwWidth || sy < 0 || sy >= shdwHeight) return;
+    if (sx < 0 || sx >= shdwWidth ||
+        sy < 0 || sy >= shdwHeight) return;
 
     // Get the index of the shadow map
     int sIdx = sx + sy * shdwWidth;
 
     // If the fragment is closer than the shadow map, ignore
-    if (sfz <= shadowDepth[sIdx] + 0.001) return;
+    if (sfz <= shadowDepth[sIdx] + 0.0001) return;
 
     // Apply the shadow
-    buffCr[i] *= 0.3;
-    buffCg[i] *= 0.3;
-    buffCb[i] *= 0.3;
+    buffCr[i] *= 0.15;
+    buffCg[i] *= 0.15;
+    buffCb[i] *= 0.15;
 }

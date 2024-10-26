@@ -1,6 +1,6 @@
-assets/Models/Shapes/Cube.obj 0.5
-assets/Models/Anime/Goku.obj .02
 assets/Models/Anime/Sukuna.obj 1
+assets/Models/Shapes/Cube.obj 1
+assets/Models/Anime/Goku.obj .02
 assets/Models/Weapon/Awp.obj .4
 assets/Models/Other/Stronghold.obj 4
 assets/Models/Anime/Miyu.obj 2

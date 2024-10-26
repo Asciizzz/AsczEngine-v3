@@ -72,7 +72,6 @@ int main() {
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
-
     GRAPHIC.createShadowMap(800, 800, 80, 80);
 
     std::string texturePath = "";
@@ -89,13 +88,10 @@ int main() {
     double rainbowB = 0;
     short cycle = 0;
 
-    // Moving graph
-    float graphMoveX = 0;
-    float graphMoveZ = 0;
-
-    // Other settings
+    // Turn on/off texture mode
     bool textureMode = true;
 
+    // Gif animation texture
     int gifFrame = 0;
     int gifMaxFrame = 26;
     float gifTime = 0;
