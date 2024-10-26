@@ -330,6 +330,14 @@ __global__ void rasterizationKernel(
     buffNx[i] = nx_sw / homo1divW;
     buffNy[i] = ny_sw / homo1divW;
     buffNz[i] = nz_sw / homo1divW;
+    float mag = sqrt( // Normalize the normal
+        buffNx[i] * buffNx[i] +
+        buffNy[i] * buffNy[i] +
+        buffNz[i] * buffNz[i]
+    );
+    buffNx[i] /= mag;
+    buffNy[i] /= mag;
+    buffNz[i] /= mag; 
 
     // Set color
     float cr_sw = runtimeCr[idx0] / runtimeSw[idx0] * alp + runtimeCr[idx1] / runtimeSw[idx1] * bet + runtimeCr[idx2] / runtimeSw[idx2] * gam;

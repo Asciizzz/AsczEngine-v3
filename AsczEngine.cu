@@ -364,13 +364,13 @@ int main() {
 
             GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(rot, 0, 0));
         }
-        // Press E to rotate light source in z axis
+        // Press E to rotate light source in y axis
         if (k_e) {
             float rot = M_PI / 3 * FPS.dTimeSec;
             if (k_ctrl) rot *= -1;
             if (k_shift) rot *= 3;
 
-            GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(0, 0, rot));
+            GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(0, rot, 0));
         }
 
         // ========== Playgrounds ==============
@@ -388,7 +388,7 @@ int main() {
             gifTime = 0;
             gifFrame++;
 
-            GRAPHIC.createTexture(gifPath);
+            // GRAPHIC.createTexture(gifPath);
 
             if (gifFrame >= gifMaxFrame) {
                 gifFrame = 0;
