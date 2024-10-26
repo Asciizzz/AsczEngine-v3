@@ -343,3 +343,16 @@ void Vecptr4ulli::operator+=(Vecptr4ulli& vec) {
     // Update
     *this = newVec;
 }
+
+// Atomics
+__device__ bool atomicMinFloat(float* addr, float value) {
+    int* addr_as_int = (int*)addr;
+    int old = *addr_as_int, assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(addr_as_int, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
+    } while (assumed != old);
+
+    return __int_as_float(old) > value;
+}

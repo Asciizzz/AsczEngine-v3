@@ -50,7 +50,7 @@ __global__ void createDepthMapKernel(
     const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw, ULLInt faceCounter,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
     float *buffBaryX, float *buffBaryY, float *buffBaryZ,
-    int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileWidth, int tileHeight
+    int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileSizeX, int tileSizeY
 );
 
 // Fill the buffer with datas

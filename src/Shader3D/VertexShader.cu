@@ -74,7 +74,7 @@ void VertexShader::createDepthMapBeta() {
             buffer.bary.x, buffer.bary.y, buffer.bary.z,
             buffer.width, buffer.height,
             grphic.tileNumX, grphic.tileNumY,
-            grphic.tileWidth, grphic.tileHeight
+            grphic.tileSizeX, grphic.tileSizeY
         );
     }
 
@@ -198,7 +198,7 @@ __global__ void createDepthMapKernel(
     const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw, ULLInt faceCounter,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
     float *buffBaryX, float *buffBaryY, float *buffBaryZ,
-    int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileWidth, int tileHeight
+    int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileSizeX, int tileSizeY
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
     ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -210,10 +210,11 @@ __global__ void createDepthMapKernel(
     ULLInt idx2 = fIdx * 3 + 2;
 
     float sx0 = (runtimeSx[idx0] / runtimeSw[idx0] + 1) * buffWidth / 2;
-    float sy0 = (1 - runtimeSy[idx0] / runtimeSw[idx0]) * buffHeight / 2;
     float sx1 = (runtimeSx[idx1] / runtimeSw[idx1] + 1) * buffWidth / 2;
-    float sy1 = (1 - runtimeSy[idx1] / runtimeSw[idx1]) * buffHeight / 2;
     float sx2 = (runtimeSx[idx2] / runtimeSw[idx2] + 1) * buffWidth / 2;
+
+    float sy0 = (1 - runtimeSy[idx0] / runtimeSw[idx0]) * buffHeight / 2;
+    float sy1 = (1 - runtimeSy[idx1] / runtimeSw[idx1]) * buffHeight / 2;
     float sy2 = (1 - runtimeSy[idx2] / runtimeSw[idx2]) * buffHeight / 2;
 
     float sz0 = runtimeSz[idx0] / runtimeSw[idx0];
@@ -225,10 +226,10 @@ __global__ void createDepthMapKernel(
     int tX = tIdx % tileNumX;
     int tY = tIdx / tileNumX;
 
-    int bufferMinX = tX * tileWidth;
-    int bufferMaxX = bufferMinX + tileWidth;
-    int bufferMinY = tY * tileHeight;
-    int bufferMaxY = bufferMinY + tileHeight;
+    int bufferMinX = tX * tileSizeX;
+    int bufferMaxX = bufferMinX + tileSizeX;
+    int bufferMinY = tY * tileSizeY;
+    int bufferMaxY = bufferMinY + tileSizeY;
 
     // Bounding box
     int minX = min(min(sx0, sx1), sx2);
@@ -236,7 +237,7 @@ __global__ void createDepthMapKernel(
     int minY = min(min(sy0, sy1), sy2);
     int maxY = max(max(sy0, sy1), sy2);
 
-    // // If bounding box is outside the tile area, return
+    // If bounding box is outside the tile area, return
     if (minX > bufferMaxX ||
         maxX < bufferMinX ||
         minY > bufferMaxY ||
@@ -255,7 +256,7 @@ __global__ void createDepthMapKernel(
         Vec3f bary = Vec3f::bary(
             Vec2f(x, y), Vec2f(sx0, sy0), Vec2f(sx1, sy1), Vec2f(sx2, sy2)
         );
-
+        // Out of bound => Ignore
         if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;
 
         float zDepth = bary.x * sz0 + bary.y * sz1 + bary.z * sz2;

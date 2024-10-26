@@ -25,9 +25,7 @@ __global__ void customGraphKernel(
 
     int edge = 1;
     if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
-        nx[i] = 0;
-        ny[i] = 1;
-        nz[i] = 0;
+        nx[i] = 0; ny[i] = 1; nz[i] = 0;
         return;
     }
 
@@ -64,14 +62,14 @@ int main() {
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
-    int width, height, pixelSize, tileWidth, tileHeight;
+    int width, height, pixelSize, tileSizeX, tileSizeY;
     // Note: higher pixelSize = lower resolution
     std::ifstream("cfg/resolution.txt")
-        >> width >> height >> pixelSize >> tileWidth >> tileHeight;
+        >> width >> height >> pixelSize >> tileSizeX >> tileSizeY;
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
     GRAPHIC.setResolution(width, height, pixelSize);
-    GRAPHIC.setTileSize(tileWidth, tileHeight);
+    GRAPHIC.setTileSize(tileSizeX, tileSizeY);
 
     Camera3D &CAMERA = GRAPHIC.camera;
     std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
@@ -96,7 +94,7 @@ int main() {
     for (size_t i = 0; i < obj.wx.size(); i++) {
         // Rotate in the z axis by 180 degrees
         Vec3f v = obj.w3f(i);
-        v.rotate(Vec3f(0), Vec3f(M_PI, 0, 0));
+        v.rotate(Vec3f(0), Vec3f(0, 0, 0));
         obj.wx[i] = v.x;
         obj.wy[i] = v.y;
         obj.wz[i] = v.z;
@@ -229,12 +227,34 @@ int main() {
 
     size_t graphPointCount = graph.wx.size();
 
+        // A wall span x, y, z +- wallSize
+    float wallSize = 2;
+    Mesh wall;
+    wall.wx = { -wallSize, -wallSize, wallSize, wallSize };
+    wall.wy = { -wallSize, wallSize, wallSize, -wallSize };
+    wall.wz = { wallSize, wallSize, wallSize, wallSize };
+    wall.tu = { 0, 1, 1, 0 };
+    wall.tv = { 0, 0, 1, 1 };
+    wall.nx = { 0, 0, 0, 0 };
+    wall.ny = { 0, 0, 0, 0 };
+    wall.nz = { -1, -1, -1, -1 };
+    wall.cr = { 255, 255, 255, 255 };
+    wall.cg = { 255, 255, 255, 255 };
+    wall.cb = { 255, 255, 255, 255 };
+    wall.ca = { 255, 255, 255, 255 };
+    wall.fw = { 0, 1, 2, 0, 2, 3 };
+    wall.ft = { 0, 1, 2, 0, 2, 3 };
+    wall.fn = { 0, 1, 2, 0, 2, 3 };
+
     // Append all the meshes here
     GRAPHIC.mesh += graph;
     GRAPHIC.mesh += obj;
+    GRAPHIC.mesh += wall;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
+
+    GRAPHIC.createShadowMap(6400, 6400, 80, 80);
 
     std::string texturePath = "";
     std::ifstream("cfg/texture.txt") >> texturePath;
@@ -388,7 +408,7 @@ int main() {
             gifTime = 0;
             gifFrame++;
 
-            GRAPHIC.createTexture(gifPath);
+            // GRAPHIC.createTexture(gifPath);
 
             if (gifFrame >= gifMaxFrame) {
                 gifFrame = 0;
@@ -418,6 +438,10 @@ int main() {
 
         if (textureMode) FragmentShader::applyTexture();
         FragmentShader::phongShading();
+        
+        FragmentShader::resetShadowMap();
+        FragmentShader::createShadowMap();
+        FragmentShader::applyShadowMap();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
@@ -459,7 +483,7 @@ int main() {
             "Screen:\n| Res: " + std::to_string(width) +
             " x " + std::to_string(height) +
             " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
-            "| Tile Size: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight) + "\n" +
+            "| Tile Size: " + std::to_string(tileSizeX) + " x " + std::to_string(tileSizeY) + "\n" +
             "| Visible Face: " + std::to_string(GRAPHIC.faceCounter) +
             " / " + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)

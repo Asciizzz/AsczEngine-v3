@@ -148,4 +148,7 @@ struct Vecptr4ulli {
     void operator+=(Vecptr4ulli &vec);
 };
 
+// Atomic functions for float
+__device__ bool atomicMinFloat(float* addr, float value);
+
 #endif
