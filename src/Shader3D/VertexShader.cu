@@ -164,7 +164,7 @@ __global__ void createRuntimeFacesKernel(
     bool allOutTop = screenY[fw0] > screenW[fw0] && screenY[fw1] > screenW[fw1] && screenY[fw2] > screenW[fw2];
     bool allOutBottom = screenY[fw0] < -screenW[fw0] && screenY[fw1] < -screenW[fw1] && screenY[fw2] < -screenW[fw2];
     bool allOutFar = screenZ[fw0] > screenW[fw0] && screenZ[fw1] > screenW[fw1] && screenZ[fw2] > screenW[fw2];
-    bool allOutNear = screenZ[fw0] < 0 && screenZ[fw1] < 0 && screenZ[fw2] < 0;
+    bool allOutNear = screenZ[fw0] < -screenW[fw0] && screenZ[fw1] < -screenW[fw1] && -screenZ[fw2] < screenW[fw2];
     if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutFar || allOutNear) return;
 
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
