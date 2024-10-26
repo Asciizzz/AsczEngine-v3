@@ -79,6 +79,7 @@ public:
 
     // Mesh operators
     void operator+=(Mesh &mesh);
+    void operator+=(std::vector<Mesh> &meshs);
 };
 
 // Kernel for preparing faces

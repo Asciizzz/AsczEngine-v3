@@ -171,6 +171,9 @@ void Mesh3D::operator+=(Mesh &mesh) {
     screen.free();
     screen.malloc(world.size);
 }
+void Mesh3D::operator+=(std::vector<Mesh> &meshs) {
+    for (Mesh &mesh : meshs) *this += mesh;
+}
 
 // Kernel for incrementing face indices
 __global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs) { // BETA

@@ -17,10 +17,7 @@ public:
 
     static Mesh readObjFile(std::string path, short fIdxBased=1, short placement=0, bool rainbow=true) {
         std::ifstream file(path);
-        if (!file.is_open()) {
-            std::cerr << "Error: Could not open file " << path << std::endl;
-            exit(1);
-        }
+        if (!file.is_open()) return Mesh();
 
         std::string line;
 

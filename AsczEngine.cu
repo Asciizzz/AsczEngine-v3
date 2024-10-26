@@ -33,51 +33,55 @@ int main() {
     ), window);
 
     // ===================== INITIALIZATION =====================
+    // Each model in models.txt will contain:
+    // src scl rotX rotY rotZ transX transY transZ
+    std::ifstream objsFile("cfg/models.txt");
+    std::string line;
+    while (std::getline(objsFile, line)) {
+        // If line start with #, it's a comment
+        if (line[0] == '#' || line.empty()) continue;
 
-    std::string objPath = "";
-    float objScale = 1;
-    // File: <path> <scale>
-    std::ifstream file("cfg/model.txt");
-    file >> objPath >> objScale;
-    Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
-    #pragma omp parallel for
-    for (size_t i = 0; i < obj.wx.size(); i++) {
-        // Rotate in the z axis by 180 degrees
-        Vec3f v = obj.w3f(i);
-        v.rotate(Vec3f(0), Vec3f(0, 0, 0));
-        obj.wx[i] = v.x;
-        obj.wy[i] = v.y;
-        obj.wz[i] = v.z;
+        std::string objPath = "";
+        float scale = 1;
+        Vec3f translate;
+        Vec3f rotate;
 
-        obj.wx[i] *= objScale;
-        obj.wy[i] *= objScale;
-        obj.wz[i] *= objScale;
+        std::stringstream ss(line);
+
+        ss >> objPath >> scale;
+        ss >> rotate.x >> rotate.y >> rotate.z;
+        ss >> translate.x >> translate.y >> translate.z;
+        rotate *= M_PI / 180;
+
+        Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
+        obj.scale(Vec3f(), Vec3f(scale));
+        obj.rotate(Vec3f(), rotate);
+        obj.translate(translate);
+
+        GRAPHIC.mesh += obj;
     }
 
-    // A wall span x +- wallSize, y +- wallSize
-    float wallSize = 2;
-    Mesh wall = Playground::readObjFile("assets/Models/Shapes/Wall.obj", 1, 1, true);
-    wall.scale(Vec3f(), Vec3f(wallSize));
-    wall.translate(Vec3f(0, 0, wallSize));
+    // // A wall span x +- wallSize, y +- wallSize
+    // float wallSize = 2;
+    // Mesh wall = Playground::readObjFile("assets/Models/Shapes/Wall.obj", 1, 1, true);
+    // wall.scale(Vec3f(), Vec3f(wallSize));
+    // wall.translate(Vec3f(0, 0, wallSize));
 
-    // A cube span x +- 1, y +- 1, z +- 1
-    Mesh cube = Playground::readObjFile("assets/Models/Shapes/Cube.obj", 1, 1, true);
-    cube.scale(Vec3f(), Vec3f(.4));
-    cube.translate(Vec3f(.4, 0, -2));
-
-    // Append all the meshes here
-    GRAPHIC.mesh += obj;
-    GRAPHIC.mesh += wall;
-    GRAPHIC.mesh += cube;
+    // // A cube span x +- 1, y +- 1, z +- 1
+    // Mesh cube = Playground::readObjFile("assets/Models/Shapes/Cube.obj", 1, 1, true);
+    // cube.scale(Vec3f(), Vec3f(.4));
+    // cube.translate(Vec3f(.4, 0, -2));
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
-    GRAPHIC.createShadowMap(800, 800, 80, 80);
 
     std::string texturePath = "";
     std::ifstream("cfg/texture.txt") >> texturePath;
     GRAPHIC.createTexture(texturePath);
 
+    int shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY;
+    std::ifstream("cfg/shadow.txt") >> shdwWidth >> shdwHeight >> shdwTileSizeX >> shdwTileSizeY;
+    GRAPHIC.createShadowMap(shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY);
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
     float fovDeg = 90;
@@ -90,6 +94,7 @@ int main() {
 
     // Turn on/off texture mode
     bool textureMode = true;
+    bool shadowMode = true;
 
     // Gif animation texture
     int gifFrame = 0;
@@ -137,6 +142,10 @@ int main() {
                 // Press T to toggle texture mode
                 if (event.key.code == sf::Keyboard::T) {
                     textureMode = !textureMode;
+                }
+                // Press S to toggle shadow mode
+                if (event.key.code == sf::Keyboard::S) {
+                    shadowMode = !shadowMode;
                 }
             }
 
@@ -215,19 +224,18 @@ int main() {
         if (gifFrame < 10) frameStr = "00" + std::to_string(gifFrame);
         else if (gifFrame < 100) frameStr = "0" + std::to_string(gifFrame);
         else frameStr = std::to_string(gifFrame);
-
         std::string gifPath = "assets/Gif/frame_" + frameStr + ".png";
+
         if (gifTime < gifMaxTime) {
             gifTime += FPS.dTimeSec;
         } else {
             gifTime = 0;
+
             gifFrame++;
-
-            GRAPHIC.createTexture(gifPath);
-
-            if (gifFrame >= gifMaxFrame) {
+            if (gifFrame >= gifMaxFrame)
                 gifFrame = 0;
-            }
+
+            // GRAPHIC.createTexture(gifPath);
         }
 
         // ========== Render Pipeline ==========
@@ -237,12 +245,14 @@ int main() {
         VertexShader::createDepthMapBeta();
         VertexShader::rasterization();
 
+        // Fragment Shader (bunch of beta features)
         if (textureMode) FragmentShader::applyTexture();
+        if (shadowMode) {
+            FragmentShader::resetShadowMap();
+            FragmentShader::createShadowMap();
+            FragmentShader::applyShadowMap();
+        }
         FragmentShader::phongShading();
-        
-        FragmentShader::resetShadowMap();
-        FragmentShader::createShadowMap();
-        FragmentShader::applyShadowMap();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
