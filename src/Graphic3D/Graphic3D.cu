@@ -65,6 +65,7 @@ void Graphic3D::free() {
     freeFaceStreams();
 
     freeTexture();
+    freeShadowMap();
 }
 
 // Graphic faces (runtime)
