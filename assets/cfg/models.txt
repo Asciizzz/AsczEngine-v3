@@ -1,5 +1,5 @@
 # Back wall
-assets/Models/Shapes/Wall.obj 2 0 0 0 0 0 2
+#assets/Models/Shapes/Wall.obj 2 0 0 0 0 0 2
 # Left wall
 #assets/Models/Shapes/Wall.obj 2 0 90 0 2 0 0
 # Right wall
@@ -18,5 +18,15 @@ assets/Models/Shapes/Wall.obj 2 0 0 0 0 0 2
 # assets/Models/Shapes/Cube.obj .4 45 1 0 .4 0 -2
 # assets/Models/Shapes/Cube.obj 1
 
-assets/Models/Anime/Goku.obj .02 0 180 0
+#assets/Models/Anime/Goku.obj .02 0 180 0
 # assets/Models/Anime/Miyu.obj 2
+
+assets/Models/Shapes/Cube.obj 1
+assets/Models/Shapes/Cube.obj 1 0 0 0 2 0 0
+assets/Models/Shapes/Cube.obj 1 0 0 0 4 0 0
+assets/Models/Shapes/Cube.obj 1 0 0 0 6 0 0
+assets/Models/Shapes/Cube.obj 1 0 0 0 8 0 0
+assets/Models/Shapes/Cube.obj 1 0 0 0 10 0 0
+assets/Models/Shapes/Cube.obj 1 0 0 0 12 0
+assets/Models/Shapes/Cube.obj 1 0 0 0 14 0 0
+assets/Models/Shapes/Cube.obj 1 0 0 0 16 0 0

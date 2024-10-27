@@ -25,9 +25,9 @@ AsczEngine:
 		src/Graphic3D/Graphic3D.cu \
 		src/Graphic3D/VertexShader.cu \
 		src/Graphic3D/FragmentShader.cu \
+		src/Graphic3D/SFMLTexture.cu \
 		src/System/FpsHandler.cu \
 		src/System/CsLogHandler.cu \
-		src/System/SFMLTexture.cu \
 		\
 		AsczEngine.cu \
 		\
