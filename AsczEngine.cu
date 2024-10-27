@@ -94,6 +94,9 @@ int main() {
     float gifTime = 0;
     float gifMaxTime = 0.03;
 
+    // Other miscellaneus stuff
+    bool k_t_hold = false;
+
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
@@ -194,9 +197,13 @@ int main() {
         }
 
         // Press T to read an transform.txt file and apply it
-        if (k_t) {
+        // Note: by holding ctrl T went from hold mode to tap mode
+        if (k_t && (!k_t_hold || !k_ctrl)) {
+            k_t_hold = true;
+
             Playground::applyTransformation(objs);
         }
+        if (!k_t) k_t_hold = false;
         // Press Q to rotate light source in x axis
         if (k_q) {
             float rot = M_PI / 3 * FPS.dTimeSec;

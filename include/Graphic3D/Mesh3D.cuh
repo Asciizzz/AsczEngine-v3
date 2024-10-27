@@ -23,8 +23,8 @@ We will have 4 arrays for vertex data:
 struct Mesh {
     /* VERY IMPORTANT NOTE:
 
-    Section 1 only used for initialization
-    once the global Mesh3D object append it
+    Section 1 is only used for initialization
+    Once the global Mesh3D object append it
     it will become practically useless
 
     When we want to perform transformations
