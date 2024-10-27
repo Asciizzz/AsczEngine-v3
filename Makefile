@@ -23,8 +23,8 @@ AsczEngine:
 		src/Graphic3D/Camera3D.cu \
 		src/Graphic3D/Buffer3D.cu \
 		src/Graphic3D/Graphic3D.cu \
-		src/Shader3D/VertexShader.cu \
-		src/Shader3D/FragmentShader.cu \
+		src/Graphic3D/VertexShader.cu \
+		src/Graphic3D/FragmentShader.cu \
 		src/System/FpsHandler.cu \
 		src/System/CsLogHandler.cu \
 		src/System/SFMLTexture.cu \
