@@ -198,6 +198,7 @@ int main() {
 
         // Press T to read an transform.txt file and apply it
         // Note: by holding ctrl T went from hold mode to tap mode
+        // You can also use ctrl to stop the transformation instantly
         if (k_t && (!k_t_hold || !k_ctrl)) {
             k_t_hold = true;
 
