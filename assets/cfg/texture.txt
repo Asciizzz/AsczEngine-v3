@@ -1,2 +1,2 @@
-assets/Textures/White.png
+assets/Textures/Nature.png
 assets/Textures/Wood.png

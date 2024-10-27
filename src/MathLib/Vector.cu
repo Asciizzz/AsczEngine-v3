@@ -345,3 +345,15 @@ __device__ bool atomicMinFloat(float* addr, float value) {
 
     return __int_as_float(old) > value;
 }
+
+__device__ bool atomicMinDouble(double* addr, double value) {
+    unsigned long long int* addr_as_ull = (unsigned long long int*)addr;
+    unsigned long long int old = *addr_as_ull, assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(addr_as_ull, assumed, __double_as_longlong(fmin(value, __longlong_as_double(assumed))));
+    } while (assumed != old);
+
+    return __longlong_as_double(old) > value;
+}

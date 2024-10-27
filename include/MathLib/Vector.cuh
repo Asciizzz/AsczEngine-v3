@@ -131,5 +131,6 @@ struct Vecptr4ulli {
 
 // Atomic functions for float
 __device__ bool atomicMinFloat(float* addr, float value);
+__device__ bool atomicMinDouble(double* addr, double value);
 
 #endif

@@ -332,7 +332,7 @@ __global__ void rasterizationKernel(
     float gam = buffBrz[i];
 
     // Get homogenous 1/w
-    float homo1divW = (1 / runtimeSw[idx0]) * alp + (1 / runtimeSw[idx1]) * bet + (1 / runtimeSw[idx2]) * gam;
+    float homo1divW = alp / runtimeSw[idx0] + bet / runtimeSw[idx1] + gam / runtimeSw[idx2];
 
     // Set world position
     float wx_sw = runtimeWx[idx0] / runtimeSw[idx0] * alp + runtimeWx[idx1] / runtimeSw[idx1] * bet + runtimeWx[idx2] / runtimeSw[idx2] * gam;
