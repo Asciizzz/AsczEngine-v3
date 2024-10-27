@@ -168,56 +168,54 @@ __global__ void createRuntimeFacesKernel(
     ULLInt fIdx1 = fIdx * 3 + 1;
     ULLInt fIdx2 = fIdx * 3 + 2;
 
-    ULLInt fw0 = faceWs[fIdx0];
-    ULLInt fw1 = faceWs[fIdx1];
-    ULLInt fw2 = faceWs[fIdx2];
-
-    ULLInt ft0 = faceTs[fIdx0];
-    ULLInt ft1 = faceTs[fIdx1];
-    ULLInt ft2 = faceTs[fIdx2];
-
-    ULLInt fn0 = faceNs[fIdx0];
-    ULLInt fn1 = faceNs[fIdx1];
-    ULLInt fn2 = faceNs[fIdx2];
+    ULLInt fw[3] = {faceWs[fIdx0], faceWs[fIdx1], faceWs[fIdx2]};
+    ULLInt ft[3] = {faceTs[fIdx0], faceTs[fIdx1], faceTs[fIdx2]};
+    ULLInt fn[3] = {faceNs[fIdx0], faceNs[fIdx1], faceNs[fIdx2]};
 
     // If all W are negative, the face is behind the camera => Ignore
-    if (screenW[fw0] < 0 && screenW[fw1] < 0 && screenW[fw2] < 0) return;
+    if (screenW[fw[0]] < 0 && screenW[fw[1]] < 0 && screenW[fw[2]] < 0) return;
+
+    // Find plane diretion
+    bool left[3] = {screenX[fw[0]] < -screenW[fw[0]], screenX[fw[1]] < -screenW[fw[1]], screenX[fw[2]] < -screenW[fw[2]]};
+    bool right[3] = {screenX[fw[0]] > screenW[fw[0]], screenX[fw[1]] > screenW[fw[1]], screenX[fw[2]] > screenW[fw[2]]};
+    bool up[3] = {screenY[fw[0]] > screenW[fw[0]], screenY[fw[1]] > screenW[fw[1]], screenY[fw[2]] > screenW[fw[2]]};
+    bool down[3] = {screenY[fw[0]] < -screenW[fw[0]], screenY[fw[1]] < -screenW[fw[1]], screenY[fw[2]] < -screenW[fw[2]]};
+    bool far[3] = {screenZ[fw[0]] > screenW[fw[0]], screenZ[fw[1]] > screenW[fw[1]], screenZ[fw[2]] > screenW[fw[2]]};
+    bool near[3] = {screenZ[fw[0]] < -screenW[fw[0]], screenZ[fw[1]] < -screenW[fw[1]], -screenZ[fw[2]] < screenW[fw[2]]};
 
     // All vertices lie on one side of the frustum's planes
-    bool allOutLeft = screenX[fw0] > screenW[fw0] && screenX[fw1] > screenW[fw1] && screenX[fw2] > screenW[fw2];
-    bool allOutRight = screenX[fw0] < -screenW[fw0] && screenX[fw1] < -screenW[fw1] && screenX[fw2] < -screenW[fw2];
-    bool allOutTop = screenY[fw0] > screenW[fw0] && screenY[fw1] > screenW[fw1] && screenY[fw2] > screenW[fw2];
-    bool allOutBottom = screenY[fw0] < -screenW[fw0] && screenY[fw1] < -screenW[fw1] && screenY[fw2] < -screenW[fw2];
-    bool allOutFar = screenZ[fw0] > screenW[fw0] && screenZ[fw1] > screenW[fw1] && screenZ[fw2] > screenW[fw2];
-    bool allOutNear = screenZ[fw0] < -screenW[fw0] && screenZ[fw1] < -screenW[fw1] && -screenZ[fw2] < screenW[fw2];
-    if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutFar || allOutNear) return;
-
-    // Will be changed later
+    bool allLeft = left[0] && left[1] && left[2];
+    bool allRight = right[0] && right[1] && right[2];
+    bool allUp = up[0] && up[1] && up[2];
+    bool allDown = down[0] && down[1] && down[2];
+    bool allFar = far[0] && far[1] && far[2];
+    bool allNear = near[0] && near[1] && near[2];
+    if (allLeft || allRight || allUp || allDown || allFar || allNear) return;
 
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
     ULLInt idx2 = idx0 + 2;
 
-    runtimeSx[idx0] = screenX[fw0]; runtimeSx[idx1] = screenX[fw1]; runtimeSx[idx2] = screenX[fw2];
-    runtimeSy[idx0] = screenY[fw0]; runtimeSy[idx1] = screenY[fw1]; runtimeSy[idx2] = screenY[fw2];
-    runtimeSz[idx0] = screenZ[fw0]; runtimeSz[idx1] = screenZ[fw1]; runtimeSz[idx2] = screenZ[fw2];
-    runtimeSw[idx0] = screenW[fw0]; runtimeSw[idx1] = screenW[fw1]; runtimeSw[idx2] = screenW[fw2];
+    runtimeSx[idx0] = screenX[fw[0]]; runtimeSx[idx1] = screenX[fw[1]]; runtimeSx[idx2] = screenX[fw[2]];
+    runtimeSy[idx0] = screenY[fw[0]]; runtimeSy[idx1] = screenY[fw[1]]; runtimeSy[idx2] = screenY[fw[2]];
+    runtimeSz[idx0] = screenZ[fw[0]]; runtimeSz[idx1] = screenZ[fw[1]]; runtimeSz[idx2] = screenZ[fw[2]];
+    runtimeSw[idx0] = screenW[fw[0]]; runtimeSw[idx1] = screenW[fw[1]]; runtimeSw[idx2] = screenW[fw[2]];
 
-    runtimeWx[idx0] = worldX[fw0]; runtimeWx[idx1] = worldX[fw1]; runtimeWx[idx2] = worldX[fw2];
-    runtimeWy[idx0] = worldY[fw0]; runtimeWy[idx1] = worldY[fw1]; runtimeWy[idx2] = worldY[fw2];
-    runtimeWz[idx0] = worldZ[fw0]; runtimeWz[idx1] = worldZ[fw1]; runtimeWz[idx2] = worldZ[fw2];
+    runtimeWx[idx0] = worldX[fw[0]]; runtimeWx[idx1] = worldX[fw[1]]; runtimeWx[idx2] = worldX[fw[2]];
+    runtimeWy[idx0] = worldY[fw[0]]; runtimeWy[idx1] = worldY[fw[1]]; runtimeWy[idx2] = worldY[fw[2]];
+    runtimeWz[idx0] = worldZ[fw[0]]; runtimeWz[idx1] = worldZ[fw[1]]; runtimeWz[idx2] = worldZ[fw[2]];
 
-    runtimeTu[idx0] = textureX[ft0]; runtimeTu[idx1] = textureX[ft1]; runtimeTu[idx2] = textureX[ft2];
-    runtimeTv[idx0] = textureY[ft0]; runtimeTv[idx1] = textureY[ft1]; runtimeTv[idx2] = textureY[ft2];
+    runtimeTu[idx0] = textureX[ft[0]]; runtimeTu[idx1] = textureX[ft[1]]; runtimeTu[idx2] = textureX[ft[2]];
+    runtimeTv[idx0] = textureY[ft[0]]; runtimeTv[idx1] = textureY[ft[1]]; runtimeTv[idx2] = textureY[ft[2]];
 
-    runtimeNx[idx0] = normalX[fn0]; runtimeNx[idx1] = normalX[fn1]; runtimeNx[idx2] = normalX[fn2];
-    runtimeNy[idx0] = normalY[fn0]; runtimeNy[idx1] = normalY[fn1]; runtimeNy[idx2] = normalY[fn2];
-    runtimeNz[idx0] = normalZ[fn0]; runtimeNz[idx1] = normalZ[fn1]; runtimeNz[idx2] = normalZ[fn2];
+    runtimeNx[idx0] = normalX[fn[0]]; runtimeNx[idx1] = normalX[fn[1]]; runtimeNx[idx2] = normalX[fn[2]];
+    runtimeNy[idx0] = normalY[fn[0]]; runtimeNy[idx1] = normalY[fn[1]]; runtimeNy[idx2] = normalY[fn[2]];
+    runtimeNz[idx0] = normalZ[fn[0]]; runtimeNz[idx1] = normalZ[fn[1]]; runtimeNz[idx2] = normalZ[fn[2]];
 
-    runtimeCr[idx0] = colorX[fw0]; runtimeCr[idx1] = colorX[fw1]; runtimeCr[idx2] = colorX[fw2];
-    runtimeCg[idx0] = colorY[fw0]; runtimeCg[idx1] = colorY[fw1]; runtimeCg[idx2] = colorY[fw2];
-    runtimeCb[idx0] = colorZ[fw0]; runtimeCb[idx1] = colorZ[fw1]; runtimeCb[idx2] = colorZ[fw2];
-    runtimeCa[idx0] = colorW[fw0]; runtimeCa[idx1] = colorW[fw1]; runtimeCa[idx2] = colorW[fw2];
+    runtimeCr[idx0] = colorX[fw[0]]; runtimeCr[idx1] = colorX[fw[1]]; runtimeCr[idx2] = colorX[fw[2]];
+    runtimeCg[idx0] = colorY[fw[0]]; runtimeCg[idx1] = colorY[fw[1]]; runtimeCg[idx2] = colorY[fw[2]];
+    runtimeCb[idx0] = colorZ[fw[0]]; runtimeCb[idx1] = colorZ[fw[1]]; runtimeCb[idx2] = colorZ[fw[2]];
+    runtimeCa[idx0] = colorW[fw[0]]; runtimeCa[idx1] = colorW[fw[1]]; runtimeCa[idx2] = colorW[fw[2]];
 }
 
 // Depth map creation
