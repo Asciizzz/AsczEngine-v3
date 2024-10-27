@@ -19,13 +19,13 @@ Vec3f Mesh::n3f(ULLInt i) { return Vec3f(nx[i], ny[i], nz[i]); }
 Vec2f Mesh::t2f(ULLInt i) { return Vec2f(tu[i], tv[i]); }
 Vec4f Mesh::c4f(ULLInt i) { return Vec4f(cr[i], cg[i], cb[i], ca[i]); }
 
-void Mesh::translateStatic(Vec3f t) {
+void Mesh::translateIni(Vec3f t) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < wx.size(); i++) {
         wx[i] += t.x; wy[i] += t.y; wz[i] += t.z;
     }
 }
-void Mesh::rotateStatic(Vec3f origin, Vec3f rot, bool rotNormal) {
+void Mesh::rotateIni(Vec3f origin, Vec3f rot, bool rotNormal) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < wx.size(); i++) {
         Vec3f p = Vec3f(wx[i], wy[i], wz[i]);
@@ -45,7 +45,7 @@ void Mesh::rotateStatic(Vec3f origin, Vec3f rot, bool rotNormal) {
         nx[i] = n.x; ny[i] = n.y; nz[i] = n.z;
     }
 }
-void Mesh::scaleStatic(Vec3f origin, Vec3f scl, bool sclNormal) {
+void Mesh::scaleIni(Vec3f origin, Vec3f scl, bool sclNormal) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < wx.size(); i++) {
         Vec3f p = Vec3f(wx[i], wy[i], wz[i]);

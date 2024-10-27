@@ -55,9 +55,9 @@ int main() {
         rotate *= M_PI / 180;
 
         Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
-        obj.scaleStatic(Vec3f(), Vec3f(scale));
-        obj.rotateStatic(Vec3f(), rotate);
-        obj.translateStatic(translate);
+        obj.scaleIni(Vec3f(), Vec3f(scale));
+        obj.rotateIni(Vec3f(), rotate);
+        obj.translateIni(translate);
 
         GRAPHIC.mesh += obj;
         objs.push_back(obj);

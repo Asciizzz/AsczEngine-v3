@@ -180,7 +180,7 @@ public:
             } else if (type == 'r') {
                 Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
                 Vec3f rot; ss >> rot.x >> rot.y >> rot.z;
-                origin *= M_PI / 180; // To degree
+                rot *= M_PI / 180; // To degree
 
                 objs[idx].rotateRuntime(origin, rot);
             } else if (type == 's') {

@@ -21,13 +21,26 @@ We will have 4 arrays for vertex data:
 #define Meshs3D std::vector<Mesh3D>
 
 struct Mesh {
+    /* VERY IMPORTANT NOTE:
+
+    Section 1 only used for initialization
+    once the global Mesh3D object append it
+    it will become practically useless
+
+    When we want to perform transformations
+    we will use the range values in section 2
+    to apply directly to the device memory
+    of the global Mesh3D object
+    */
+
+    // Section 1: initialization
     std::vector<float> wx, wy, wz;
     std::vector<float> nx, ny, nz;
     std::vector<float> tu, tv;
     std::vector<float> cr, cg, cb, ca;
     std::vector<ULLInt> fw, ft, fn;
 
-    // Note: a <= i < b, [a, b)
+    // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
     Vec2ulli fw_range, ft_range, fn_range;
 
@@ -46,12 +59,12 @@ struct Mesh {
     Vec2f t2f(ULLInt i);
     Vec4f c4f(ULLInt i);
 
-    // Instant Transformations
-    void translateStatic(Vec3f t);
-    void rotateStatic(Vec3f origin, Vec3f rot, bool rotNormal=true);
-    void scaleStatic(Vec3f origin, Vec3f scl, bool sclNormal=true);
+    // Section 1 transformations
+    void translateIni(Vec3f t);
+    void rotateIni(Vec3f origin, Vec3f rot, bool rotNormal=true);
+    void scaleIni(Vec3f origin, Vec3f scl, bool sclNormal=true);
 
-    // Runtime Transformations (in the Graphic3D.Mesh3D)
+    // Section 2 transformations
     void translateRuntime(Vec3f t);
     void rotateRuntime(Vec3f origin, Vec3f rot);
     void scaleRuntime(Vec3f origin, Vec3f scl);
