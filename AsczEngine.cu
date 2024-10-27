@@ -14,7 +14,7 @@ int main() {
 
     int width, height, pixelSize, tileSizeX, tileSizeY;
     // Note: higher pixelSize = lower resolution
-    std::ifstream("cfg/resolution.txt")
+    std::ifstream("assets/cfg/resolution.txt")
         >> width >> height >> pixelSize >> tileSizeX >> tileSizeY;
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
@@ -22,8 +22,8 @@ int main() {
     GRAPHIC.setTileSize(tileSizeX, tileSizeY);
 
     Camera3D &CAMERA = GRAPHIC.camera;
-    std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
-    std::ifstream("cfg/cameraSpd.txt") >> CAMERA.slowFactor >> CAMERA.fastFactor;
+    std::ifstream("assets/cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
+    std::ifstream("assets/cfg/cameraSpd.txt") >> CAMERA.slowFactor >> CAMERA.fastFactor;
 
     SFMLTexture SFTex = SFMLTexture(width, height);
     sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
@@ -35,7 +35,7 @@ int main() {
     // ===================== INITIALIZATION =====================
     // Each model in models.txt will contain:
     // src scl rotX rotY rotZ transX transY transZ
-    std::ifstream objsFile("cfg/models.txt");
+    std::ifstream objsFile("assets/cfg/models.txt");
     std::string line;
     while (std::getline(objsFile, line)) {
         // If line start with #, it's a comment
@@ -76,11 +76,11 @@ int main() {
     GRAPHIC.mallocFaceStreams();
 
     std::string texturePath = "";
-    std::ifstream("cfg/texture.txt") >> texturePath;
+    std::ifstream("assets/cfg/texture.txt") >> texturePath;
     GRAPHIC.createTexture(texturePath);
 
     int shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY;
-    std::ifstream("cfg/shadow.txt") >> shdwWidth >> shdwHeight >> shdwTileSizeX >> shdwTileSizeY;
+    std::ifstream("assets/cfg/shadow.txt") >> shdwWidth >> shdwHeight >> shdwTileSizeX >> shdwTileSizeY;
     GRAPHIC.createShadowMap(shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY);
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
@@ -125,17 +125,17 @@ int main() {
 
                 // Press L to read light.txt file and set its prop
                 if (event.key.code == sf::Keyboard::L) {
-                    std::ifstream dir("cfg/lightDir.txt");
+                    std::ifstream dir("assets/cfg/lightDir.txt");
                     dir >> GRAPHIC.light.dir.x >> GRAPHIC.light.dir.y >> GRAPHIC.light.dir.z;
 
-                    std::ifstream color("cfg/lightColor.txt");
+                    std::ifstream color("assets/cfg/lightColor.txt");
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
                 }
                 
                 // Press f2 to read texture.txt file and set its prop
                 if (event.key.code == sf::Keyboard::F2) {
                     std::string texturePath = "";
-                    std::ifstream("cfg/texture.txt") >> texturePath;
+                    std::ifstream("assets/cfg/texture.txt") >> texturePath;
                     GRAPHIC.createTexture(texturePath);
                 }
 

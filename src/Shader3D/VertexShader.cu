@@ -123,6 +123,28 @@ __global__ void cameraProjectionKernel(
     screenW[i] = t4.w;
 }
 
+// A bunch of placeholder functions
+struct Intersect {
+    bool near = false, far = false;
+    bool left = false, right = false;
+    bool up = false, down = false;
+};
+
+__device__ Intersect intersect(Vec4f s1, Vec4f s2) {
+    Intersect inter;
+
+    if ((s1.z < -s1.w && s2.z > -s2.w) || (s1.z > -s1.w && s2.z < -s2.w)) inter.near = true;
+    if ((s1.z < s1.w && s2.z > s2.w) || (s1.z > s1.w && s2.z < s2.w)) inter.far = true;
+
+    if ((s1.x < -s1.w && s2.x > -s2.w) || (s1.x > -s1.w && s2.x < -s2.w)) inter.left = true;
+    if ((s1.x < s1.w && s2.x > s2.w) || (s1.x > s1.w && s2.x < s2.w)) inter.right = true;
+
+    if ((s1.y < -s1.w && s2.y > -s2.w) || (s1.y > -s1.w && s2.y < -s2.w)) inter.down = true;
+    if ((s1.y < s1.w && s2.y > s2.w) || (s1.y > s1.w && s2.y < s2.w)) inter.up = true;
+
+    return inter;
+}
+
 // Create runtime faces
 __global__ void createRuntimeFacesKernel(
     const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
@@ -158,6 +180,9 @@ __global__ void createRuntimeFacesKernel(
     ULLInt fn1 = faceNs[fIdx1];
     ULLInt fn2 = faceNs[fIdx2];
 
+    // If all W are negative, the face is behind the camera => Ignore
+    if (screenW[fw0] < 0 && screenW[fw1] < 0 && screenW[fw2] < 0) return;
+
     // All vertices lie on one side of the frustum's planes
     bool allOutLeft = screenX[fw0] > screenW[fw0] && screenX[fw1] > screenW[fw1] && screenX[fw2] > screenW[fw2];
     bool allOutRight = screenX[fw0] < -screenW[fw0] && screenX[fw1] < -screenW[fw1] && screenX[fw2] < -screenW[fw2];
@@ -166,6 +191,8 @@ __global__ void createRuntimeFacesKernel(
     bool allOutFar = screenZ[fw0] > screenW[fw0] && screenZ[fw1] > screenW[fw1] && screenZ[fw2] > screenW[fw2];
     bool allOutNear = screenZ[fw0] < -screenW[fw0] && screenZ[fw1] < -screenW[fw1] && -screenZ[fw2] < screenW[fw2];
     if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutFar || allOutNear) return;
+
+    // Will be changed later
 
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
