@@ -37,6 +37,7 @@ int main() {
     // src scl rotX rotY rotZ transX transY transZ
     std::ifstream objsFile("assets/cfg/models.txt");
     std::string line;
+    std::vector<Mesh> objs;
     while (std::getline(objsFile, line)) {
         // If line start with #, it's a comment
         if (line[0] == '#' || line.empty()) continue;
@@ -54,23 +55,13 @@ int main() {
         rotate *= M_PI / 180;
 
         Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
-        obj.scale(Vec3f(), Vec3f(scale));
-        obj.rotate(Vec3f(), rotate);
-        obj.translate(translate);
+        obj.scaleStatic(Vec3f(), Vec3f(scale));
+        obj.rotateStatic(Vec3f(), rotate);
+        obj.translateStatic(translate);
 
         GRAPHIC.mesh += obj;
+        objs.push_back(obj);
     }
-
-    // // A wall span x +- wallSize, y +- wallSize
-    // float wallSize = 2;
-    // Mesh wall = Playground::readObjFile("assets/Models/Shapes/Wall.obj", 1, 1, true);
-    // wall.scale(Vec3f(), Vec3f(wallSize));
-    // wall.translate(Vec3f(0, 0, wallSize));
-
-    // // A cube span x +- 1, y +- 1, z +- 1
-    // Mesh cube = Playground::readObjFile("assets/Models/Shapes/Cube.obj", 1, 1, true);
-    // cube.scale(Vec3f(), Vec3f(.4));
-    // cube.translate(Vec3f(.4, 0, -2));
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
@@ -95,6 +86,7 @@ int main() {
     // Turn on/off texture mode
     bool textureMode = true;
     bool shadowMode = true;
+    bool shadeMode = true;
 
     // Gif animation texture
     int gifFrame = 0;
@@ -139,14 +131,15 @@ int main() {
                     GRAPHIC.createTexture(texturePath);
                 }
 
-                // Press T to toggle texture mode
-                if (event.key.code == sf::Keyboard::T) {
+                // Press 1 to toggle texture mode
+                if (event.key.code == sf::Keyboard::Num1)
                     textureMode = !textureMode;
-                }
-                // Press S to toggle shadow mode
-                if (event.key.code == sf::Keyboard::S) {
+                // Press 2 to toggle shadow mode
+                if (event.key.code == sf::Keyboard::Num2)
                     shadowMode = !shadowMode;
-                }
+                // Press 3 to toggle shade mode
+                if (event.key.code == sf::Keyboard::Num3)
+                    shadeMode = !shadeMode;
             }
 
             // Scroll to zoom in/out
@@ -200,6 +193,14 @@ int main() {
             CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
 
+        // Press R to rotate an object
+        if (k_r) {
+            float rot = M_PI / 3 * FPS.dTimeSec;
+            if (k_ctrl) rot *= -1;
+            if (k_shift) rot *= 3;
+
+            objs[0].rotateRuntime(Vec3f(), Vec3f(0, rot, 0));
+        }
         // Press Q to rotate light source in x axis
         if (k_q) {
             float rot = M_PI / 3 * FPS.dTimeSec;
@@ -252,7 +253,7 @@ int main() {
             FragmentShader::createShadowMap();
             FragmentShader::applyShadowMap();
         }
-        FragmentShader::phongShading();
+        if (shadeMode) FragmentShader::phongShading();
 
         // From buffer to texture
         // (clever way to incorporate CUDA into SFML)
@@ -301,6 +302,9 @@ int main() {
         );
         LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));
         LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 255, 160));
+        LOG.addLog("Texture", sf::Color(50, 50, textureMode ? 255 : 100));
+        LOG.addLog("Shadow", sf::Color(50, shadowMode ? 255 : 100, 50));
+        LOG.addLog("Shade", sf::Color(shadeMode ? 255 : 100, 50, 50));
 
         // Displays
         window.clear(sf::Color(0, 0, 0));

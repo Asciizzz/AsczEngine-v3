@@ -1,4 +1,5 @@
 #include <Mesh3D.cuh>
+#include <Graphic3D.cuh> // For the Graphic.mesh object
 
 // Mesh object
 
@@ -18,13 +19,13 @@ Vec3f Mesh::n3f(ULLInt i) { return Vec3f(nx[i], ny[i], nz[i]); }
 Vec2f Mesh::t2f(ULLInt i) { return Vec2f(tu[i], tv[i]); }
 Vec4f Mesh::c4f(ULLInt i) { return Vec4f(cr[i], cg[i], cb[i], ca[i]); }
 
-void Mesh::translate(Vec3f t) {
+void Mesh::translateStatic(Vec3f t) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < wx.size(); i++) {
         wx[i] += t.x; wy[i] += t.y; wz[i] += t.z;
     }
 }
-void Mesh::rotate(Vec3f origin, Vec3f rot, bool rotNormal) {
+void Mesh::rotateStatic(Vec3f origin, Vec3f rot, bool rotNormal) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < wx.size(); i++) {
         Vec3f p = Vec3f(wx[i], wy[i], wz[i]);
@@ -44,7 +45,7 @@ void Mesh::rotate(Vec3f origin, Vec3f rot, bool rotNormal) {
         nx[i] = n.x; ny[i] = n.y; nz[i] = n.z;
     }
 }
-void Mesh::scale(Vec3f origin, Vec3f scl, bool sclNormal) {
+void Mesh::scaleStatic(Vec3f origin, Vec3f scl, bool sclNormal) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < wx.size(); i++) {
         Vec3f p = Vec3f(wx[i], wy[i], wz[i]);
@@ -63,6 +64,72 @@ void Mesh::scale(Vec3f origin, Vec3f scl, bool sclNormal) {
 
         nx[i] = n.x; ny[i] = n.y; nz[i] = n.z;
     }
+}
+
+void Mesh::translateRuntime(Vec3f t) {
+    Vec3f_ptr &world = Graphic3D::instance().mesh.world;
+
+    ULLInt start = w_range.x;
+    ULLInt end = w_range.y;
+
+    ULLInt numWs = end - start;
+    ULLInt gridSize = (numWs + 255) / 256;
+
+    translateKernel<<<gridSize, 256>>>(
+        world.x + start, world.y + start, world.z + start,
+        t.x, t.y, t.z, numWs
+    );
+    cudaDeviceSynchronize();
+}
+void Mesh::rotateRuntime(Vec3f origin, Vec3f rot) {
+    Vec3f_ptr &world = Graphic3D::instance().mesh.world;
+    Vec3f_ptr &normal = Graphic3D::instance().mesh.normal;
+
+    ULLInt startW = w_range.x;
+    ULLInt endW = w_range.y;
+    ULLInt startN = n_range.x;
+    ULLInt endN = n_range.y;
+
+    ULLInt numWs = endW - startW;
+    ULLInt numNs = endN - startN;
+
+    ULLInt gridWsSize = (numWs + 255) / 256;
+    ULLInt gridNsSize = (numNs + 255) / 256;
+
+    rotateWsKernel<<<gridWsSize, 256>>>(
+        world.x + startW, world.y + startW, world.z + startW,
+        origin.x, origin.y, origin.z, rot.x, rot.y, rot.z, numWs
+    );
+    rotateNsKernel<<<gridNsSize, 256>>>(
+        normal.x + startN, normal.y + startN, normal.z + startN,
+        rot.x, rot.y, rot.z, numNs
+    );
+    cudaDeviceSynchronize();
+}
+void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
+    Vec3f_ptr &world = Graphic3D::instance().mesh.world;
+    Vec3f_ptr &normal = Graphic3D::instance().mesh.normal;
+
+    ULLInt startW = w_range.x;
+    ULLInt endW = w_range.y;
+    ULLInt startN = n_range.x;
+    ULLInt endN = n_range.y;
+
+    ULLInt numWs = endW - startW;
+    ULLInt numNs = endN - startN;
+
+    ULLInt gridWsSize = (numWs + 255) / 256;
+    ULLInt gridNsSize = (numNs + 255) / 256;
+
+    scaleWsKernel<<<gridWsSize, 256>>>(
+        world.x + startW, world.y + startW, world.z + startW,
+        origin.x, origin.y, origin.z, scl.x, scl.y, scl.z, numWs
+    );
+    scaleNsKernel<<<gridNsSize, 256>>>(
+        normal.x + startN, normal.y + startN, normal.z + startN,
+        scl.x, scl.y, scl.z, numNs
+    );
+    cudaDeviceSynchronize();
 }
 
 // Mesh3D
@@ -122,6 +189,16 @@ void Mesh3D::operator+=(Mesh &mesh) {
     ULLInt offsetT = texture.size;
     ULLInt offsetN = normal.size;
 
+    // Set the range of stuff
+    mesh.w_range = {offsetV, offsetV + mesh.wx.size()};
+    mesh.n_range = {offsetN, offsetN + mesh.nx.size()};
+    mesh.t_range = {offsetT, offsetT + mesh.tu.size()};
+    mesh.c_range = {offsetV, offsetV + mesh.cr.size()};
+
+    mesh.fw_range = {faces.size, faces.size + mesh.fw.size()};
+    mesh.ft_range = {faces.size, faces.size + mesh.ft.size()};
+    mesh.fn_range = {faces.size, faces.size + mesh.fn.size()};
+
     Vec3f_ptr newWorld;
     Vec3f_ptr newNormal;
     Vec2f_ptr newTexture;
@@ -180,4 +257,70 @@ void Mesh3D::operator+=(std::vector<Mesh> &meshs) {
 __global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs) { // BETA
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numFs) f[idx] += offset;
+}
+
+// Kernel for transforming vertices
+
+__global__ void translateKernel(
+    float *wx, float *wy, float *wz,
+    float tx, float ty, float tz,
+    ULLInt numWs
+) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < numWs) {
+        wx[idx] += tx;
+        wy[idx] += ty;
+        wz[idx] += tz;
+    }
+}
+
+__global__ void rotateWsKernel(
+    float *wx, float *wy, float *wz,
+    float ox, float oy, float oz,
+    float rx, float ry, float rz, ULLInt numWs
+) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numWs) return;
+
+    Vec3f w = {wx[idx], wy[idx], wz[idx]};
+    w.rotate({ox, oy, oz}, {rx, ry, rz});
+    wx[idx] = w.x; wy[idx] = w.y; wz[idx] = w.z;
+}
+__global__ void rotateNsKernel(
+    float *nx, float *ny, float *nz,
+    float rx, float ry, float rz, ULLInt numNs
+) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numNs) return;
+
+    Vec3f n = {nx[idx], ny[idx], nz[idx]};
+    n.rotate({0, 0, 0}, {rx, ry, rz});
+    n /= n.mag(); // Normalize
+    nx[idx] = n.x; ny[idx] = n.y; nz[idx] = n.z;
+}
+
+__global__ void scaleWsKernel(
+    float *wx, float *wy, float *wz,
+    float ox, float oy, float oz,
+    float sx, float sy, float sz, ULLInt numWs
+) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numWs) return;
+
+    Vec3f w = {wx[idx], wy[idx], wz[idx]};
+    w.scale({ox, oy, oz}, {sx, sy, sz});
+    wx[idx] = w.x; wy[idx] = w.y; wz[idx] = w.z;
+}
+
+__global__ void scaleNsKernel(
+    float *nx, float *ny, float *nz,
+    float sx, float sy, float sz, ULLInt numNs
+) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx >= numNs) return;
+
+    Vec3f n = {nx[idx], ny[idx], nz[idx]};
+    n.scale({0, 0, 0}, {sx, sy, sz});
+    n /= n.mag(); // Normalize
+    nx[idx] = n.x; ny[idx] = n.y; nz[idx] = n.z;
 }

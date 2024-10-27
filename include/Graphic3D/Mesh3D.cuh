@@ -27,6 +27,10 @@ struct Mesh {
     std::vector<float> cr, cg, cb, ca;
     std::vector<ULLInt> fw, ft, fn;
 
+    // Note: a <= i < b, [a, b)
+    Vec2ulli w_range, n_range, t_range, c_range;
+    Vec2ulli fw_range, ft_range, fn_range;
+
     Mesh(
         std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
         std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
@@ -42,10 +46,15 @@ struct Mesh {
     Vec2f t2f(ULLInt i);
     Vec4f c4f(ULLInt i);
 
-    // Transformations
-    void translate(Vec3f t);
-    void rotate(Vec3f origin, Vec3f rot, bool rotNormal=true);
-    void scale(Vec3f origin, Vec3f scl, bool sclNormal=true);
+    // Instant Transformations
+    void translateStatic(Vec3f t);
+    void rotateStatic(Vec3f origin, Vec3f rot, bool rotNormal=true);
+    void scaleStatic(Vec3f origin, Vec3f scl, bool sclNormal=true);
+
+    // Runtime Transformations (in the Graphic3D.Mesh3D)
+    void translateRuntime(Vec3f t);
+    void rotateRuntime(Vec3f origin, Vec3f rot);
+    void scaleRuntime(Vec3f origin, Vec3f scl);
 };
 
 // Cool device mesh (for parallel processing)
@@ -77,5 +86,32 @@ public:
 
 // Kernel for preparing faces
 __global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs);
+
+// Kernel for transformations
+// Note: rotation and scaling also affects normals
+
+__global__ void translateKernel(
+    float *wx, float *wy, float *wz, float tx, float ty, float tz, ULLInt numWs
+);
+
+__global__ void rotateWsKernel(
+    float *wx, float *wy, float *wz,
+    float ox, float oy, float oz,
+    float rx, float ry, float rz, ULLInt numWs
+);
+__global__ void rotateNsKernel(
+    float *nx, float *ny, float *nz,
+    float rx, float ry, float rz, ULLInt numNs
+);
+
+__global__ void scaleWsKernel(
+    float *wx, float *wy, float *wz,
+    float ox, float oy, float oz,
+    float sx, float sy, float sz, ULLInt numWs
+);
+__global__ void scaleNsKernel(
+    float *nx, float *ny, float *nz,
+    float sx, float sy, float sz, ULLInt numNs
+);
 
 #endif

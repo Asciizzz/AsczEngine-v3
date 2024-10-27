@@ -90,6 +90,10 @@ struct Vec4f {
     __host__ __device__ void limit(float min, float max); // Limit the vector
 };
 
+struct Vec2ulli {
+    ULLInt x = 0, y = 0;
+};
+
 // SoA structure Vecs
 
 struct Vec2f_ptr {
