@@ -281,7 +281,7 @@ __global__ void createDepthMapKernel(
         Vec3f bary = Vec3f::bary(
             Vec2f(x, y), Vec2f(sx0, sy0), Vec2f(sx1, sy1), Vec2f(sx2, sy2)
         );
-        // Out of bound => Ignore
+        // Ignore if out of bound
         if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;
 
         float zDepth = bary.x * sz0 + bary.y * sz1 + bary.z * sz2;

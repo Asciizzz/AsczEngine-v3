@@ -24,12 +24,12 @@ public:
     bool *active;
     float *depth;
     ULLInt *faceID;
-    Vecptr3f bary;
+    Vec3f_ptr bary;
 
-    Vecptr3f world;
-    Vecptr2f texture;
-    Vecptr3f normal;
-    Vecptr4f color;
+    Vec3f_ptr world;
+    Vec2f_ptr texture;
+    Vec3f_ptr normal;
+    Vec4f_ptr color;
 
 
     Buffer3D();

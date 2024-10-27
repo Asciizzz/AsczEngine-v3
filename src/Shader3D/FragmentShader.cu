@@ -159,7 +159,6 @@ __global__ void createShadowMapKernel(
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
     ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
-
     if (tIdx >= shdwTileNumX * shdwTileNumY || fIdx >= numFs) return;
 
     ULLInt idx0 = fIdx * 3;

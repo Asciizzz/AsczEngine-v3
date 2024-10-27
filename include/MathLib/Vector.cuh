@@ -92,41 +92,41 @@ struct Vec4f {
 
 // SoA structure Vecs
 
-struct Vecptr2f {
+struct Vec2f_ptr {
     float *x, *y;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
-    void operator+=(Vecptr2f &vec);
+    void operator+=(Vec2f_ptr &vec);
 };
-struct Vecptr3f {
+struct Vec3f_ptr {
     float *x, *y, *z;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
 
-    void operator+=(Vecptr3f &vec);
+    void operator+=(Vec3f_ptr &vec);
 };
-struct Vecptr4f {
+struct Vec4f_ptr {
     float *x, *y, *z, *w;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
-    void operator+=(Vecptr4f &vec);
+    void operator+=(Vec4f_ptr &vec);
 };
 
 // Mainly used for faces
-struct Vecptr4ulli {
+struct Vec4ulli_ptr {
     // Vertex, texture, normal, and objId
     ULLInt *v, *t, *n, *o;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
-    void operator+=(Vecptr4ulli &vec);
+    void operator+=(Vec4ulli_ptr &vec);
 };
 
 // Atomic functions for float

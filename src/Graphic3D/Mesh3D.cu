@@ -122,11 +122,11 @@ void Mesh3D::operator+=(Mesh &mesh) {
     ULLInt offsetT = texture.size;
     ULLInt offsetN = normal.size;
 
-    Vecptr3f newWorld;
-    Vecptr3f newNormal;
-    Vecptr2f newTexture;
-    Vecptr4f newColor;
-    Vecptr4ulli newFaces;
+    Vec3f_ptr newWorld;
+    Vec3f_ptr newNormal;
+    Vec2f_ptr newTexture;
+    Vec4f_ptr newColor;
+    Vec4ulli_ptr newFaces;
     ULLInt worldSize = mesh.wx.size();
     ULLInt normalSize = mesh.nx.size();
     ULLInt textureSize = mesh.tu.size();

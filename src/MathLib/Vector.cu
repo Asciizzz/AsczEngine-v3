@@ -193,18 +193,18 @@ void Vec4f::limit(float min, float max) {
 
 // SoA structure Vecs
 
-void Vecptr2f::malloc(ULLInt size) {
+void Vec2f_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&x, size * sizeof(float));
     cudaMalloc(&y, size * sizeof(float));
 }
-void Vecptr2f::free() {
+void Vec2f_ptr::free() {
     this->size = 0;
     cudaFree(x);
     cudaFree(y);
 }
-void Vecptr2f::operator+=(Vecptr2f& vec) {
-    Vecptr2f newVec;
+void Vec2f_ptr::operator+=(Vec2f_ptr& vec) {
+    Vec2f_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data
@@ -223,20 +223,20 @@ void Vecptr2f::operator+=(Vecptr2f& vec) {
     *this = newVec;
 }
 
-void Vecptr3f::malloc(ULLInt size) {
+void Vec3f_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&x, size * sizeof(float));
     cudaMalloc(&y, size * sizeof(float));
     cudaMalloc(&z, size * sizeof(float));
 }
-void Vecptr3f::free() {
+void Vec3f_ptr::free() {
     this->size = 0;
     cudaFree(x);
     cudaFree(y);
     cudaFree(z);
 }
-void Vecptr3f::operator+=(Vecptr3f& vec) {
-    Vecptr3f newVec;
+void Vec3f_ptr::operator+=(Vec3f_ptr& vec) {
+    Vec3f_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data
@@ -257,22 +257,22 @@ void Vecptr3f::operator+=(Vecptr3f& vec) {
     *this = newVec;
 }
 
-void Vecptr4f::malloc(ULLInt size) {
+void Vec4f_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&x, size * sizeof(float));
     cudaMalloc(&y, size * sizeof(float));
     cudaMalloc(&z, size * sizeof(float));
     cudaMalloc(&w, size * sizeof(float));
 }
-void Vecptr4f::free() {
+void Vec4f_ptr::free() {
     this->size = 0;
     cudaFree(x);
     cudaFree(y);
     cudaFree(z);
     cudaFree(w);
 }
-void Vecptr4f::operator+=(Vecptr4f& vec) {
-    Vecptr4f newVec;
+void Vec4f_ptr::operator+=(Vec4f_ptr& vec) {
+    Vec4f_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data
@@ -295,22 +295,22 @@ void Vecptr4f::operator+=(Vecptr4f& vec) {
     *this = newVec;
 }
 
-void Vecptr4ulli::malloc(ULLInt size) {
+void Vec4ulli_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&v, size * sizeof(ULLInt));
     cudaMalloc(&t, size * sizeof(ULLInt));
     cudaMalloc(&n, size * sizeof(ULLInt));
     cudaMalloc(&o, size * sizeof(ULLInt));
 }
-void Vecptr4ulli::free() {
+void Vec4ulli_ptr::free() {
     this->size = 0;
     cudaFree(v);
     cudaFree(t);
     cudaFree(n);
     cudaFree(o);
 }
-void Vecptr4ulli::operator+=(Vecptr4ulli& vec) {
-    Vecptr4ulli newVec;
+void Vec4ulli_ptr::operator+=(Vec4ulli_ptr& vec) {
+    Vec4ulli_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data

@@ -51,16 +51,12 @@ struct Mesh {
 // Cool device mesh (for parallel processing)
 class Mesh3D {
 public:
-    // Beta: SoA vertex data
-    Vecptr3f world;
-    Vecptr3f normal;
-    Vecptr2f texture;
-    Vecptr4f color;
-    Vecptr4f screen;
-
-    // Faces index (triangles)
-    // Every 3 indices is a face
-    Vecptr4ulli faces;
+    Vec3f_ptr world;
+    Vec3f_ptr normal;
+    Vec2f_ptr texture;
+    Vec4f_ptr color;
+    Vec4f_ptr screen;
+    Vec4ulli_ptr faces;
 
     Mesh3D(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
 
