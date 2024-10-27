@@ -7,6 +7,7 @@
 
 #include <Playground.cuh>
 
+// Main
 int main() {
     // Initialize Default stuff
     FpsHandler &FPS = FpsHandler::instance();
@@ -38,6 +39,9 @@ int main() {
     std::ifstream objsFile("assets/cfg/models.txt");
     std::string line;
     std::vector<Mesh> objs;
+
+    std::string objsTxt = "";
+    int objsCount = 0;
     while (std::getline(objsFile, line)) {
         // If line start with #, it's a comment
         if (line[0] == '#' || line.empty()) continue;
@@ -61,7 +65,12 @@ int main() {
 
         GRAPHIC.mesh += obj;
         objs.push_back(obj);
+
+        // Write to log
+        objsTxt += "Obj " + std::to_string(objsCount) + " - " + objPath + "\n";
+        objsCount++;
     }
+    std::cout << objsTxt;
 
     GRAPHIC.mallocRuntimeFaces();
     GRAPHIC.mallocFaceStreams();
@@ -73,14 +82,13 @@ int main() {
     int shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY;
     std::ifstream("assets/cfg/shadow.txt") >> shdwWidth >> shdwHeight >> shdwTileSizeX >> shdwTileSizeY;
     GRAPHIC.createShadowMap(shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY);
+
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
     float fovDeg = 90;
 
     // Cool rainbow effect for title
-    double rainbowR = 255;
-    double rainbowG = 0;
-    double rainbowB = 0;
+    Vec3f rainbow;
     short cycle = 0;
 
     // Turn on/off texture mode
@@ -89,10 +97,8 @@ int main() {
     bool shadeMode = true;
 
     // Gif animation texture
-    int gifFrame = 0;
-    int gifMaxFrame = 26;
-    float gifTime = 0;
-    float gifMaxTime = 0.03;
+    Vec2ulli gifFrame = {0, 26};
+    Vec2f gifTime = {0, 0.03};
 
     // Other miscellaneus stuff
     bool k_t_hold = false;
@@ -226,25 +232,25 @@ int main() {
 
         // 3 digit frame number (add additional 0s if needed)
         std::string frameStr;
-        if (gifFrame < 10) frameStr = "00" + std::to_string(gifFrame);
-        else if (gifFrame < 100) frameStr = "0" + std::to_string(gifFrame);
-        else frameStr = std::to_string(gifFrame);
+        if (gifFrame.x < 10) frameStr = "00" + std::to_string(gifFrame.x);
+        else if (gifFrame.x < 100) frameStr = "0" + std::to_string(gifFrame.x);
+        else frameStr = std::to_string(gifFrame.x);
         std::string gifPath = "assets/Gif/frame_" + frameStr + ".png";
 
-        if (gifTime < gifMaxTime) {
-            gifTime += FPS.dTimeSec;
+        if (gifTime.x < gifTime.y) {
+            gifTime.x += FPS.dTimeSec;
         } else {
-            gifTime = 0;
+            gifTime.x = 0;
 
-            gifFrame++;
-            if (gifFrame >= gifMaxFrame)
-                gifFrame = 0;
+            gifFrame.x++;
+            if (gifFrame.x >= gifFrame.y) gifFrame.x = 0;
 
             // GRAPHIC.createTexture(gifPath);
         }
 
         // ========== Render Pipeline ==========
 
+        // Vertex Shader
         VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
         VertexShader::createDepthMapBeta();
@@ -276,16 +282,16 @@ int main() {
         // Rainbow title
         double step = 120 * FPS.dTimeSec;
         if (cycle == 0) {
-            rainbowG += step; rainbowR -= step;
-            if (rainbowG >= 255) cycle = 1;
+            rainbow.y += step; rainbow.x -= step;
+            if (rainbow.y >= 255) cycle = 1;
         } else if (cycle == 1) {
-            rainbowB += step; rainbowG -= step;
-            if (rainbowB >= 255) cycle = 2;
+            rainbow.z += step; rainbow.y -= step;
+            if (rainbow.z >= 255) cycle = 2;
         } else if (cycle == 2) {
-            rainbowR += step; rainbowB -= step;
-            if (rainbowR >= 255) cycle = 0;
+            rainbow.x += step; rainbow.z -= step;
+            if (rainbow.x >= 255) cycle = 0;
         }
-        sf::Color rainbow = sf::Color(rainbowR, rainbowG, rainbowB);
+        sf::Color rainbowColor = sf::Color(rainbow.x, rainbow.y, rainbow.z);
 
         // Dynamic FPS color
         double gRatio = double(FPS.fps - 10) / 50;
@@ -293,7 +299,7 @@ int main() {
         sf::Color fpsColor((1 - gRatio) * 255, gRatio * 255, 0);
 
         // Log all the data
-        LOG.addLog("Welcome to AsczEngine 3.0", rainbow, 1);
+        LOG.addLog("Welcome to AsczEngine 3.0", rainbowColor, 1);
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
         LOG.addLog(
             "Screen:\n| Res: " + std::to_string(width) +
@@ -304,11 +310,21 @@ int main() {
             " / " + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );
-        LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));
-        LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 255, 160));
-        LOG.addLog("Texture", sf::Color(50, 50, textureMode ? 255 : 100));
-        LOG.addLog("Shadow", sf::Color(50, shadowMode ? 255 : 100, 50));
-        LOG.addLog("Shade", sf::Color(shadeMode ? 255 : 100, 50, 50));
+        LOG.addLog(CAMERA.data(), sf::Color(160, 255, 160));
+        LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 160, 255));
+        LOG.addLog("Shader (BETA)", sf::Color(255, 255, 255), 1);
+        LOG.addLog(
+            "| Texture: " + std::to_string(textureMode),
+            sf::Color(textureMode ? 255 : 100, 50, 50)
+        );
+        LOG.addLog(
+            "| Shadow: " + std::to_string(shadowMode),
+            sf::Color(50, shadowMode ? 255 : 100, 50)
+        );
+        LOG.addLog(
+            "| Shade: " + std::to_string(shadeMode),
+            sf::Color(50, 50, shadeMode ? 255 : 100)
+        );
 
         // Displays
         window.clear(sf::Color(0, 0, 0));
