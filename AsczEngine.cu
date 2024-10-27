@@ -197,14 +197,14 @@ int main() {
         }
 
         // Press T to read an transform.txt file and apply it
-        // Note: by holding ctrl T went from hold mode to tap mode
-        // You can also use ctrl to stop the transformation instantly
+        // Note: hold ctrl to switch keyT from hold to tap
         if (k_t && (!k_t_hold || !k_ctrl)) {
             k_t_hold = true;
 
             Playground::applyTransformation(objs);
         }
         if (!k_t) k_t_hold = false;
+
         // Press Q to rotate light source in x axis
         if (k_q) {
             float rot = M_PI / 3 * FPS.dTimeSec;
