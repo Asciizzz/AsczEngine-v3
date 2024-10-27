@@ -6,7 +6,7 @@ ClearScreen:
 
 AsczEngine:
 	nvcc \
-		-I include \
+		-I include/Beta \
 		-I include/System \
 		-I include/MathLib \
 		-I include/Graphic3D \

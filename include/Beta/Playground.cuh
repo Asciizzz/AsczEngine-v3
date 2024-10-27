@@ -7,8 +7,6 @@
 #include <sstream>
 #include <string>
 
-#include <omp.h>
-
 // Create a function that would read an .obj file and return a Mesh3D object
 
 class Playground {

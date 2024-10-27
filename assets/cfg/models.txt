@@ -9,7 +9,7 @@ assets/Models/Shapes/Wall.obj 2 0 0 0 0 0 2
 # Floor
 #assets/Models/Shapes/Wall.obj 2 -90 0 0 0 -2 0
 
-assets/Models/Weapon/Awp.obj .4 0 90 45 0 0 0
+#assets/Models/Weapon/Awp.obj .4 0 90 45 0 0 0
 # assets/Models/Weapon/M4A1.obj .5 0 90 45 0 0 .3
 # assets/Models/Weapon/Ak47.obj .5 0 90 45 0 0 -.6
 
@@ -17,5 +17,6 @@ assets/Models/Weapon/Awp.obj .4 0 90 45 0 0 0
 
 # assets/Models/Shapes/Cube.obj .4 45 1 0 .4 0 -2
 # assets/Models/Shapes/Cube.obj 1
-# assets/Models/Anime/Goku.obj .02
+
+assets/Models/Anime/Goku.obj .02 0 180 0
 # assets/Models/Anime/Miyu.obj 2
