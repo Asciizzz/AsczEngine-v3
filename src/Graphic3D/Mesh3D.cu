@@ -69,8 +69,7 @@ void Mesh::scaleStatic(Vec3f origin, Vec3f scl, bool sclNormal) {
 void Mesh::translateRuntime(Vec3f t) {
     Vec3f_ptr &world = Graphic3D::instance().mesh.world;
 
-    ULLInt start = w_range.x;
-    ULLInt end = w_range.y;
+    ULLInt start = w_range.x, end = w_range.y;
 
     ULLInt numWs = end - start;
     ULLInt gridSize = (numWs + 255) / 256;
@@ -85,10 +84,8 @@ void Mesh::rotateRuntime(Vec3f origin, Vec3f rot) {
     Vec3f_ptr &world = Graphic3D::instance().mesh.world;
     Vec3f_ptr &normal = Graphic3D::instance().mesh.normal;
 
-    ULLInt startW = w_range.x;
-    ULLInt endW = w_range.y;
-    ULLInt startN = n_range.x;
-    ULLInt endN = n_range.y;
+    ULLInt startW = w_range.x, endW = w_range.y;
+    ULLInt startN = n_range.x, endN = n_range.y;
 
     ULLInt numWs = endW - startW;
     ULLInt numNs = endN - startN;
@@ -110,10 +107,8 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
     Vec3f_ptr &world = Graphic3D::instance().mesh.world;
     Vec3f_ptr &normal = Graphic3D::instance().mesh.normal;
 
-    ULLInt startW = w_range.x;
-    ULLInt endW = w_range.y;
-    ULLInt startN = n_range.x;
-    ULLInt endN = n_range.y;
+    ULLInt startW = w_range.x, endW = w_range.y;
+    ULLInt startN = n_range.x, endN = n_range.y;
 
     ULLInt numWs = endW - startW;
     ULLInt numNs = endN - startN;

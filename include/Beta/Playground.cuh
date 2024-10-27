@@ -155,6 +155,42 @@ public:
         return mesh;
     }
 
+    static void applyTransformation(std::vector<Mesh> objs) {
+        // Read an transform.txt file and apply it
+        /* Format:
+            <idx> t <x> <y> <z>
+            <idx> r <ox> <oy> <oz> <x> <y> <z>
+            <idx> s <ox> <oy> <oz> <x> <y> <z>
+        */
+        std::ifstream file("assets/cfg/transform.txt");
+        if (!file.is_open()) return;
+
+        std::string line;
+        while (std::getline(file, line)) {
+            if (line.size() == 0 || line[0] == '#') continue;
+
+            std::stringstream ss(line);
+            ULLInt idx; char type;
+            ss >> idx >> type;
+
+            if (type == 't') {
+                Vec3f t; ss >> t.x >> t.y >> t.z;
+
+                objs[idx].translateRuntime(t);
+            } else if (type == 'r') {
+                Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
+                Vec3f rot; ss >> rot.x >> rot.y >> rot.z;
+                origin *= M_PI / 180; // To degree
+
+                objs[idx].rotateRuntime(origin, rot);
+            } else if (type == 's') {
+                Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
+                Vec3f scl; ss >> scl.x >> scl.y >> scl.z;
+
+                objs[idx].scaleRuntime(origin, scl);
+            }
+        }
+    }
 };
 
 #endif

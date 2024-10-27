@@ -159,9 +159,9 @@ int main() {
         bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
         bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
         bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
-        bool k_r = sf::Keyboard::isKeyPressed(sf::Keyboard::R);
         bool k_q = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
         bool k_e = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
+        bool k_t = sf::Keyboard::isKeyPressed(sf::Keyboard::T);
 
         if (CAMERA.focus) {
             // Mouse movement handling
@@ -193,13 +193,9 @@ int main() {
             CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
 
-        // Press R to rotate an object
-        if (k_r) {
-            float rot = M_PI / 3 * FPS.dTimeSec;
-            if (k_ctrl) rot *= -1;
-            if (k_shift) rot *= 3;
-
-            objs[0].rotateRuntime(Vec3f(), Vec3f(0, rot, 0));
+        // Press T to read an transform.txt file and apply it
+        if (k_t) {
+            Playground::applyTransformation(objs);
         }
         // Press Q to rotate light source in x axis
         if (k_q) {

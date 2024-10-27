@@ -1,7 +1,7 @@
-assets/Models/Anime/Goku.obj .02 0 180 0
+#assets/Models/Anime/Goku.obj .02 0 180 0
 
 # Back wall
-#assets/Models/Shapes/Wall.obj 2 0 0 0 0 0 2
+assets/Models/Shapes/Wall.obj 2 0 0 0 0 0 2
 # Left wall
 #assets/Models/Shapes/Wall.obj 2 0 90 0 2 0 0
 # Right wall
