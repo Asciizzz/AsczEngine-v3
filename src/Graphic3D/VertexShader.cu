@@ -54,7 +54,7 @@ void VertexShader::createDepthMap() {
     // Split the faces into chunks
     size_t chunkNum = (grphic.faceCounter + grphic.faceChunkSize - 1) / grphic.faceChunkSize;
 
-    dim3 blockSize(16, 16);
+    dim3 blockSize(16, 32);
     for (size_t i = 0; i < chunkNum; i++) {
         size_t faceOffset = grphic.faceChunkSize * i;
 
@@ -119,7 +119,7 @@ __global__ void cameraProjectionKernel(
     Vec4f v4(worldX[i], worldY[i], worldZ[i], 1);
     Vec4f t4 = mvp * v4;
 
-    screenX[i] = t4.x;
+    screenX[i] = -t4.x;
     screenY[i] = t4.y;
     screenZ[i] = t4.z;
     screenW[i] = t4.w;

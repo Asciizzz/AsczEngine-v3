@@ -183,7 +183,7 @@ int main() {
 
             // Camera look around
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
-            CAMERA.rot.y -= dMx * CAMERA.mSens * FPS.dTimeSec;
+            CAMERA.rot.y += dMx * CAMERA.mSens * FPS.dTimeSec;
             CAMERA.restrictRot();
             CAMERA.updateMVP();
 
