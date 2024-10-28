@@ -64,7 +64,7 @@ public:
     // For runtime faces
     ULLInt faceCounter;
     ULLInt *d_faceCounter;
-    size_t faceChunkSize = 1e6; // For chunking
+    size_t faceChunkSize = 5e5; // For chunking
     Face3D rtFaces;
 
     void mallocRuntimeFaces();
