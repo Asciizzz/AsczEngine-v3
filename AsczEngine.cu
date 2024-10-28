@@ -7,6 +7,7 @@
 
 #include <Playground.cuh>
 #include <Sphere3D.cuh>
+#include <Cube3D.cuh>
 
 // Main
 int main() {
@@ -77,7 +78,16 @@ int main() {
     Sphere3D sphere(Vec3f(0, 8, 0), 1);
     sphere.vel = Vec3f(0.3, 0, 0.1);
     sphere.angvel = Vec3f(M_PI * 2.8, 0, M_PI * 2.4);
-    GRAPHIC.mesh += sphere.mesh;
+    // GRAPHIC.mesh += sphere.mesh;
+
+    // Create test cubes
+    std::vector<Cube3D> cubes;
+    for (int i = 0; i < 10; i++) {
+        break;
+        Cube3D cube = Cube3D(Vec3f(0, i * 2 + 1, i * 2 + 1), 1);
+        GRAPHIC.mesh += cube.mesh;
+        cubes.push_back(cube);
+    }
 
     GRAPHIC.mallocRuntimeFaces();
 
@@ -109,7 +119,7 @@ int main() {
     // Other miscellaneus stuff
     bool k_t_hold = false;
 
-    Vec3f cam_vel;
+    bool moveMode = true;
     bool moving = false;
 
     while (window.isOpen()) {
@@ -158,6 +168,10 @@ int main() {
                 // Press 3 to toggle shade mode
                 if (event.key.code == sf::Keyboard::Num3)
                     shadeMode = !shadeMode;
+
+                // Press Z to toggle move mode
+                if (event.key.code == sf::Keyboard::Z)
+                    moveMode = !moveMode;
             }
 
             // Scroll to zoom in/out
@@ -187,8 +201,8 @@ int main() {
         bool k_d = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
         bool k_space = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
 
+        // Mouse movement => Look around
         if (CAMERA.focus) {
-            // Mouse movement handling
             sf::Vector2i mousepos = sf::Mouse::getPosition(window);
             sf::Mouse::setPosition(sf::Vector2i(
                 GRAPHIC.res_half.x, GRAPHIC.res_half.y
@@ -201,73 +215,76 @@ int main() {
             // Camera look around
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
             CAMERA.rot.y += dMx * CAMERA.mSens * FPS.dTimeSec;
-            CAMERA.restrictRot();
-            CAMERA.updateMVP();
-
-            // // Mouse Click = move forward
-            // float vel = 0;
-            // // Move forward/backward
-            // if (m_left && !m_right)      vel = 20;
-            // else if (m_right && !m_left) vel = -20;
-            // else                         vel = 0;
-            // // Move slower/faster
-            // if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
-            // else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
-            // // Update camera World pos
-            // CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
+        CAMERA.updateMVP();
 
-        // Gravity
-        cam_vel.y -= 1.15 * FPS.dTimeSec;
-
-        // On ground
-        if (CAMERA.pos.y < 1.5) {
-            cam_vel.y = 0;
-            CAMERA.pos.y = 1.5;
+        if (CAMERA.focus && !moveMode) {
+            // Mouse Click = move forward
+            float vel = 0;
+            // Move forward/backward
+            if (m_left && !m_right)      vel = 20;
+            else if (m_right && !m_left) vel = -20;
+            else                         vel = 0;
+            // Move slower/faster
+            if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
+            else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
+            // Update camera World pos
+            CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
 
-        // Jump
-        if (k_space && cam_vel.y == 0) cam_vel.y = .3;
+        if (CAMERA.focus && moveMode) {
+            // Gravity
+            CAMERA.vel.y -= 1.15 * FPS.dTimeSec;
 
-        float vel_xz = sqrt(cam_vel.x * cam_vel.x + cam_vel.z * cam_vel.z);
+            // On ground
+            if (CAMERA.pos.y + CAMERA.vel.y < 1.5) {
+                CAMERA.vel.y = 0;
+                CAMERA.pos.y = 1.5;
+            }
 
-        // Move
-        moving = false;
-        if (k_w && !k_s) {
-            moving = true;
-            cam_vel.x += CAMERA.forward.x * FPS.dTimeSec;
-            cam_vel.z += CAMERA.forward.z * FPS.dTimeSec;
-        }
-        if (k_s && !k_w) {
-            moving = true;
-            cam_vel.x -= CAMERA.forward.x * FPS.dTimeSec;
-            cam_vel.z -= CAMERA.forward.z * FPS.dTimeSec;
-        }
-        if (k_a && !k_d) {
-            moving = true;
-            cam_vel.x += CAMERA.right.x * FPS.dTimeSec;
-            cam_vel.z += CAMERA.right.z * FPS.dTimeSec;
-        }
-        if (k_d && !k_a) {
-            moving = true;
-            cam_vel.x -= CAMERA.right.x * FPS.dTimeSec;
-            cam_vel.z -= CAMERA.right.z * FPS.dTimeSec;
-        }
-        if (vel_xz > 0 && !moving) {
-            cam_vel.x /= 1.5;
-            cam_vel.z /= 1.5;
-        }
+            // Jump
+            if (k_space && abs(CAMERA.vel.y) < 0.01) CAMERA.vel.y = .3;
 
-        // Limit and restrict horizontal speed
-        if (vel_xz > 1) {
-            cam_vel.x /= vel_xz;
-            cam_vel.z /= vel_xz;
+            float vel_xz = sqrt(
+                CAMERA.vel.x * CAMERA.vel.x + CAMERA.vel.z * CAMERA.vel.z
+            );
+
+            // Move
+            moving = false;
+            if (k_w && !k_s) {
+                moving = true;
+                CAMERA.vel.x += CAMERA.forward.x * FPS.dTimeSec;
+                CAMERA.vel.z += CAMERA.forward.z * FPS.dTimeSec;
+            }
+            if (k_s && !k_w) {
+                moving = true;
+                CAMERA.vel.x -= CAMERA.forward.x * FPS.dTimeSec;
+                CAMERA.vel.z -= CAMERA.forward.z * FPS.dTimeSec;
+            }
+            if (k_a && !k_d) {
+                moving = true;
+                CAMERA.vel.x += CAMERA.right.x * FPS.dTimeSec;
+                CAMERA.vel.z += CAMERA.right.z * FPS.dTimeSec;
+            }
+            if (k_d && !k_a) {
+                moving = true;
+                CAMERA.vel.x -= CAMERA.right.x * FPS.dTimeSec;
+                CAMERA.vel.z -= CAMERA.right.z * FPS.dTimeSec;
+            }
+            if (vel_xz > 0 && !moving) {
+                CAMERA.vel.x /= 1.5;
+                CAMERA.vel.z /= 1.5;
+            }
+
+            // Limit and restrict horizontal speed
+            if (vel_xz > 1) {
+                CAMERA.vel.x /= vel_xz;
+                CAMERA.vel.z /= vel_xz;
+            }
+
+            for (Cube3D &cube : cubes) cube.physic();
+            CAMERA.pos += CAMERA.vel;
         }
-        
-        // Set postition
-        CAMERA.pos += Vec3f(
-            cam_vel.x / 1.2, cam_vel.y, cam_vel.z / 1.2
-        );
 
         // Press T to read an transform.txt file and apply it
         // Note: hold ctrl to switch keyT from hold to tap
@@ -314,8 +331,6 @@ int main() {
 
             // GRAPHIC.createTexture(gifPath);
         }
-
-        sphere.movement();
 
         // ========== Render Pipeline ==========
 
@@ -393,6 +408,13 @@ int main() {
         LOG.addLog(
             "| Shade: " + std::to_string(shadeMode),
             sf::Color(50, 50, shadeMode ? 255 : 100)
+        );
+
+        LOG.addLog(
+            "vx: " + std::to_string(CAMERA.vel.x) +
+            " vy: " + std::to_string(CAMERA.vel.y) +
+            " vz: " + std::to_string(CAMERA.vel.z),
+            sf::Color(255, 255, 255)
         );
 
         // Displays

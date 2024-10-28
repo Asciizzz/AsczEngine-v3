@@ -58,18 +58,11 @@ void Camera3D::updateProjection() {
 }
 
 void Camera3D::updateMVP() {
+    restrictRot();
     updateView();
     updateProjection();
 
     mvp = projection * view;
-}
-
-bool Camera3D::isInsideFrustum(Vec3f &v) {
-    Vec4f v4 = mvp * v.toVec4f();
-
-    return  v4.x >= -v4.w && v4.x <= v4.w &&
-            v4.y >= -v4.w && v4.y <= v4.w &&
-            v4.z >= 0 && v4.z <= v4.w;
 }
 
 // Debug

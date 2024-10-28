@@ -12,6 +12,19 @@ have a correct perspective correction.
 
 */
 
+struct Plane { // Ax + By + Cz + D = 0
+    float a, b, c, d;
+
+    __device__ Plane(Vec3f v1, Vec3f v2, Vec3f v3) {
+        Vec3f n = (v2 - v1) & (v3 - v1);
+        n.norm();
+        a = n.x;
+        b = n.y;
+        c = n.z;
+        d = -(a * v1.x + b * v1.y + c * v1.z);
+    }
+};
+
 class VertexShader {
 public:
     // Render pipeline

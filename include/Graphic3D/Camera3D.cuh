@@ -31,8 +31,8 @@ public:
     Mat4f mvp;
     void updateMVP();
 
-    // Frustum culling check
-    __host__ __device__ bool isInsideFrustum(Vec3f &v);
+    // BETA: movement
+    Vec3f vel;
 
     // Debug
     std::string data();

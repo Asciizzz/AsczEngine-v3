@@ -79,11 +79,6 @@ void VertexShader::createDepthMap() {
         );
         cudaDeviceSynchronize();
     }
-
-    // // Synchronize all streams
-    // for (int i = 0; i < chunkNum; i++) {
-    //     cudaStreamSynchronize(grphic.faceStreams[i]);
-    // }
 }
 
 void VertexShader::rasterization() {
@@ -193,6 +188,66 @@ __global__ void createRuntimeFacesKernel(
     bool allFar = far[0] && far[1] && far[2];
     bool allNear = near[0] && near[1] && near[2];
     if (allLeft || allRight || allUp || allDown || allFar || allNear) return;
+
+    // Vec3f ndcVertices[8] = {
+    //     Vec3f(1, 1, 1), Vec3f(-1, 1, 1), Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
+    //     Vec3f(1, 1, -1), Vec3f(-1, 1, -1), Vec3f(-1, -1, -1), Vec3f(1, -1, -1)
+    // };
+    // int edges[12][2] = {
+    //     {0, 1}, {1, 2}, {2, 3}, {3, 0},     // Front face
+    //     {4, 5}, {5, 6}, {6, 7}, {7, 4},     // Back face
+    //     {0, 4}, {1, 5}, {2, 6}, {3, 7}      // Connecting edges
+    // };
+
+    // Vec4f screens[3] = {
+    //     Vec4f(screenX[fw[0]], screenY[fw[0]], screenZ[fw[0]], screenW[fw[0]]),
+    //     Vec4f(screenX[fw[1]], screenY[fw[1]], screenZ[fw[1]], screenW[fw[1]]),
+    //     Vec4f(screenX[fw[2]], screenY[fw[2]], screenZ[fw[2]], screenW[fw[2]])
+    // };
+    // Vec3f ndcs[3] = {
+    //     screens[0].toVec3f(),
+    //     screens[1].toVec3f(),
+    //     screens[2].toVec3f()
+    // };
+    // Plane plane = Plane(ndcs[0], ndcs[1], ndcs[2]);
+
+    // Vec3f polygon[6];
+    // int polyCount = 0;
+    // float a = plane.a, b = plane.b, c = plane.c, d = plane.d;
+
+    // Vec3f polyCenter;
+    // for (int i = 0; i < 12; i++) {
+    //     // Get endpoints of the edge
+    //     Vec3f v_i = ndcVertices[edges[i][0]];
+    //     Vec3f v_j = ndcVertices[edges[i][1]];
+
+    //     // Find the plane side of each vertex
+    //     float Fi = a * v_i.x + b * v_i.y + c * v_i.z + d;
+    //     float Fj = a * v_j.x + b * v_j.y + c * v_j.z + d;
+
+    //     // Check if edge crosses the plane
+    //     if (Fi * Fj < 0) {
+    //         // Find the intersection point
+    //         float t = Fi / (Fi - Fj);
+    //         Vec3f v = v_i * (1 - t) + v_j * t;
+    //         polygon[polyCount++] = v;
+
+    //         polyCenter += v;
+    //     }
+    // }
+    // polyCenter /= polyCount;
+
+    // // Sort the vertices on a clockwise order
+    // Vec3f temp;
+    // for (int i = 0; i < polyCount; i++)
+    // for (int j = i + 1; j < polyCount; j++) {
+    //     if (atan2(polygon[i].y - polyCenter.y, polygon[i].x - polyCenter.x) >
+    //         atan2(polygon[j].y - polyCenter.y, polygon[j].x - polyCenter.x)) {
+    //         temp = polygon[i];
+    //         polygon[i] = polygon[j];
+    //         polygon[j] = temp;
+    //     }
+    // }
 
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
