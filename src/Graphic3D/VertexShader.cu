@@ -54,15 +54,15 @@ void VertexShader::createDepthMap() {
     // Split the faces into chunks
     size_t chunkNum = (grphic.faceCounter + grphic.faceChunkSize - 1) / grphic.faceChunkSize;
 
-    dim3 blockSize(16, 8);
+    dim3 blockSize(16, 16);
     for (size_t i = 0; i < chunkNum; i++) {
         size_t faceOffset = grphic.faceChunkSize * i;
 
         size_t curFaceCount = (i == chunkNum - 1) ?
             grphic.faceCounter - faceOffset : grphic.faceChunkSize;
-        size_t blockNumFace = (curFaceCount + blockSize.x - 1) / blockSize.x;
-        size_t blockNumTile = (grphic.tileNum + blockSize.y - 1) / blockSize.y;
-        dim3 blockNum(blockNumFace, blockNumTile);
+        size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
+        size_t blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
+        dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
             grphic.rtFaces.sx,
@@ -228,8 +228,8 @@ __global__ void createDepthMapKernel(
     float *buffBaryX, float *buffBaryY, float *buffBaryZ,
     int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileSizeX, int tileSizeY
 ) {
-    ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    ULLInt tIdx = blockIdx.y * blockDim.y + threadIdx.y;
+    ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (tIdx >= tileNumX * tileNumY || fIdx >= faceCounter) return;
     fIdx += faceOffset;
