@@ -44,31 +44,32 @@ void VertexShader::createRuntimeFaces() {
     cudaMemcpy(&grphic.faceCounter, grphic.d_faceCounter, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
-void VertexShader::createDepthMapBeta() {
+void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
-    // 1 million elements per batch
-    int chunkNum = (grphic.faceCounter + grphic.chunkSize - 1) / grphic.chunkSize;
+    // Split the faces into chunks
+    size_t chunkNum = (grphic.faceCounter + grphic.faceChunkSize - 1) / grphic.faceChunkSize;
 
-    dim3 blockSize(16, 16);
+    dim3 blockSize(16, 8);
+    for (size_t i = 0; i < chunkNum; i++) {
+        size_t faceOffset = grphic.faceChunkSize * i;
 
-    for (int i = 0; i < chunkNum; i++) {
-        size_t currentChunkSize = (i == chunkNum - 1) ?
-            grphic.faceCounter - i * grphic.chunkSize : grphic.chunkSize;
-        size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
-        size_t blockNumFace = (currentChunkSize + blockSize.y - 1) / blockSize.y;
-        dim3 blockNum(blockNumTile, blockNumFace);
+        size_t curFaceCount = (i == chunkNum - 1) ?
+            grphic.faceCounter - faceOffset : grphic.faceChunkSize;
+        size_t blockNumFace = (curFaceCount + blockSize.x - 1) / blockSize.x;
+        size_t blockNumTile = (grphic.tileNum + blockSize.y - 1) / blockSize.y;
+        dim3 blockNum(blockNumFace, blockNumTile);
 
-        createDepthMapKernel<<<blockNum, blockSize, 0, grphic.faceStreams[i]>>>(
-            grphic.rtFaces.sx + i * grphic.chunkSize,
-            grphic.rtFaces.sy + i * grphic.chunkSize,
-            grphic.rtFaces.sz + i * grphic.chunkSize,
-            grphic.rtFaces.sw + i * grphic.chunkSize,
-            currentChunkSize,
+        createDepthMapKernel<<<blockNum, blockSize>>>(
+            grphic.rtFaces.sx,
+            grphic.rtFaces.sy,
+            grphic.rtFaces.sz,
+            grphic.rtFaces.sw,
+            curFaceCount, faceOffset,
 
             buffer.active, buffer.depth, buffer.faceID,
             buffer.bary.x, buffer.bary.y, buffer.bary.z,
@@ -76,12 +77,13 @@ void VertexShader::createDepthMapBeta() {
             grphic.tileNumX, grphic.tileNumY,
             grphic.tileSizeX, grphic.tileSizeY
         );
+        cudaDeviceSynchronize();
     }
 
-    // Synchronize all streams
-    for (int i = 0; i < chunkNum; i++) {
-        cudaStreamSynchronize(grphic.faceStreams[i]);
-    }
+    // // Synchronize all streams
+    // for (int i = 0; i < chunkNum; i++) {
+    //     cudaStreamSynchronize(grphic.faceStreams[i]);
+    // }
 }
 
 void VertexShader::rasterization() {
@@ -220,15 +222,17 @@ __global__ void createRuntimeFacesKernel(
 
 // Depth map creation
 __global__ void createDepthMapKernel(
-    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw, ULLInt faceCounter,
+    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw,
+    ULLInt faceCounter, ULLInt faceOffset,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
     float *buffBaryX, float *buffBaryY, float *buffBaryZ,
     int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileSizeX, int tileSizeY
 ) {
-    ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
+    ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    ULLInt tIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (tIdx >= tileNumX * tileNumY || fIdx >= faceCounter) return;
+    fIdx += faceOffset;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;

@@ -62,7 +62,6 @@ void Graphic3D::free() {
     mesh.free();
     buffer.free();
     freeRuntimeFaces();
-    freeFaceStreams();
 
     freeTexture();
     freeShadowMap();
@@ -72,6 +71,7 @@ void Graphic3D::free() {
 void Graphic3D::mallocRuntimeFaces() {
     cudaMalloc(&d_faceCounter, sizeof(ULLInt));
     // In the worst case scenario, each face when culled can be split into 4 faces
+    // DANGER: I AM SO ABSOLUTELY WRONG, IT CAN BE EVEN WORSE
     rtFaces.malloc(mesh.faces.size * 4);
 }
 void Graphic3D::freeRuntimeFaces() {
@@ -81,30 +81,6 @@ void Graphic3D::freeRuntimeFaces() {
 void Graphic3D::resizeRuntimeFaces() {
     freeRuntimeFaces();
     mallocRuntimeFaces();
-}
-
-// Face stream for chunking very large number of faces
-void Graphic3D::mallocFaceStreams() {
-    chunkNum = (mesh.faces.size + chunkSize - 1) / chunkSize;
-
-    // Stream for asynchronous execution (very helpful)
-    faceStreams = (cudaStream_t*)malloc(chunkNum * sizeof(cudaStream_t));
-    for (int i = 0; i < chunkNum; i++) {
-        cudaStreamCreate(&faceStreams[i]);
-    }
-}
-void Graphic3D::freeFaceStreams() {
-    // for (int i = 0; i < chunkSize; i++) {
-    //     if (faceStreams) cudaStreamDestroy(faceStreams[i]);
-    // }
-    // if (faceStreams) delete[] faceStreams;
-}
-void Graphic3D::resizeFaceStreams() {
-    int newChunkNum = (mesh.faces.size + chunkSize - 1) / chunkSize;
-    if (newChunkNum == chunkNum) return;
-
-    freeFaceStreams();
-    mallocFaceStreams();
 }
 
 // =========================================================================

@@ -1,5 +1,7 @@
 #assets/Models/Anime/Goku.obj .02 0 180 0
 
+.heavy/mountains.obj 1 0 0 0 0 0 0
+
 # Back wall
 assets/Models/Shapes/Wall.obj 2 0 0 0 0 0 2
 # Left wall

@@ -17,7 +17,7 @@ public:
     // Render pipeline
     static void cameraProjection();
     static void createRuntimeFaces();
-    static void createDepthMapBeta();
+    static void createDepthMap();
     static void rasterization();
 };
 
@@ -47,7 +47,7 @@ __global__ void createRuntimeFacesKernel(
 
 // Tile-based depth map creation
 __global__ void createDepthMapKernel(
-    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw, ULLInt faceCounter,
+    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw, ULLInt faceCounter, ULLInt faceOffset,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
     float *buffBaryX, float *buffBaryY, float *buffBaryZ,
     int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileSizeX, int tileSizeY

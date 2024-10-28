@@ -64,6 +64,7 @@ public:
     // For runtime faces
     ULLInt faceCounter;
     ULLInt *d_faceCounter;
+    size_t faceChunkSize = 1e6; // For chunking
     Face3D rtFaces;
 
     void mallocRuntimeFaces();
@@ -71,12 +72,6 @@ public:
     void resizeRuntimeFaces();
 
     // Face stream for chunking
-    cudaStream_t *faceStreams;
-    size_t chunkSize = 5e6;
-    int chunkNum;
-    void mallocFaceStreams();
-    void freeFaceStreams();
-    void resizeFaceStreams();
 
     // Camera3D and Buffer3D
     Camera3D camera;

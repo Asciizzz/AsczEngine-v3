@@ -71,9 +71,7 @@ int main() {
         objsCount++;
     }
     std::cout << objsTxt;
-
     GRAPHIC.mallocRuntimeFaces();
-    GRAPHIC.mallocFaceStreams();
 
     std::string texturePath = "";
     std::ifstream("assets/cfg/texture.txt") >> texturePath;
@@ -253,7 +251,7 @@ int main() {
         // Vertex Shader
         VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
-        VertexShader::createDepthMapBeta();
+        VertexShader::createDepthMap();
         VertexShader::rasterization();
 
         // Fragment Shader (bunch of beta features)
