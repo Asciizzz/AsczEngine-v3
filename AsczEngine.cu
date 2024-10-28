@@ -6,6 +6,7 @@
 #include <SFMLTexture.cuh>
 
 #include <Playground.cuh>
+#include <Sphere3D.cuh>
 
 // Main
 int main() {
@@ -71,6 +72,12 @@ int main() {
         objsCount++;
     }
     std::cout << objsTxt;
+
+    // Create a test sphere
+    Sphere3D sphere(Vec3f(0, 8, 0), 1);
+    sphere.vel = Vec3f(0.3, 0, 0.1);
+    GRAPHIC.mesh += sphere.mesh;
+
     GRAPHIC.mallocRuntimeFaces();
 
     std::string texturePath = "";
@@ -245,6 +252,8 @@ int main() {
 
             // GRAPHIC.createTexture(gifPath);
         }
+
+        sphere.movement();
 
         // ========== Render Pipeline ==========
 
