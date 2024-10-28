@@ -109,6 +109,9 @@ int main() {
     // Other miscellaneus stuff
     bool k_t_hold = false;
 
+    Vec3f cam_vel;
+    bool moving = false;
+
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
@@ -178,6 +181,12 @@ int main() {
         bool k_e = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
         bool k_t = sf::Keyboard::isKeyPressed(sf::Keyboard::T);
 
+        bool k_w = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
+        bool k_a = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+        bool k_s = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+        bool k_d = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+        bool k_space = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+
         if (CAMERA.focus) {
             // Mouse movement handling
             sf::Vector2i mousepos = sf::Mouse::getPosition(window);
@@ -195,18 +204,70 @@ int main() {
             CAMERA.restrictRot();
             CAMERA.updateMVP();
 
-            // Mouse Click = move forward
-            float vel = 0;
-            // Move forward/backward
-            if (m_left && !m_right)      vel = 20;
-            else if (m_right && !m_left) vel = -20;
-            else                         vel = 0;
-            // Move slower/faster
-            if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
-            else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
-            // Update camera World pos
-            CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
+            // // Mouse Click = move forward
+            // float vel = 0;
+            // // Move forward/backward
+            // if (m_left && !m_right)      vel = 20;
+            // else if (m_right && !m_left) vel = -20;
+            // else                         vel = 0;
+            // // Move slower/faster
+            // if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
+            // else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
+            // // Update camera World pos
+            // CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
         }
+
+        // Gravity
+        cam_vel.y -= 1.15 * FPS.dTimeSec;
+
+        // On ground
+        if (CAMERA.pos.y < 1.5) {
+            cam_vel.y = 0;
+            CAMERA.pos.y = 1.5;
+        }
+
+        // Jump
+        if (k_space && cam_vel.y == 0) cam_vel.y = .3;
+
+        float vel_xz = sqrt(cam_vel.x * cam_vel.x + cam_vel.z * cam_vel.z);
+
+        // Move
+        moving = false;
+        if (k_w && !k_s) {
+            moving = true;
+            cam_vel.x += CAMERA.forward.x * FPS.dTimeSec;
+            cam_vel.z += CAMERA.forward.z * FPS.dTimeSec;
+        }
+        if (k_s && !k_w) {
+            moving = true;
+            cam_vel.x -= CAMERA.forward.x * FPS.dTimeSec;
+            cam_vel.z -= CAMERA.forward.z * FPS.dTimeSec;
+        }
+        if (k_a && !k_d) {
+            moving = true;
+            cam_vel.x += CAMERA.right.x * FPS.dTimeSec;
+            cam_vel.z += CAMERA.right.z * FPS.dTimeSec;
+        }
+        if (k_d && !k_a) {
+            moving = true;
+            cam_vel.x -= CAMERA.right.x * FPS.dTimeSec;
+            cam_vel.z -= CAMERA.right.z * FPS.dTimeSec;
+        }
+        if (vel_xz > 0 && !moving) {
+            cam_vel.x /= 1.5;
+            cam_vel.z /= 1.5;
+        }
+
+        // Limit and restrict horizontal speed
+        if (vel_xz > 1) {
+            cam_vel.x /= vel_xz;
+            cam_vel.z /= vel_xz;
+        }
+        
+        // Set postition
+        CAMERA.pos += Vec3f(
+            cam_vel.x / 1.2, cam_vel.y, cam_vel.z / 1.2
+        );
 
         // Press T to read an transform.txt file and apply it
         // Note: hold ctrl to switch keyT from hold to tap
