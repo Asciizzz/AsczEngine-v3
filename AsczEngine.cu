@@ -76,6 +76,7 @@ int main() {
     // Create a test sphere
     Sphere3D sphere(Vec3f(0, 8, 0), 1);
     sphere.vel = Vec3f(0.3, 0, 0.1);
+    sphere.angvel = Vec3f(M_PI * 2.8, 0, M_PI * 2.4);
     GRAPHIC.mesh += sphere.mesh;
 
     GRAPHIC.mallocRuntimeFaces();
