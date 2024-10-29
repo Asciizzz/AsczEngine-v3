@@ -80,8 +80,6 @@ public:
     void freeClippedFaces();
     void resizeClippedFaces();
 
-    // Face stream for chunking
-
     // Camera3D and Buffer3D
     Camera3D camera;
     Buffer3D buffer;
