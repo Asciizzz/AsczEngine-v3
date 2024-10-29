@@ -10,14 +10,29 @@ We will interpolate u/w and v/w in the vertex shader, and then divide them
 by interpolated 1/w in the fragment shader. This will ensure that the texture
 have a correct perspective correction.
 
+ADDITIONAL NOTE:
+
+This applies for EVERYTHING that needs to be perspective corrected:
+- Normal
+- Color
+- World position
+
+*/
+
+/* CREATOR NOTE:
+
+PLEASE CLIP FIRST, PROJECT LATER
+
+THERE IS LITERALLY NO REASON TO INTERPOLATE
+SCREEN COORDINATES INSIDE THE CLIPPING KERNEL
 */
 
 class VertexShader {
 public:
     // Render pipeline
-    static void cameraProjection();
     static void createRuntimeFaces();
     static void frustumClipping();
+    static void cameraProjection();
     static void createDepthMap();
     static void rasterization();
 };
@@ -31,14 +46,12 @@ __global__ void cameraProjectionKernel(
 
 // Filter visible faces
 __global__ void createRuntimeFacesKernel(
-    const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
     const float *worldX, const float *worldY, const float *worldZ,
     const float *normalX, const float *normalY, const float *normalZ,
     const float *textureX, const float *textureY,
     const float *colorX, const float *colorY, const float *colorZ, float *colorW,
     const ULLInt *faceWs, const ULLInt *faceTs, const ULLInt *faceNs, ULLInt numFs,
 
-    float *runtimeSx, float *runtimeSy, float *runtimeSz, float *runtimeSw,
     float *runtimeWx, float *runtimeWy, float *runtimeWz,
     float *runtimeTu, float *runtimeTv,
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
@@ -48,14 +61,12 @@ __global__ void createRuntimeFacesKernel(
 
 // Frustum clipping
 __global__ void clipFrustumKernel(
-    const float *preSx, const float *preSy, const float *preSz, const float *preSw,
     const float *preWx, const float *preWy, const float *preWz,
     const float *preTu, const float *preTv,
     const float *preNx, const float *preNy, const float *preNz,
     const float *preCr, const float *preCg, const float *preCb, const float *preCa,
     ULLInt *preCounter,
 
-    float *postSx, float *postSy, float *postSz, float *postSw,
     float *postWx, float *postWy, float *postWz,
     float *postTu, float *postTv,
     float *postNx, float *postNy, float *postNz,

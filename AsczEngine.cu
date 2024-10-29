@@ -83,6 +83,7 @@ int main() {
     // Create test cubes
     std::vector<Cube3D> cubes;
     for (int i = 0; i < 10; i++) {
+        break;
         Cube3D cube = Cube3D(Vec3f(0, i * 2 + 1, i * 2 + 1), 1);
         GRAPHIC.mesh += cube.mesh;
         cubes.push_back(cube);
@@ -107,7 +108,7 @@ int main() {
     Vec3f rainbow;
     short cycle = 0;
 
-    // Turn on/off texture mode
+    // Turn on/off features
     bool textureMode = true;
     bool shadowMode = true;
     bool shadeMode = true;
@@ -121,6 +122,10 @@ int main() {
 
     bool moveMode = true;
     bool moving = false;
+
+    // =====================================================
+    // ===================== MAIN LOOP =====================
+    // =====================================================
 
     while (window.isOpen()) {
         // Frame start
@@ -337,9 +342,9 @@ int main() {
         // ========== Render Pipeline ==========
 
         // Vertex Shader
-        VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
         VertexShader::frustumClipping();
+        VertexShader::cameraProjection();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 

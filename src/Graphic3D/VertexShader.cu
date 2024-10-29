@@ -2,20 +2,6 @@
 
 // Render pipeline
 
-void VertexShader::cameraProjection() {
-    Graphic3D &grphic = Graphic3D::instance();
-    Camera3D &camera = grphic.camera;
-    Mesh3D &mesh = grphic.mesh;
-
-    size_t gridSize = (mesh.world.size + 256 - 1) / 256;
-    cameraProjectionKernel<<<gridSize, 256>>>(
-        mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
-        mesh.world.x, mesh.world.y, mesh.world.z,
-        camera.mvp, mesh.world.size
-    );
-    cudaDeviceSynchronize();
-}
-
 void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
@@ -25,14 +11,12 @@ void VertexShader::createRuntimeFaces() {
     size_t gridSize = (mesh.faces.size / 3 + 255) / 256;
 
     createRuntimeFacesKernel<<<gridSize, 256>>>(
-        mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
         mesh.world.x, mesh.world.y, mesh.world.z,
         mesh.normal.x, mesh.normal.y, mesh.normal.z,
         mesh.texture.x, mesh.texture.y,
         mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
         mesh.faces.v, mesh.faces.t, mesh.faces.n, mesh.faces.size / 3,
 
-        grphic.rtFaces.sx, grphic.rtFaces.sy, grphic.rtFaces.sz, grphic.rtFaces.sw,
         grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
@@ -56,14 +40,12 @@ void VertexShader::frustumClipping() {
     // Clip near plane
     gridSize = (grphic.faceCount + 255) / 256;
     clipFrustumKernel<<<gridSize, 256>>>(
-        grphic.rtFaces.sx, grphic.rtFaces.sy, grphic.rtFaces.sz, grphic.rtFaces.sw,
         grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
         grphic.d_faceCount,
 
-        grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
         grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
         grphic.clip1.tu, grphic.clip1.tv,
         grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
@@ -78,14 +60,12 @@ void VertexShader::frustumClipping() {
     // Clip far plane
     gridSize = (grphic.clip1Count + 255) / 256;
     clipFrustumKernel<<<gridSize, 256>>>(
-        grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
         grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
         grphic.clip1.tu, grphic.clip1.tv,
         grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
         grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
         grphic.d_clip1Count,
 
-        grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
         grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
         grphic.clip2.tu, grphic.clip2.tv,
         grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
@@ -96,6 +76,19 @@ void VertexShader::frustumClipping() {
     );
     cudaDeviceSynchronize();
     cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+}
+
+void VertexShader::cameraProjection() {
+    Graphic3D &grphic = Graphic3D::instance();
+    Camera3D &camera = grphic.camera;
+
+    size_t gridSize = (grphic.clip2Count * 3 + 255) / 256;
+    cameraProjectionKernel<<<gridSize, 256>>>(
+        grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
+        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
+        camera.mvp, grphic.clip2Count * 3
+    );
+    cudaDeviceSynchronize();
 }
 
 void VertexShader::createDepthMap() {
@@ -176,14 +169,12 @@ __global__ void cameraProjectionKernel(
 
 // Create runtime faces
 __global__ void createRuntimeFacesKernel(
-    const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
     const float *worldX, const float *worldY, const float *worldZ,
     const float *normalX, const float *normalY, const float *normalZ,
     const float *textureX, const float *textureY,
     const float *colorX, const float *colorY, const float *colorZ, float *colorW,
     const ULLInt *faceWs, const ULLInt *faceTs, const ULLInt *faceNs, ULLInt numFs,
 
-    float *runtimeSx, float *runtimeSy, float *runtimeSz, float *runtimeSw,
     float *runtimeWx, float *runtimeWy, float *runtimeWz,
     float *runtimeTu, float *runtimeTv,
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
@@ -201,34 +192,9 @@ __global__ void createRuntimeFacesKernel(
     ULLInt ft[3] = {faceTs[fIdx0], faceTs[fIdx1], faceTs[fIdx2]};
     ULLInt fn[3] = {faceNs[fIdx0], faceNs[fIdx1], faceNs[fIdx2]};
 
-    // If all W are negative, the face is behind the camera => Ignore
-    if (screenW[fw[0]] < 0 && screenW[fw[1]] < 0 && screenW[fw[2]] < 0) return;
-
-    // Find plane diretion
-    bool left[3] = {screenX[fw[0]] < -screenW[fw[0]], screenX[fw[1]] < -screenW[fw[1]], screenX[fw[2]] < -screenW[fw[2]]};
-    bool right[3] = {screenX[fw[0]] > screenW[fw[0]], screenX[fw[1]] > screenW[fw[1]], screenX[fw[2]] > screenW[fw[2]]};
-    bool up[3] = {screenY[fw[0]] > screenW[fw[0]], screenY[fw[1]] > screenW[fw[1]], screenY[fw[2]] > screenW[fw[2]]};
-    bool down[3] = {screenY[fw[0]] < -screenW[fw[0]], screenY[fw[1]] < -screenW[fw[1]], screenY[fw[2]] < -screenW[fw[2]]};
-    bool far[3] = {screenZ[fw[0]] > screenW[fw[0]], screenZ[fw[1]] > screenW[fw[1]], screenZ[fw[2]] > screenW[fw[2]]};
-    bool near[3] = {screenZ[fw[0]] < -screenW[fw[0]], screenZ[fw[1]] < -screenW[fw[1]], -screenZ[fw[2]] < screenW[fw[2]]};
-
-    // All vertices lie on one side of the frustum's planes
-    bool allLeft = left[0] && left[1] && left[2];
-    bool allRight = right[0] && right[1] && right[2];
-    bool allUp = up[0] && up[1] && up[2];
-    bool allDown = down[0] && down[1] && down[2];
-    bool allFar = far[0] && far[1] && far[2];
-    bool allNear = near[0] && near[1] && near[2];
-    if (allLeft || allRight || allUp || allDown || allFar || allNear) return;
-
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
     ULLInt idx2 = idx0 + 2;
-
-    runtimeSx[idx0] = screenX[fw[0]]; runtimeSx[idx1] = screenX[fw[1]]; runtimeSx[idx2] = screenX[fw[2]];
-    runtimeSy[idx0] = screenY[fw[0]]; runtimeSy[idx1] = screenY[fw[1]]; runtimeSy[idx2] = screenY[fw[2]];
-    runtimeSz[idx0] = screenZ[fw[0]]; runtimeSz[idx1] = screenZ[fw[1]]; runtimeSz[idx2] = screenZ[fw[2]];
-    runtimeSw[idx0] = screenW[fw[0]]; runtimeSw[idx1] = screenW[fw[1]]; runtimeSw[idx2] = screenW[fw[2]];
 
     runtimeWx[idx0] = worldX[fw[0]]; runtimeWx[idx1] = worldX[fw[1]]; runtimeWx[idx2] = worldX[fw[2]];
     runtimeWy[idx0] = worldY[fw[0]]; runtimeWy[idx1] = worldY[fw[1]]; runtimeWy[idx2] = worldY[fw[2]];
@@ -249,14 +215,12 @@ __global__ void createRuntimeFacesKernel(
 
 // Frustum culling
 __global__ void clipFrustumKernel(
-    const float *preSx, const float *preSy, const float *preSz, const float *preSw,
     const float *preWx, const float *preWy, const float *preWz,
     const float *preTu, const float *preTv,
     const float *preNx, const float *preNy, const float *preNz,
     const float *preCr, const float *preCg, const float *preCb, const float *preCa,
     ULLInt *preCounter,
 
-    float *postSx, float *postSy, float *postSz, float *postSw,
     float *postWx, float *postWy, float *postWz,
     float *postTu, float *postTv,
     float *postNx, float *postNy, float *postNz,
@@ -272,11 +236,6 @@ __global__ void clipFrustumKernel(
     ULInt preIdx1 = preIdx * 3 + 1;
     ULInt preIdx2 = preIdx * 3 + 2;
 
-    Vec4f rtSs[3] = {
-        Vec4f(preSx[preIdx0], preSy[preIdx0], preSz[preIdx0], preSw[preIdx0]),
-        Vec4f(preSx[preIdx1], preSy[preIdx1], preSz[preIdx1], preSw[preIdx1]),
-        Vec4f(preSx[preIdx2], preSy[preIdx2], preSz[preIdx2], preSw[preIdx2])
-    };
     Vec3f rtWs[3] = {
         Vec3f(preWx[preIdx0], preWy[preIdx0], preWz[preIdx0]),
         Vec3f(preWx[preIdx1], preWy[preIdx1], preWz[preIdx1]),
@@ -299,7 +258,6 @@ __global__ void clipFrustumKernel(
     };
 
     // Everything will be interpolated
-    Vec4f newSs[4];
     Vec3f newWs[4];
     Vec2f newTs[4];
     Vec3f newNs[4];
@@ -330,7 +288,6 @@ __global__ void clipFrustumKernel(
         if (sideA < 0 && sideB < 0) continue;
 
         if (sideA >= 0 && sideB >= 0) {
-            newSs[newVcount] = rtSs[a];
             newWs[newVcount] = rtWs[a];
             newTs[newVcount] = rtTs[a];
             newNs[newVcount] = rtNs[a];
@@ -342,27 +299,25 @@ __global__ void clipFrustumKernel(
         // Find intersection
         float tFact = -sideA / (sideB - sideA);
 
-        Vec4f s = rtSs[a] + (rtSs[b] - rtSs[a]) * tFact;
         Vec3f w = rtWs[a] + (rtWs[b] - rtWs[a]) * tFact;
         Vec2f t = rtTs[a] + (rtTs[b] - rtTs[a]) * tFact;
         Vec3f n = rtNs[a] + (rtNs[b] - rtNs[a]) * tFact;
         Vec4f c = rtCs[a] + (rtCs[b] - rtCs[a]) * tFact;
 
         if (sideA > 0) {
-            newSs[newVcount] = rtSs[a];
+            // Append A
             newWs[newVcount] = rtWs[a];
             newTs[newVcount] = rtTs[a];
             newNs[newVcount] = rtNs[a];
             newCs[newVcount] = rtCs[a];
             newVcount++;
-            newSs[newVcount] = s;
+            // Append intersection
             newWs[newVcount] = w;
             newTs[newVcount] = t;
             newNs[newVcount] = n;
             newCs[newVcount] = c;
             newVcount++;
         } else {
-            newSs[newVcount] = s;
             newWs[newVcount] = w;
             newTs[newVcount] = t;
             newNs[newVcount] = n;
@@ -376,11 +331,6 @@ __global__ void clipFrustumKernel(
         ULInt idx0 = atomicAdd(postCounter, 1) * 3;
         ULInt idx1 = idx0 + 1;
         ULInt idx2 = idx0 + 2;
-
-        postSx[idx0] = newSs[0].x; postSx[idx1] = newSs[i + 1].x; postSx[idx2] = newSs[i + 2].x;
-        postSy[idx0] = newSs[0].y; postSy[idx1] = newSs[i + 1].y; postSy[idx2] = newSs[i + 2].y;
-        postSz[idx0] = newSs[0].z; postSz[idx1] = newSs[i + 1].z; postSz[idx2] = newSs[i + 2].z;
-        postSw[idx0] = newSs[0].w; postSw[idx1] = newSs[i + 1].w; postSw[idx2] = newSs[i + 2].w;
 
         postWx[idx0] = newWs[0].x; postWx[idx1] = newWs[i + 1].x; postWx[idx2] = newWs[i + 2].x;
         postWy[idx0] = newWs[0].y; postWy[idx1] = newWs[i + 1].y; postWy[idx2] = newWs[i + 2].y;
