@@ -90,6 +90,25 @@ void Camera3D::updatePlane() {
     leftNormal.norm();
     leftNormal *= -1; // Facing inwards the frustum
     leftPlane = Plane3D(leftNormal, pos);
+
+    // Get the vertical fov
+    float vFov = 2 * atan(tan(fov / 2) / aspect);
+
+    float upAngle = vFov + M_PI_2;
+    float downAngle = -vFov - M_PI_2;
+
+    float cosU = cos(upAngle);
+    float sinU = sin(upAngle);
+    float cosD = cos(downAngle);
+    float sinD = sin(downAngle);
+
+    Vec3f upNormal = up * cosU + (right & up) * sinU + right * (right * up) * (1 - cosU);
+    upNormal.norm();
+    upPlane = Plane3D(upNormal, pos);
+
+    Vec3f downNormal = up * cosD + (right & up) * sinD + right * (right * up) * (1 - cosD);
+    downNormal.norm();
+    downPlane = Plane3D(downNormal, pos);
 }
 
 // Debug

@@ -61,7 +61,7 @@ void VertexShader::frustumClipping() {
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.faceCount,
+        grphic.d_faceCount,
 
         grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
         grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
@@ -75,38 +75,9 @@ void VertexShader::frustumClipping() {
     cudaDeviceSynchronize();
     cudaMemcpy(&grphic.clip1Count, grphic.d_clip1Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 
-    // Clip right plane
+    // Clip far plane
     gridSize = (grphic.clip1Count + 255) / 256;
     clipFrustumKernel<<<gridSize, 256>>>(
-        grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
-        grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
-        grphic.clip1.tu, grphic.clip1.tv,
-        grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
-        grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
-        grphic.clip1Count,
-
-        grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
-        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
-        grphic.clip2.tu, grphic.clip2.tv,
-        grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
-        grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
-        grphic.d_clip2Count,
-
-        camera.rightPlane
-    );
-    cudaDeviceSynchronize();
-    cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-
-    // Clip far plane
-    gridSize = (grphic.clip2Count + 255) / 256;
-    clipFrustumKernel<<<gridSize, 256>>>(
-        grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
-        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
-        grphic.clip2.tu, grphic.clip2.tv,
-        grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
-        grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
-        grphic.clip2Count,
-
         grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
         grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
         grphic.clip1.tu, grphic.clip1.tv,
@@ -114,21 +85,6 @@ void VertexShader::frustumClipping() {
         grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
         grphic.d_clip1Count,
 
-        camera.farPlane
-    );
-    cudaDeviceSynchronize();
-    cudaMemcpy(&grphic.clip1Count, grphic.d_clip1Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-
-    // Clip left plane
-    gridSize = (grphic.clip1Count + 255) / 256;
-    clipFrustumKernel<<<gridSize, 256>>>(
-        grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
-        grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
-        grphic.clip1.tu, grphic.clip1.tv,
-        grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
-        grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
-        grphic.clip1Count,
-
         grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
         grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
         grphic.clip2.tu, grphic.clip2.tv,
@@ -136,7 +92,7 @@ void VertexShader::frustumClipping() {
         grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
         grphic.d_clip2Count,
 
-        camera.leftPlane
+        camera.farPlane
     );
     cudaDeviceSynchronize();
     cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
@@ -298,7 +254,7 @@ __global__ void clipFrustumKernel(
     const float *preTu, const float *preTv,
     const float *preNx, const float *preNy, const float *preNz,
     const float *preCr, const float *preCg, const float *preCb, const float *preCa,
-    ULLInt preCounter,
+    ULLInt *preCounter,
 
     float *postSx, float *postSy, float *postSz, float *postSw,
     float *postWx, float *postWy, float *postWz,
@@ -310,7 +266,7 @@ __global__ void clipFrustumKernel(
     Plane3D plane
 ) {
     ULInt preIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (preIdx >= preCounter) return;
+    if (preIdx >= *preCounter) return;
 
     ULInt preIdx0 = preIdx * 3;
     ULInt preIdx1 = preIdx * 3 + 1;

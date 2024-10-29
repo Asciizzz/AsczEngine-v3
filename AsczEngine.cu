@@ -83,7 +83,6 @@ int main() {
     // Create test cubes
     std::vector<Cube3D> cubes;
     for (int i = 0; i < 10; i++) {
-        break;
         Cube3D cube = Cube3D(Vec3f(0, i * 2 + 1, i * 2 + 1), 1);
         GRAPHIC.mesh += cube.mesh;
         cubes.push_back(cube);
@@ -353,8 +352,7 @@ int main() {
         }
         if (shadeMode) FragmentShader::phongShading();
 
-        // From buffer to texture
-        // (clever way to incorporate CUDA into SFML)
+        // From buffer to SFMLtexture
         SFTex.updateTexture(
             GRAPHIC.buffer.color.x,
             GRAPHIC.buffer.color.y,

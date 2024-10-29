@@ -53,7 +53,7 @@ __global__ void clipFrustumKernel(
     const float *preTu, const float *preTv,
     const float *preNx, const float *preNy, const float *preNz,
     const float *preCr, const float *preCg, const float *preCb, const float *preCa,
-    ULLInt preCounter,
+    ULLInt *preCounter,
 
     float *postSx, float *postSy, float *postSz, float *postSw,
     float *postWx, float *postWy, float *postWz,
