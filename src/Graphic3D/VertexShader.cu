@@ -241,6 +241,15 @@ __global__ void clipFrustumKernel(
         Vec3f(preWx[preIdx1], preWy[preIdx1], preWz[preIdx1]),
         Vec3f(preWx[preIdx2], preWy[preIdx2], preWz[preIdx2])
     };
+    float side[3] = {
+        plane.equation(rtWs[0]),
+        plane.equation(rtWs[1]),
+        plane.equation(rtWs[2])
+    };
+
+    // If all behind, return
+    if (side[0] < 0 && side[1] < 0 && side[2] < 0) return;
+
     Vec2f rtTs[3] = {
         Vec2f(preTu[preIdx0], preTv[preIdx0]),
         Vec2f(preTu[preIdx1], preTv[preIdx1]),
@@ -256,6 +265,31 @@ __global__ void clipFrustumKernel(
         Vec4f(preCr[preIdx1], preCg[preIdx1], preCb[preIdx1], preCa[preIdx1]),
         Vec4f(preCr[preIdx2], preCg[preIdx2], preCb[preIdx2], preCa[preIdx2])
     };
+
+    // If all infront, copy
+    if (side[0] >= 0 && side[1] >= 0 && side[2] >= 0) {
+        ULInt idx0 = atomicAdd(postCounter, 1) * 3;
+        ULInt idx1 = idx0 + 1;
+        ULInt idx2 = idx0 + 2;
+
+        postWx[idx0] = rtWs[0].x; postWx[idx1] = rtWs[1].x; postWx[idx2] = rtWs[2].x;
+        postWy[idx0] = rtWs[0].y; postWy[idx1] = rtWs[1].y; postWy[idx2] = rtWs[2].y;
+        postWz[idx0] = rtWs[0].z; postWz[idx1] = rtWs[1].z; postWz[idx2] = rtWs[2].z;
+
+        postTu[idx0] = rtTs[0].x; postTu[idx1] = rtTs[1].x; postTu[idx2] = rtTs[2].x;
+        postTv[idx0] = rtTs[0].y; postTv[idx1] = rtTs[1].y; postTv[idx2] = rtTs[2].y;
+
+        postNx[idx0] = rtNs[0].x; postNx[idx1] = rtNs[1].x; postNx[idx2] = rtNs[2].x;
+        postNy[idx0] = rtNs[0].y; postNy[idx1] = rtNs[1].y; postNy[idx2] = rtNs[2].y;
+        postNz[idx0] = rtNs[0].z; postNz[idx1] = rtNs[1].z; postNz[idx2] = rtNs[2].z;
+
+        postCr[idx0] = rtCs[0].x; postCr[idx1] = rtCs[1].x; postCr[idx2] = rtCs[2].x;
+        postCg[idx0] = rtCs[0].y; postCg[idx1] = rtCs[1].y; postCg[idx2] = rtCs[2].y;
+        postCb[idx0] = rtCs[0].z; postCb[idx1] = rtCs[1].z; postCb[idx2] = rtCs[2].z;
+        postCa[idx0] = rtCs[0].w; postCa[idx1] = rtCs[1].w; postCa[idx2] = rtCs[2].w;
+
+        return;
+    }
 
     // Everything will be interpolated
     Vec3f newWs[4];
@@ -282,8 +316,8 @@ __global__ void clipFrustumKernel(
         int b = (a + 1) % 3;
 
         // Find plane side
-        float sideA = plane.equation(rtWs[a]);
-        float sideB = plane.equation(rtWs[b]);
+        float sideA = side[a];
+        float sideB = side[b];
 
         if (sideA < 0 && sideB < 0) continue;
 
