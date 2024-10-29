@@ -25,8 +25,10 @@ int main() {
     GRAPHIC.setTileSize(tileSizeX, tileSizeY);
 
     Camera3D &CAMERA = GRAPHIC.camera;
-    std::ifstream("assets/cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
-    std::ifstream("assets/cfg/cameraSpd.txt") >> CAMERA.slowFactor >> CAMERA.fastFactor;
+    std::ifstream("assets/cfg/cameraPos.txt")
+        >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
+    std::ifstream("assets/cfg/cameraSpd.txt")
+        >> CAMERA.velSpec >> CAMERA.slowFactor >> CAMERA.fastFactor;
 
     SFMLTexture SFTex = SFMLTexture(width, height);
     sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
@@ -225,18 +227,30 @@ int main() {
         // Update camera
         CAMERA.update();
 
+        // Csgo perspective mode
         if (CAMERA.focus && !moveMode) {
-            // Mouse Click = move forward
-            float vel = 0;
-            // Move forward/backward
-            if (m_left && !m_right)      vel = 20;
-            else if (m_right && !m_left) vel = -20;
-            else                         vel = 0;
-            // Move slower/faster
+            // // Mouse Click = move forward
+            // float vel = 0;
+            // // Move forward/backward
+            // if (m_left && !m_right)      vel = 20;
+            // else if (m_right && !m_left) vel = -20;
+            // else                         vel = 0;
+            // // Move slower/faster
+            // if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
+            // else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
+            // // Update camera World pos
+            // CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
+
+            float vel = CAMERA.velSpec;
             if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
             else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
-            // Update camera World pos
-            CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
+
+            // Press W/S to move forward/backward
+            if (k_w && !k_s) CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
+            if (k_s && !k_w) CAMERA.pos -= CAMERA.forward * vel * FPS.dTimeSec;
+            // Press A/D to move left/right
+            if (k_a && !k_d) CAMERA.pos += CAMERA.right * vel * FPS.dTimeSec;
+            if (k_d && !k_a) CAMERA.pos -= CAMERA.right * vel * FPS.dTimeSec;
         }
 
         if (CAMERA.focus && moveMode) {
@@ -397,7 +411,7 @@ int main() {
             " x " + std::to_string(height) +
             " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
             "| Tile Size: " + std::to_string(tileSizeX) + " x " + std::to_string(tileSizeY) + "\n" +
-            "| Visible Face: " + std::to_string(GRAPHIC.faceCount) +
+            "| Clip Face: " + std::to_string(GRAPHIC.clip2Count) +
             " / " + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );
