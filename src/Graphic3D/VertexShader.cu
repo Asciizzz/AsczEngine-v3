@@ -46,7 +46,7 @@ void VertexShader::createRuntimeFaces() {
 
 void VertexShader::frustumCulling() {
     Graphic3D &grphic = Graphic3D::instance();
-    Mesh3D &mesh = grphic.mesh;
+    Camera3D &camera = grphic.camera;
 
     cudaMemset(grphic.d_cullCounter, 0, sizeof(ULLInt));
 
@@ -65,7 +65,9 @@ void VertexShader::frustumCulling() {
         grphic.cullFaces.tu, grphic.cullFaces.tv,
         grphic.cullFaces.nx, grphic.cullFaces.ny, grphic.cullFaces.nz,
         grphic.cullFaces.cr, grphic.cullFaces.cg, grphic.cullFaces.cb, grphic.cullFaces.ca,
-        grphic.d_cullCounter
+        grphic.d_cullCounter,
+
+        camera.plane
     );
     cudaDeviceSynchronize();
 
@@ -235,7 +237,9 @@ __global__ void frustumCullingKernel(
     float *cullTu, float *cullTv,
     float *cullNx, float *cullNy, float *cullNz,
     float *cullCr, float *cullCg, float *cullCb, float *cullCa,
-    ULLInt *cullCounter
+    ULLInt *cullCounter,
+
+    Plane3D plane
 ) {
     ULInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= faceCounter) return;
@@ -243,6 +247,132 @@ __global__ void frustumCullingKernel(
     ULInt fIdx0 = fIdx * 3;
     ULInt fIdx1 = fIdx * 3 + 1;
     ULInt fIdx2 = fIdx * 3 + 2;
+
+    Vec4f rtSs[3] = {
+        Vec4f(runtimeSx[fIdx0], runtimeSy[fIdx0], runtimeSz[fIdx0], runtimeSw[fIdx0]),
+        Vec4f(runtimeSx[fIdx1], runtimeSy[fIdx1], runtimeSz[fIdx1], runtimeSw[fIdx1]),
+        Vec4f(runtimeSx[fIdx2], runtimeSy[fIdx2], runtimeSz[fIdx2], runtimeSw[fIdx2])
+    };
+    Vec3f rtWs[3] = {
+        Vec3f(runtimeWx[fIdx0], runtimeWy[fIdx0], runtimeWz[fIdx0]),
+        Vec3f(runtimeWx[fIdx1], runtimeWy[fIdx1], runtimeWz[fIdx1]),
+        Vec3f(runtimeWx[fIdx2], runtimeWy[fIdx2], runtimeWz[fIdx2])
+    };
+    Vec2f rtTs[3] = {
+        Vec2f(runtimeTu[fIdx0], runtimeTv[fIdx0]),
+        Vec2f(runtimeTu[fIdx1], runtimeTv[fIdx1]),
+        Vec2f(runtimeTu[fIdx2], runtimeTv[fIdx2])
+    };
+    Vec3f rtNs[3] = {
+        Vec3f(runtimeNx[fIdx0], runtimeNy[fIdx0], runtimeNz[fIdx0]),
+        Vec3f(runtimeNx[fIdx1], runtimeNy[fIdx1], runtimeNz[fIdx1]),
+        Vec3f(runtimeNx[fIdx2], runtimeNy[fIdx2], runtimeNz[fIdx2])
+    };
+    Vec4f rtCs[3] = {
+        Vec4f(runtimeCr[fIdx0], runtimeCg[fIdx0], runtimeCb[fIdx0], runtimeCa[fIdx0]),
+        Vec4f(runtimeCr[fIdx1], runtimeCg[fIdx1], runtimeCb[fIdx1], runtimeCa[fIdx1]),
+        Vec4f(runtimeCr[fIdx2], runtimeCg[fIdx2], runtimeCb[fIdx2], runtimeCa[fIdx2])
+    };
+
+    // Everything will be interpolated
+    Vec4f newSs[4];
+    Vec3f newWs[4];
+    Vec2f newTs[4];
+    Vec3f newNs[4];
+    Vec4f newCs[4];
+
+    int newVcount = 0;
+
+    /* Explaination
+
+    We will go AB, BC, CA, with the first vertices being the anchor
+
+    Both in front: append A
+    Both in back: ignore
+    A in front, B in back: append A and intersect AB
+    B in front, A in back: append intersection
+    */
+
+    for (int a = 0; a < 3; a++) {
+        int b = (a + 1) % 3;
+
+        // Find plane side
+        float sideA = plane.equation(rtWs[a]);
+        float sideB = plane.equation(rtWs[b]);
+
+        if (sideA < 0 && sideB < 0) continue;
+
+        if (sideA >= 0 && sideB >= 0) {
+            newSs[newVcount] = rtSs[a];
+            newWs[newVcount] = rtWs[a];
+            newTs[newVcount] = rtTs[a];
+            newNs[newVcount] = rtNs[a];
+            newCs[newVcount] = rtCs[a];
+            newVcount++;
+            continue;
+        }
+
+        // Find intersection
+        float tFact = -sideA / (sideB - sideA);
+
+        Vec4f s = rtSs[a] + (rtSs[b] - rtSs[a]) * tFact;
+        Vec3f w = rtWs[a] + (rtWs[b] - rtWs[a]) * tFact;
+        Vec2f t = rtTs[a] + (rtTs[b] - rtTs[a]) * tFact;
+        Vec3f n = rtNs[a] + (rtNs[b] - rtNs[a]) * tFact;
+        Vec4f c = rtCs[a] + (rtCs[b] - rtCs[a]) * tFact;
+
+        if (sideA > 0) {
+            newSs[newVcount] = rtSs[a];
+            newWs[newVcount] = rtWs[a];
+            newTs[newVcount] = rtTs[a];
+            newNs[newVcount] = rtNs[a];
+            newCs[newVcount] = rtCs[a];
+            newVcount++;
+            newSs[newVcount] = s;
+            newWs[newVcount] = w;
+            newTs[newVcount] = t;
+            newNs[newVcount] = n;
+            newCs[newVcount] = c;
+            newVcount++;
+        } else {
+            newSs[newVcount] = s;
+            newWs[newVcount] = w;
+            newTs[newVcount] = t;
+            newNs[newVcount] = n;
+            newCs[newVcount] = c;
+            newVcount++;
+        }
+    }
+
+    // If 4 point: create 2 faces A B C, A C D
+    for (int i = 0; i < newVcount - 2; i++) {
+        ULInt idx0 = atomicAdd(cullCounter, 1) * 3;
+        ULInt idx1 = idx0 + 1;
+        ULInt idx2 = idx0 + 2;
+
+        cullSx[idx0] = newSs[0].x; cullSx[idx1] = newSs[i + 1].x; cullSx[idx2] = newSs[i + 2].x;
+        cullSy[idx0] = newSs[0].y; cullSy[idx1] = newSs[i + 1].y; cullSy[idx2] = newSs[i + 2].y;
+        cullSz[idx0] = newSs[0].z; cullSz[idx1] = newSs[i + 1].z; cullSz[idx2] = newSs[i + 2].z;
+        cullSw[idx0] = newSs[0].w; cullSw[idx1] = newSs[i + 1].w; cullSw[idx2] = newSs[i + 2].w;
+
+        cullWx[idx0] = newWs[0].x; cullWx[idx1] = newWs[i + 1].x; cullWx[idx2] = newWs[i + 2].x;
+        cullWy[idx0] = newWs[0].y; cullWy[idx1] = newWs[i + 1].y; cullWy[idx2] = newWs[i + 2].y;
+        cullWz[idx0] = newWs[0].z; cullWz[idx1] = newWs[i + 1].z; cullWz[idx2] = newWs[i + 2].z;
+
+        cullTu[idx0] = newTs[0].x; cullTu[idx1] = newTs[i + 1].x; cullTu[idx2] = newTs[i + 2].x;
+        cullTv[idx0] = newTs[0].y; cullTv[idx1] = newTs[i + 1].y; cullTv[idx2] = newTs[i + 2].y;
+
+        cullNx[idx0] = newNs[0].x; cullNx[idx1] = newNs[i + 1].x; cullNx[idx2] = newNs[i + 2].x;
+        cullNy[idx0] = newNs[0].y; cullNy[idx1] = newNs[i + 1].y; cullNy[idx2] = newNs[i + 2].y;
+        cullNz[idx0] = newNs[0].z; cullNz[idx1] = newNs[i + 1].z; cullNz[idx2] = newNs[i + 2].z;
+
+        cullCr[idx0] = newCs[0].x; cullCr[idx1] = newCs[i + 1].x; cullCr[idx2] = newCs[i + 2].x;
+        cullCg[idx0] = newCs[0].y; cullCg[idx1] = newCs[i + 1].y; cullCg[idx2] = newCs[i + 2].y;
+        cullCb[idx0] = newCs[0].z; cullCb[idx1] = newCs[i + 1].z; cullCb[idx2] = newCs[i + 2].z;
+        cullCa[idx0] = newCs[0].w; cullCa[idx1] = newCs[i + 1].w; cullCa[idx2] = newCs[i + 2].w;
+    }
+
+    return;
 
     // For the time being we just gonna copy the face
     ULInt idx0 = atomicAdd(cullCounter, 1) * 3;

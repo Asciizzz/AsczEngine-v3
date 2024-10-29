@@ -12,32 +12,6 @@ have a correct perspective correction.
 
 */
 
-struct Plane { // Ax + By + Cz + D = 0
-    float a, b, c, d;
-
-    __device__ Plane(Vec3f v1, Vec3f v2, Vec3f v3) {
-        Vec3f n = (v2 - v1) & (v3 - v1);
-        n.norm();
-        a = n.x;
-        b = n.y;
-        c = n.z;
-        d = -(a * v1.x + b * v1.y + c * v1.z);
-    }
-
-    __device__ float equation(Vec3f v) {
-        return a * v.x + b * v.y + c * v.z + d;
-    }
-};
-
-struct Vertex {
-    Vec4f screen;
-    Vec3f ndc;
-    Vec3f world;
-    Vec2f texture;
-    Vec3f normal;
-    Vec4f color;
-};
-
 class VertexShader {
 public:
     // Render pipeline
@@ -85,7 +59,9 @@ __global__ void frustumCullingKernel(
     float *cullTu, float *cullTv,
     float *cullNx, float *cullNy, float *cullNz,
     float *cullCr, float *cullCg, float *cullCb, float *cullCa,
-    ULLInt *cullCounter
+    ULLInt *cullCounter,
+
+    Plane3D plane
 );
 
 // Tile-based depth map creation

@@ -1,12 +1,14 @@
 #ifndef CAMERA3D_CUH
 #define CAMERA3D_CUH
 
-#include <Matrix.cuh>
+// #include <Matrix.cuh>
 #include <string>
+
+#include <Plane3D.cuh>
 
 class Camera3D {
 public:
-    Camera3D();
+    Camera3D() {};
 
     // Some camera settings
     float mSens = 0.1f;
@@ -33,6 +35,10 @@ public:
 
     // BETA: movement
     Vec3f vel;
+
+    // BETA: camera plane
+    Plane3D plane;
+    void updatePlane();
 
     // Debug
     std::string data();

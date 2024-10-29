@@ -1,7 +1,5 @@
 #include <Camera3D.cuh>
 
-Camera3D::Camera3D() {}
-
 void Camera3D::restrictRot() {
     if (rot.x <= -M_PI_2) rot.x = -M_PI_2 + 0.001;
     else if (rot.x >= M_PI_2) rot.x = M_PI_2 - 0.001;
@@ -63,6 +61,12 @@ void Camera3D::updateMVP() {
     updateProjection();
 
     mvp = projection * view;
+
+    updatePlane(); // BETA: camera plane
+}
+
+void Camera3D::updatePlane() {
+    plane = Plane3D(forward, pos + forward * near);
 }
 
 // Debug
