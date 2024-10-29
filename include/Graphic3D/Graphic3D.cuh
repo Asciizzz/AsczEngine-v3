@@ -72,16 +72,6 @@ public:
     void resizeRuntimeFaces();
 
     // For clipped  faces
-
-    /* Explaination:
-
-    We will perform clipping on each plane of the frustum
-    clip 1 will be the input for clip 2
-    clip 2 will then be the input for the next clip 1
-    and so on until the last frustum plane
-    
-    */
-
     ULLInt clip1Count, clip2Count;
     ULLInt *d_clip1Count, *d_clip2Count;
     Face3D clip1, clip2;
