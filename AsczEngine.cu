@@ -90,6 +90,7 @@ int main() {
     }
 
     GRAPHIC.mallocRuntimeFaces();
+    GRAPHIC.mallocCulledFaces();
 
     std::string texturePath = "";
     std::ifstream("assets/cfg/texture.txt") >> texturePath;
@@ -337,6 +338,7 @@ int main() {
         // Vertex Shader
         VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
+        VertexShader::frustumCulling();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 

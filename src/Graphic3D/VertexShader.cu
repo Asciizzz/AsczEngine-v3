@@ -22,7 +22,7 @@ void VertexShader::createRuntimeFaces() {
 
     cudaMemset(grphic.d_faceCounter, 0, sizeof(ULLInt));
 
-    size_t gridSize = (mesh.faces.size / 3 + 256 - 1) / 256;
+    size_t gridSize = (mesh.faces.size / 3 + 255) / 256;
 
     createRuntimeFacesKernel<<<gridSize, 256>>>(
         mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
@@ -44,6 +44,34 @@ void VertexShader::createRuntimeFaces() {
     cudaMemcpy(&grphic.faceCounter, grphic.d_faceCounter, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
+void VertexShader::frustumCulling() {
+    Graphic3D &grphic = Graphic3D::instance();
+    Mesh3D &mesh = grphic.mesh;
+
+    cudaMemset(grphic.d_cullCounter, 0, sizeof(ULLInt));
+
+    size_t gridSize = (grphic.faceCounter + 255) / 256;
+
+    frustumCullingKernel<<<gridSize, 256>>>(
+        grphic.rtFaces.sx, grphic.rtFaces.sy, grphic.rtFaces.sz, grphic.rtFaces.sw,
+        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
+        grphic.rtFaces.tu, grphic.rtFaces.tv,
+        grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
+        grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
+        grphic.faceCounter,
+
+        grphic.cullFaces.sx, grphic.cullFaces.sy, grphic.cullFaces.sz, grphic.cullFaces.sw,
+        grphic.cullFaces.wx, grphic.cullFaces.wy, grphic.cullFaces.wz,
+        grphic.cullFaces.tu, grphic.cullFaces.tv,
+        grphic.cullFaces.nx, grphic.cullFaces.ny, grphic.cullFaces.nz,
+        grphic.cullFaces.cr, grphic.cullFaces.cg, grphic.cullFaces.cb, grphic.cullFaces.ca,
+        grphic.d_cullCounter
+    );
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(&grphic.cullCounter, grphic.d_cullCounter, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+}
+
 void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
@@ -52,23 +80,22 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // Split the faces into chunks
-    size_t chunkNum = (grphic.faceCounter + grphic.faceChunkSize - 1) / grphic.faceChunkSize;
+    size_t chunkNum = (grphic.cullCounter + grphic.faceChunkSize - 1) 
+                    /  grphic.faceChunkSize;
 
     dim3 blockSize(16, 32);
     for (size_t i = 0; i < chunkNum; i++) {
         size_t faceOffset = grphic.faceChunkSize * i;
 
         size_t curFaceCount = (i == chunkNum - 1) ?
-            grphic.faceCounter - faceOffset : grphic.faceChunkSize;
+            grphic.cullCounter - faceOffset : grphic.faceChunkSize;
         size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
         size_t blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
-            grphic.rtFaces.sx,
-            grphic.rtFaces.sy,
-            grphic.rtFaces.sz,
-            grphic.rtFaces.sw,
+            grphic.cullFaces.sx, grphic.cullFaces.sy,
+            grphic.cullFaces.sz, grphic.cullFaces.sw,
             curFaceCount, faceOffset,
 
             buffer.active, buffer.depth, buffer.faceID,
@@ -86,11 +113,12 @@ void VertexShader::rasterization() {
     Buffer3D &buffer = grphic.buffer;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        grphic.rtFaces.sw,
-        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
-        grphic.rtFaces.tu, grphic.rtFaces.tv,
-        grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
-        grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
+        grphic.cullFaces.sw,
+        grphic.cullFaces.wx, grphic.cullFaces.wy, grphic.cullFaces.wz,
+        grphic.cullFaces.tu, grphic.cullFaces.tv,
+        grphic.cullFaces.nx, grphic.cullFaces.ny, grphic.cullFaces.nz,
+        grphic.cullFaces.cr, grphic.cullFaces.cg, grphic.cullFaces.cb, grphic.cullFaces.ca,
+
         buffer.active, buffer.faceID,
         buffer.bary.x, buffer.bary.y, buffer.bary.z,
         buffer.world.x, buffer.world.y, buffer.world.z,
@@ -118,28 +146,6 @@ __global__ void cameraProjectionKernel(
     screenY[i] = t4.y;
     screenZ[i] = t4.z;
     screenW[i] = t4.w;
-}
-
-// A bunch of placeholder functions
-struct Intersect {
-    bool near = false, far = false;
-    bool left = false, right = false;
-    bool up = false, down = false;
-};
-
-__device__ Intersect intersect(Vec4f s1, Vec4f s2) {
-    Intersect inter;
-
-    if ((s1.z < -s1.w && s2.z > -s2.w) || (s1.z > -s1.w && s2.z < -s2.w)) inter.near = true;
-    if ((s1.z < s1.w && s2.z > s2.w) || (s1.z > s1.w && s2.z < s2.w)) inter.far = true;
-
-    if ((s1.x < -s1.w && s2.x > -s2.w) || (s1.x > -s1.w && s2.x < -s2.w)) inter.left = true;
-    if ((s1.x < s1.w && s2.x > s2.w) || (s1.x > s1.w && s2.x < s2.w)) inter.right = true;
-
-    if ((s1.y < -s1.w && s2.y > -s2.w) || (s1.y > -s1.w && s2.y < -s2.w)) inter.down = true;
-    if ((s1.y < s1.w && s2.y > s2.w) || (s1.y > s1.w && s2.y < s2.w)) inter.up = true;
-
-    return inter;
 }
 
 // Create runtime faces
@@ -189,66 +195,6 @@ __global__ void createRuntimeFacesKernel(
     bool allNear = near[0] && near[1] && near[2];
     if (allLeft || allRight || allUp || allDown || allFar || allNear) return;
 
-    // Vec3f ndcVertices[8] = {
-    //     Vec3f(1, 1, 1), Vec3f(-1, 1, 1), Vec3f(-1, -1, 1), Vec3f(1, -1, 1),
-    //     Vec3f(1, 1, -1), Vec3f(-1, 1, -1), Vec3f(-1, -1, -1), Vec3f(1, -1, -1)
-    // };
-    // int edges[12][2] = {
-    //     {0, 1}, {1, 2}, {2, 3}, {3, 0},     // Front face
-    //     {4, 5}, {5, 6}, {6, 7}, {7, 4},     // Back face
-    //     {0, 4}, {1, 5}, {2, 6}, {3, 7}      // Connecting edges
-    // };
-
-    // Vec4f screens[3] = {
-    //     Vec4f(screenX[fw[0]], screenY[fw[0]], screenZ[fw[0]], screenW[fw[0]]),
-    //     Vec4f(screenX[fw[1]], screenY[fw[1]], screenZ[fw[1]], screenW[fw[1]]),
-    //     Vec4f(screenX[fw[2]], screenY[fw[2]], screenZ[fw[2]], screenW[fw[2]])
-    // };
-    // Vec3f ndcs[3] = {
-    //     screens[0].toVec3f(),
-    //     screens[1].toVec3f(),
-    //     screens[2].toVec3f()
-    // };
-    // Plane plane = Plane(ndcs[0], ndcs[1], ndcs[2]);
-
-    // Vec3f polygon[6];
-    // int polyCount = 0;
-    // float a = plane.a, b = plane.b, c = plane.c, d = plane.d;
-
-    // Vec3f polyCenter;
-    // for (int i = 0; i < 12; i++) {
-    //     // Get endpoints of the edge
-    //     Vec3f v_i = ndcVertices[edges[i][0]];
-    //     Vec3f v_j = ndcVertices[edges[i][1]];
-
-    //     // Find the plane side of each vertex
-    //     float Fi = a * v_i.x + b * v_i.y + c * v_i.z + d;
-    //     float Fj = a * v_j.x + b * v_j.y + c * v_j.z + d;
-
-    //     // Check if edge crosses the plane
-    //     if (Fi * Fj < 0) {
-    //         // Find the intersection point
-    //         float t = Fi / (Fi - Fj);
-    //         Vec3f v = v_i * (1 - t) + v_j * t;
-    //         polygon[polyCount++] = v;
-
-    //         polyCenter += v;
-    //     }
-    // }
-    // polyCenter /= polyCount;
-
-    // // Sort the vertices on a clockwise order
-    // Vec3f temp;
-    // for (int i = 0; i < polyCount; i++)
-    // for (int j = i + 1; j < polyCount; j++) {
-    //     if (atan2(polygon[i].y - polyCenter.y, polygon[i].x - polyCenter.x) >
-    //         atan2(polygon[j].y - polyCenter.y, polygon[j].x - polyCenter.x)) {
-    //         temp = polygon[i];
-    //         polygon[i] = polygon[j];
-    //         polygon[j] = temp;
-    //     }
-    // }
-
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
     ULLInt idx2 = idx0 + 2;
@@ -273,6 +219,56 @@ __global__ void createRuntimeFacesKernel(
     runtimeCg[idx0] = colorY[fw[0]]; runtimeCg[idx1] = colorY[fw[1]]; runtimeCg[idx2] = colorY[fw[2]];
     runtimeCb[idx0] = colorZ[fw[0]]; runtimeCb[idx1] = colorZ[fw[1]]; runtimeCb[idx2] = colorZ[fw[2]];
     runtimeCa[idx0] = colorW[fw[0]]; runtimeCa[idx1] = colorW[fw[1]]; runtimeCa[idx2] = colorW[fw[2]];
+}
+
+// Frustum culling
+__global__ void frustumCullingKernel(
+    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw,
+    const float *runtimeWx, const float *runtimeWy, const float *runtimeWz,
+    const float *runtimeTu, const float *runtimeTv,
+    const float *runtimeNx, const float *runtimeNy, const float *runtimeNz,
+    const float *runtimeCr, const float *runtimeCg, const float *runtimeCb, const float *runtimeCa,
+    ULLInt faceCounter,
+
+    float *cullSx, float *cullSy, float *cullSz, float *cullSw,
+    float *cullWx, float *cullWy, float *cullWz,
+    float *cullTu, float *cullTv,
+    float *cullNx, float *cullNy, float *cullNz,
+    float *cullCr, float *cullCg, float *cullCb, float *cullCa,
+    ULLInt *cullCounter
+) {
+    ULInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (fIdx >= faceCounter) return;
+
+    ULInt fIdx0 = fIdx * 3;
+    ULInt fIdx1 = fIdx * 3 + 1;
+    ULInt fIdx2 = fIdx * 3 + 2;
+
+    // For the time being we just gonna copy the face
+    ULInt idx0 = atomicAdd(cullCounter, 1) * 3;
+    ULInt idx1 = idx0 + 1;
+    ULInt idx2 = idx0 + 2;
+
+    cullSx[idx0] = runtimeSx[fIdx0]; cullSx[idx1] = runtimeSx[fIdx1]; cullSx[idx2] = runtimeSx[fIdx2];
+    cullSy[idx0] = runtimeSy[fIdx0]; cullSy[idx1] = runtimeSy[fIdx1]; cullSy[idx2] = runtimeSy[fIdx2];
+    cullSz[idx0] = runtimeSz[fIdx0]; cullSz[idx1] = runtimeSz[fIdx1]; cullSz[idx2] = runtimeSz[fIdx2];
+    cullSw[idx0] = runtimeSw[fIdx0]; cullSw[idx1] = runtimeSw[fIdx1]; cullSw[idx2] = runtimeSw[fIdx2];
+
+    cullWx[idx0] = runtimeWx[fIdx0]; cullWx[idx1] = runtimeWx[fIdx1]; cullWx[idx2] = runtimeWx[fIdx2];
+    cullWy[idx0] = runtimeWy[fIdx0]; cullWy[idx1] = runtimeWy[fIdx1]; cullWy[idx2] = runtimeWy[fIdx2];
+    cullWz[idx0] = runtimeWz[fIdx0]; cullWz[idx1] = runtimeWz[fIdx1]; cullWz[idx2] = runtimeWz[fIdx2];
+
+    cullTu[idx0] = runtimeTu[fIdx0]; cullTu[idx1] = runtimeTu[fIdx1]; cullTu[idx2] = runtimeTu[fIdx2];
+    cullTv[idx0] = runtimeTv[fIdx0]; cullTv[idx1] = runtimeTv[fIdx1]; cullTv[idx2] = runtimeTv[fIdx2];
+
+    cullNx[idx0] = runtimeNx[fIdx0]; cullNx[idx1] = runtimeNx[fIdx1]; cullNx[idx2] = runtimeNx[fIdx2];
+    cullNy[idx0] = runtimeNy[fIdx0]; cullNy[idx1] = runtimeNy[fIdx1]; cullNy[idx2] = runtimeNy[fIdx2];
+    cullNz[idx0] = runtimeNz[fIdx0]; cullNz[idx1] = runtimeNz[fIdx1]; cullNz[idx2] = runtimeNz[fIdx2];
+
+    cullCr[idx0] = runtimeCr[fIdx0]; cullCr[idx1] = runtimeCr[fIdx1]; cullCr[idx2] = runtimeCr[fIdx2];
+    cullCg[idx0] = runtimeCg[fIdx0]; cullCg[idx1] = runtimeCg[fIdx1]; cullCg[idx2] = runtimeCg[fIdx2];
+    cullCb[idx0] = runtimeCb[fIdx0]; cullCb[idx1] = runtimeCb[fIdx1]; cullCb[idx2] = runtimeCb[fIdx2];
+    cullCa[idx0] = runtimeCa[fIdx0]; cullCa[idx1] = runtimeCa[fIdx1]; cullCa[idx2] = runtimeCa[fIdx2];
 }
 
 // Depth map creation

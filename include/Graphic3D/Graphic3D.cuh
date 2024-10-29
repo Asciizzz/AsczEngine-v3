@@ -71,6 +71,15 @@ public:
     void freeRuntimeFaces();
     void resizeRuntimeFaces();
 
+    // For culled faces
+    ULLInt cullCounter;
+    ULLInt *d_cullCounter;
+    Face3D cullFaces;
+
+    void mallocCulledFaces();
+    void freeCulledFaces();
+    void resizeCulledFaces();
+
     // Face stream for chunking
 
     // Camera3D and Buffer3D

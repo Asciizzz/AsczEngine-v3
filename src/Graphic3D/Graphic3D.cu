@@ -62,6 +62,7 @@ void Graphic3D::free() {
     mesh.free();
     buffer.free();
     freeRuntimeFaces();
+    freeCulledFaces();
 
     freeTexture();
     freeShadowMap();
@@ -70,8 +71,6 @@ void Graphic3D::free() {
 // Graphic faces (runtime)
 void Graphic3D::mallocRuntimeFaces() {
     cudaMalloc(&d_faceCounter, sizeof(ULLInt));
-    // In the worst case scenario, each face when culled can be split into 4 faces
-    // DANGER: I AM SO ABSOLUTELY WRONG, IT CAN BE EVEN WORSE
     rtFaces.malloc(mesh.faces.size * 4);
 }
 void Graphic3D::freeRuntimeFaces() {
@@ -81,6 +80,19 @@ void Graphic3D::freeRuntimeFaces() {
 void Graphic3D::resizeRuntimeFaces() {
     freeRuntimeFaces();
     mallocRuntimeFaces();
+}
+
+void Graphic3D::mallocCulledFaces() {
+    cudaMalloc(&d_cullCounter, sizeof(ULLInt));
+    cullFaces.malloc(mesh.faces.size * 2);
+}
+void Graphic3D::freeCulledFaces() {
+    if (d_cullCounter) cudaFree(d_cullCounter);
+    cullFaces.free();
+}
+void Graphic3D::resizeCulledFaces() {
+    freeCulledFaces();
+    mallocCulledFaces();
 }
 
 // =========================================================================

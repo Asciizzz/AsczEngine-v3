@@ -23,6 +23,19 @@ struct Plane { // Ax + By + Cz + D = 0
         c = n.z;
         d = -(a * v1.x + b * v1.y + c * v1.z);
     }
+
+    __device__ float equation(Vec3f v) {
+        return a * v.x + b * v.y + c * v.z + d;
+    }
+};
+
+struct Vertex {
+    Vec4f screen;
+    Vec3f ndc;
+    Vec3f world;
+    Vec2f texture;
+    Vec3f normal;
+    Vec4f color;
 };
 
 class VertexShader {
@@ -30,6 +43,7 @@ public:
     // Render pipeline
     static void cameraProjection();
     static void createRuntimeFaces();
+    static void frustumCulling();
     static void createDepthMap();
     static void rasterization();
 };
@@ -56,6 +70,22 @@ __global__ void createRuntimeFacesKernel(
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
     float *runtimeCr, float *runtimeCg, float *runtimeCb, float *runtimeCa,
     ULLInt *faceCounter
+);
+
+__global__ void frustumCullingKernel(
+    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw,
+    const float *runtimeWx, const float *runtimeWy, const float *runtimeWz,
+    const float *runtimeTu, const float *runtimeTv,
+    const float *runtimeNx, const float *runtimeNy, const float *runtimeNz,
+    const float *runtimeCr, const float *runtimeCg, const float *runtimeCb, const float *runtimeCa,
+    ULLInt faceCounter,
+
+    float *cullSx, float *cullSy, float *cullSz, float *cullSw,
+    float *cullWx, float *cullWy, float *cullWz,
+    float *cullTu, float *cullTv,
+    float *cullNx, float *cullNy, float *cullNz,
+    float *cullCr, float *cullCg, float *cullCb, float *cullCa,
+    ULLInt *cullCounter
 );
 
 // Tile-based depth map creation
