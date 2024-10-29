@@ -24,8 +24,9 @@
 # assets/Models/Shapes/Cube.obj .4 45 1 0 .4 0 -2
 # assets/Models/Shapes/Cube.obj 1
 
-assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
+# assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
 # assets/Models/Anime/Miyu.obj 2
+assets/Models/Anime/MalevolentShrine.obj 1
 
 # assets/Models/Other/Street.obj 1 0 0 0 0 4.2 0
 # assets/Models/City/Building001.obj 1 0 0 0 0 0 0

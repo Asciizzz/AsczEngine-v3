@@ -198,15 +198,16 @@ int main() {
         bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
         bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
         bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
-        bool k_q = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
-        bool k_e = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
-        bool k_t = sf::Keyboard::isKeyPressed(sf::Keyboard::T);
 
         bool k_w = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
         bool k_a = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
         bool k_s = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
         bool k_d = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
         bool k_space = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+
+        bool k_q = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
+        bool k_e = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
+        bool k_t = sf::Keyboard::isKeyPressed(sf::Keyboard::T);
 
         // Mouse movement => Look around
         if (CAMERA.focus) {
@@ -229,22 +230,10 @@ int main() {
 
         // Csgo perspective mode
         if (CAMERA.focus && !moveMode) {
-            // // Mouse Click = move forward
-            // float vel = 0;
-            // // Move forward/backward
-            // if (m_left && !m_right)      vel = 20;
-            // else if (m_right && !m_left) vel = -20;
-            // else                         vel = 0;
-            // // Move slower/faster
-            // if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
-            // else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
-            // // Update camera World pos
-            // CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
-
             float vel = CAMERA.velSpec;
+            // Hold ctrl to go slow, hold shift to go fast
             if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
             else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
-
             // Press W/S to move forward/backward
             if (k_w && !k_s) CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
             if (k_s && !k_w) CAMERA.pos -= CAMERA.forward * vel * FPS.dTimeSec;
