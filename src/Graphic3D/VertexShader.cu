@@ -67,7 +67,7 @@ void VertexShader::frustumCulling() {
         grphic.cullFaces.cr, grphic.cullFaces.cg, grphic.cullFaces.cb, grphic.cullFaces.ca,
         grphic.d_cullCounter,
 
-        camera.plane
+        camera.nearPlane
     );
     cudaDeviceSynchronize();
 
@@ -239,7 +239,7 @@ __global__ void frustumCullingKernel(
     float *cullCr, float *cullCg, float *cullCb, float *cullCa,
     ULLInt *cullCounter,
 
-    Plane3D plane
+    Plane3D nearPlane
 ) {
     ULInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= faceCounter) return;
@@ -297,8 +297,8 @@ __global__ void frustumCullingKernel(
         int b = (a + 1) % 3;
 
         // Find plane side
-        float sideA = plane.equation(rtWs[a]);
-        float sideB = plane.equation(rtWs[b]);
+        float sideA = nearPlane.equation(rtWs[a]);
+        float sideB = nearPlane.equation(rtWs[b]);
 
         if (sideA < 0 && sideB < 0) continue;
 

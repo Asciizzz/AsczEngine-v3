@@ -56,17 +56,24 @@ void Camera3D::updateProjection() {
 }
 
 void Camera3D::updateMVP() {
+    mvp = projection * view;
+}
+
+void Camera3D::update() {
     restrictRot();
+
+    // Model-View-Projection matrix
     updateView();
     updateProjection();
+    updateMVP();
 
-    mvp = projection * view;
-
-    updatePlane(); // BETA: camera plane
+    // Camera plane
+    updatePlane();
 }
 
 void Camera3D::updatePlane() {
-    plane = Plane3D(forward, pos + forward * near);
+    nearPlane = Plane3D(forward, pos + forward * near);
+    farPlane = Plane3D(forward * -1, pos + forward * far);
 }
 
 // Debug

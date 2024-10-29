@@ -29,15 +29,17 @@ public:
     float far = 43210;
     Mat4f projection;
     void updateProjection();
-
+    
     Mat4f mvp;
     void updateMVP();
+
+    void update();
 
     // BETA: movement
     Vec3f vel;
 
     // BETA: camera plane
-    Plane3D plane;
+    Plane3D nearPlane, farPlane;
     void updatePlane();
 
     // Debug

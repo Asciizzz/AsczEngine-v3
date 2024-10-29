@@ -217,7 +217,9 @@ int main() {
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
             CAMERA.rot.y += dMx * CAMERA.mSens * FPS.dTimeSec;
         }
-        CAMERA.updateMVP();
+
+        // Update camera
+        CAMERA.update();
 
         if (CAMERA.focus && !moveMode) {
             // Mouse Click = move forward
