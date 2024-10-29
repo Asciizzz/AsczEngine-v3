@@ -74,6 +74,26 @@ void Camera3D::update() {
 void Camera3D::updatePlane() {
     nearPlane = Plane3D(forward, pos + forward * near);
     farPlane = Plane3D(forward * -1, pos + forward * far);
+
+    /*
+    The right normal is basically just the forward vector rotated by fov/2 + 90 degrees.
+    */
+
+    Vec3f rightNormal = Vec3f::rotate(forward, Vec3f(), Vec3f(0, fov / 2 + M_PI_2, 0));
+    rightNormal.y = 0;
+    rightNormal.norm();
+    rightPlane = Plane3D(rightNormal, pos);
+
+    Vec3f leftNormal = Vec3f::rotate(forward, Vec3f(), Vec3f(0, -fov / 2 - M_PI_2, 0));
+    leftNormal.y = 0;
+    leftNormal.norm();
+    leftPlane = Plane3D(leftNormal, pos);
+
+    float fovY = 2 * atan(tan(fov / 2) / aspect);
+
+    // Same for up and down
+    Vec3f upNormal = Vec3f::rotate(forward, Vec3f(), Vec3f(fovY / 2, 0, 0));
+    upNormal.x = 0; upNormal.z = 0;
 }
 
 // Debug

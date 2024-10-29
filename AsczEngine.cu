@@ -90,7 +90,7 @@ int main() {
     }
 
     GRAPHIC.mallocRuntimeFaces();
-    GRAPHIC.mallocCulledFaces();
+    GRAPHIC.mallocClippedFaces();
 
     std::string texturePath = "";
     std::ifstream("assets/cfg/texture.txt") >> texturePath;
@@ -340,7 +340,7 @@ int main() {
         // Vertex Shader
         VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
-        VertexShader::frustumCulling();
+        VertexShader::frustumClipping();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
@@ -394,7 +394,7 @@ int main() {
             " x " + std::to_string(height) +
             " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
             "| Tile Size: " + std::to_string(tileSizeX) + " x " + std::to_string(tileSizeY) + "\n" +
-            "| Visible Face: " + std::to_string(GRAPHIC.faceCounter) +
+            "| Visible Face: " + std::to_string(GRAPHIC.faceCount) +
             " / " + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );

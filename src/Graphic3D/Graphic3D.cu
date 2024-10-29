@@ -62,7 +62,7 @@ void Graphic3D::free() {
     mesh.free();
     buffer.free();
     freeRuntimeFaces();
-    freeCulledFaces();
+    freeClippedFaces();
 
     freeTexture();
     freeShadowMap();
@@ -70,11 +70,11 @@ void Graphic3D::free() {
 
 // Graphic faces (runtime)
 void Graphic3D::mallocRuntimeFaces() {
-    cudaMalloc(&d_faceCounter, sizeof(ULLInt));
+    cudaMalloc(&d_faceCount, sizeof(ULLInt));
     rtFaces.malloc(mesh.faces.size);
 }
 void Graphic3D::freeRuntimeFaces() {
-    if (d_faceCounter) cudaFree(d_faceCounter);
+    if (d_faceCount) cudaFree(d_faceCount);
     rtFaces.free();
 }
 void Graphic3D::resizeRuntimeFaces() {
@@ -82,17 +82,23 @@ void Graphic3D::resizeRuntimeFaces() {
     mallocRuntimeFaces();
 }
 
-void Graphic3D::mallocCulledFaces() {
-    cudaMalloc(&d_cullCounter, sizeof(ULLInt));
-    cullFaces.malloc(mesh.faces.size * 2);
+void Graphic3D::mallocClippedFaces() {
+    cudaMalloc(&d_clip1Count, sizeof(ULLInt));
+    cudaMalloc(&d_clip2Count, sizeof(ULLInt));
+
+    clip1.malloc(mesh.faces.size * 16);
+    clip2.malloc(mesh.faces.size * 16);
 }
-void Graphic3D::freeCulledFaces() {
-    if (d_cullCounter) cudaFree(d_cullCounter);
-    cullFaces.free();
+void Graphic3D::freeClippedFaces() {
+    if (d_clip1Count) cudaFree(d_clip1Count);
+    if (d_clip2Count) cudaFree(d_clip2Count);
+
+    clip1.free();
+    clip2.free();
 }
-void Graphic3D::resizeCulledFaces() {
-    freeCulledFaces();
-    mallocCulledFaces();
+void Graphic3D::resizeClippedFaces() {
+    freeClippedFaces();
+    mallocClippedFaces();
 }
 
 // =========================================================================

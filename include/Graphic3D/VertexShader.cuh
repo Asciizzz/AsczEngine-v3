@@ -17,7 +17,7 @@ public:
     // Render pipeline
     static void cameraProjection();
     static void createRuntimeFaces();
-    static void frustumCulling();
+    static void frustumClipping();
     static void createDepthMap();
     static void rasterization();
 };
@@ -46,20 +46,21 @@ __global__ void createRuntimeFacesKernel(
     ULLInt *faceCounter
 );
 
-__global__ void frustumCullingKernel(
-    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw,
-    const float *runtimeWx, const float *runtimeWy, const float *runtimeWz,
-    const float *runtimeTu, const float *runtimeTv,
-    const float *runtimeNx, const float *runtimeNy, const float *runtimeNz,
-    const float *runtimeCr, const float *runtimeCg, const float *runtimeCb, const float *runtimeCa,
-    ULLInt faceCounter,
+// Frustum clipping
+__global__ void clipFrustumKernel(
+    const float *preSx, const float *preSy, const float *preSz, const float *preSw,
+    const float *preWx, const float *preWy, const float *preWz,
+    const float *preTu, const float *preTv,
+    const float *preNx, const float *preNy, const float *preNz,
+    const float *preCr, const float *preCg, const float *preCb, const float *preCa,
+    ULLInt preCounter,
 
-    float *cullSx, float *cullSy, float *cullSz, float *cullSw,
-    float *cullWx, float *cullWy, float *cullWz,
-    float *cullTu, float *cullTv,
-    float *cullNx, float *cullNy, float *cullNz,
-    float *cullCr, float *cullCg, float *cullCb, float *cullCa,
-    ULLInt *cullCounter,
+    float *postSx, float *postSy, float *postSz, float *postSw,
+    float *postWx, float *postWy, float *postWz,
+    float *postTu, float *postTv,
+    float *postNx, float *postNy, float *postNz,
+    float *postCr, float *postCg, float *postCb, float *postCa,
+    ULLInt *postCounter,
 
     Plane3D plane
 );

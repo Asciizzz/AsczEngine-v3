@@ -20,7 +20,7 @@ void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
 
-    cudaMemset(grphic.d_faceCounter, 0, sizeof(ULLInt));
+    cudaMemset(grphic.d_faceCount, 0, sizeof(ULLInt));
 
     size_t gridSize = (mesh.faces.size / 3 + 255) / 256;
 
@@ -37,41 +37,65 @@ void VertexShader::createRuntimeFaces() {
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.d_faceCounter
+        grphic.d_faceCount
     );
     cudaDeviceSynchronize();
 
-    cudaMemcpy(&grphic.faceCounter, grphic.d_faceCounter, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grphic.faceCount, grphic.d_faceCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
-void VertexShader::frustumCulling() {
+void VertexShader::frustumClipping() {
     Graphic3D &grphic = Graphic3D::instance();
     Camera3D &camera = grphic.camera;
 
-    cudaMemset(grphic.d_cullCounter, 0, sizeof(ULLInt));
+    cudaMemset(grphic.d_clip1Count, 0, sizeof(ULLInt));
+    cudaMemset(grphic.d_clip2Count, 0, sizeof(ULLInt));
 
-    size_t gridSize = (grphic.faceCounter + 255) / 256;
+    size_t gridSize = (grphic.faceCount + 255) / 256;
 
-    frustumCullingKernel<<<gridSize, 256>>>(
+    clipFrustumKernel<<<gridSize, 256>>>(
         grphic.rtFaces.sx, grphic.rtFaces.sy, grphic.rtFaces.sz, grphic.rtFaces.sw,
         grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.faceCounter,
+        grphic.faceCount,
 
-        grphic.cullFaces.sx, grphic.cullFaces.sy, grphic.cullFaces.sz, grphic.cullFaces.sw,
-        grphic.cullFaces.wx, grphic.cullFaces.wy, grphic.cullFaces.wz,
-        grphic.cullFaces.tu, grphic.cullFaces.tv,
-        grphic.cullFaces.nx, grphic.cullFaces.ny, grphic.cullFaces.nz,
-        grphic.cullFaces.cr, grphic.cullFaces.cg, grphic.cullFaces.cb, grphic.cullFaces.ca,
-        grphic.d_cullCounter,
+        grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
+        grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
+        grphic.clip1.tu, grphic.clip1.tv,
+        grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
+        grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
+        grphic.d_clip1Count,
 
         camera.nearPlane
     );
     cudaDeviceSynchronize();
 
-    cudaMemcpy(&grphic.cullCounter, grphic.d_cullCounter, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grphic.clip1Count, grphic.d_clip1Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+
+    size_t gridSizeNear = (grphic.clip1Count + 255) / 256;
+
+    clipFrustumKernel<<<gridSizeNear, 256>>>(
+        grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
+        grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
+        grphic.clip1.tu, grphic.clip1.tv,
+        grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
+        grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
+        grphic.clip1Count,
+
+        grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
+        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
+        grphic.clip2.tu, grphic.clip2.tv,
+        grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
+        grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
+        grphic.d_clip2Count,
+
+        camera.farPlane
+    );
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::createDepthMap() {
@@ -82,7 +106,7 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // Split the faces into chunks
-    size_t chunkNum = (grphic.cullCounter + grphic.faceChunkSize - 1) 
+    size_t chunkNum = (grphic.clip2Count + grphic.faceChunkSize - 1) 
                     /  grphic.faceChunkSize;
 
     dim3 blockSize(16, 32);
@@ -90,14 +114,14 @@ void VertexShader::createDepthMap() {
         size_t faceOffset = grphic.faceChunkSize * i;
 
         size_t curFaceCount = (i == chunkNum - 1) ?
-            grphic.cullCounter - faceOffset : grphic.faceChunkSize;
+            grphic.clip2Count - faceOffset : grphic.faceChunkSize;
         size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
         size_t blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
-            grphic.cullFaces.sx, grphic.cullFaces.sy,
-            grphic.cullFaces.sz, grphic.cullFaces.sw,
+            grphic.clip2.sx, grphic.clip2.sy,
+            grphic.clip2.sz, grphic.clip2.sw,
             curFaceCount, faceOffset,
 
             buffer.active, buffer.depth, buffer.faceID,
@@ -115,11 +139,11 @@ void VertexShader::rasterization() {
     Buffer3D &buffer = grphic.buffer;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        grphic.cullFaces.sw,
-        grphic.cullFaces.wx, grphic.cullFaces.wy, grphic.cullFaces.wz,
-        grphic.cullFaces.tu, grphic.cullFaces.tv,
-        grphic.cullFaces.nx, grphic.cullFaces.ny, grphic.cullFaces.nz,
-        grphic.cullFaces.cr, grphic.cullFaces.cg, grphic.cullFaces.cb, grphic.cullFaces.ca,
+        grphic.clip2.sw,
+        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
+        grphic.clip2.tu, grphic.clip2.tv,
+        grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
+        grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
 
         buffer.active, buffer.faceID,
         buffer.bary.x, buffer.bary.y, buffer.bary.z,
@@ -224,54 +248,54 @@ __global__ void createRuntimeFacesKernel(
 }
 
 // Frustum culling
-__global__ void frustumCullingKernel(
-    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw,
-    const float *runtimeWx, const float *runtimeWy, const float *runtimeWz,
-    const float *runtimeTu, const float *runtimeTv,
-    const float *runtimeNx, const float *runtimeNy, const float *runtimeNz,
-    const float *runtimeCr, const float *runtimeCg, const float *runtimeCb, const float *runtimeCa,
-    ULLInt faceCounter,
+__global__ void clipFrustumKernel(
+    const float *preSx, const float *preSy, const float *preSz, const float *preSw,
+    const float *preWx, const float *preWy, const float *preWz,
+    const float *preTu, const float *preTv,
+    const float *preNx, const float *preNy, const float *preNz,
+    const float *preCr, const float *preCg, const float *preCb, const float *preCa,
+    ULLInt preCounter,
 
-    float *cullSx, float *cullSy, float *cullSz, float *cullSw,
-    float *cullWx, float *cullWy, float *cullWz,
-    float *cullTu, float *cullTv,
-    float *cullNx, float *cullNy, float *cullNz,
-    float *cullCr, float *cullCg, float *cullCb, float *cullCa,
-    ULLInt *cullCounter,
+    float *postSx, float *postSy, float *postSz, float *postSw,
+    float *postWx, float *postWy, float *postWz,
+    float *postTu, float *postTv,
+    float *postNx, float *postNy, float *postNz,
+    float *postCr, float *postCg, float *postCb, float *postCa,
+    ULLInt *postCounter,
 
-    Plane3D nearPlane
+    Plane3D plane
 ) {
-    ULInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (fIdx >= faceCounter) return;
+    ULInt preIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (preIdx >= preCounter) return;
 
-    ULInt fIdx0 = fIdx * 3;
-    ULInt fIdx1 = fIdx * 3 + 1;
-    ULInt fIdx2 = fIdx * 3 + 2;
+    ULInt preIdx0 = preIdx * 3;
+    ULInt preIdx1 = preIdx * 3 + 1;
+    ULInt preIdx2 = preIdx * 3 + 2;
 
     Vec4f rtSs[3] = {
-        Vec4f(runtimeSx[fIdx0], runtimeSy[fIdx0], runtimeSz[fIdx0], runtimeSw[fIdx0]),
-        Vec4f(runtimeSx[fIdx1], runtimeSy[fIdx1], runtimeSz[fIdx1], runtimeSw[fIdx1]),
-        Vec4f(runtimeSx[fIdx2], runtimeSy[fIdx2], runtimeSz[fIdx2], runtimeSw[fIdx2])
+        Vec4f(preSx[preIdx0], preSy[preIdx0], preSz[preIdx0], preSw[preIdx0]),
+        Vec4f(preSx[preIdx1], preSy[preIdx1], preSz[preIdx1], preSw[preIdx1]),
+        Vec4f(preSx[preIdx2], preSy[preIdx2], preSz[preIdx2], preSw[preIdx2])
     };
     Vec3f rtWs[3] = {
-        Vec3f(runtimeWx[fIdx0], runtimeWy[fIdx0], runtimeWz[fIdx0]),
-        Vec3f(runtimeWx[fIdx1], runtimeWy[fIdx1], runtimeWz[fIdx1]),
-        Vec3f(runtimeWx[fIdx2], runtimeWy[fIdx2], runtimeWz[fIdx2])
+        Vec3f(preWx[preIdx0], preWy[preIdx0], preWz[preIdx0]),
+        Vec3f(preWx[preIdx1], preWy[preIdx1], preWz[preIdx1]),
+        Vec3f(preWx[preIdx2], preWy[preIdx2], preWz[preIdx2])
     };
     Vec2f rtTs[3] = {
-        Vec2f(runtimeTu[fIdx0], runtimeTv[fIdx0]),
-        Vec2f(runtimeTu[fIdx1], runtimeTv[fIdx1]),
-        Vec2f(runtimeTu[fIdx2], runtimeTv[fIdx2])
+        Vec2f(preTu[preIdx0], preTv[preIdx0]),
+        Vec2f(preTu[preIdx1], preTv[preIdx1]),
+        Vec2f(preTu[preIdx2], preTv[preIdx2])
     };
     Vec3f rtNs[3] = {
-        Vec3f(runtimeNx[fIdx0], runtimeNy[fIdx0], runtimeNz[fIdx0]),
-        Vec3f(runtimeNx[fIdx1], runtimeNy[fIdx1], runtimeNz[fIdx1]),
-        Vec3f(runtimeNx[fIdx2], runtimeNy[fIdx2], runtimeNz[fIdx2])
+        Vec3f(preNx[preIdx0], preNy[preIdx0], preNz[preIdx0]),
+        Vec3f(preNx[preIdx1], preNy[preIdx1], preNz[preIdx1]),
+        Vec3f(preNx[preIdx2], preNy[preIdx2], preNz[preIdx2])
     };
     Vec4f rtCs[3] = {
-        Vec4f(runtimeCr[fIdx0], runtimeCg[fIdx0], runtimeCb[fIdx0], runtimeCa[fIdx0]),
-        Vec4f(runtimeCr[fIdx1], runtimeCg[fIdx1], runtimeCb[fIdx1], runtimeCa[fIdx1]),
-        Vec4f(runtimeCr[fIdx2], runtimeCg[fIdx2], runtimeCb[fIdx2], runtimeCa[fIdx2])
+        Vec4f(preCr[preIdx0], preCg[preIdx0], preCb[preIdx0], preCa[preIdx0]),
+        Vec4f(preCr[preIdx1], preCg[preIdx1], preCb[preIdx1], preCa[preIdx1]),
+        Vec4f(preCr[preIdx2], preCg[preIdx2], preCb[preIdx2], preCa[preIdx2])
     };
 
     // Everything will be interpolated
@@ -291,14 +315,17 @@ __global__ void frustumCullingKernel(
     Both in back: ignore
     A in front, B in back: append A and intersect AB
     B in front, A in back: append intersection
+
+    Note: front and back here are relative to the frustum plane
+    not to just the near plane
     */
 
     for (int a = 0; a < 3; a++) {
         int b = (a + 1) % 3;
 
         // Find plane side
-        float sideA = nearPlane.equation(rtWs[a]);
-        float sideB = nearPlane.equation(rtWs[b]);
+        float sideA = plane.equation(rtWs[a]);
+        float sideB = plane.equation(rtWs[b]);
 
         if (sideA < 0 && sideB < 0) continue;
 
@@ -346,59 +373,31 @@ __global__ void frustumCullingKernel(
 
     // If 4 point: create 2 faces A B C, A C D
     for (int i = 0; i < newVcount - 2; i++) {
-        ULInt idx0 = atomicAdd(cullCounter, 1) * 3;
+        ULInt idx0 = atomicAdd(postCounter, 1) * 3;
         ULInt idx1 = idx0 + 1;
         ULInt idx2 = idx0 + 2;
 
-        cullSx[idx0] = newSs[0].x; cullSx[idx1] = newSs[i + 1].x; cullSx[idx2] = newSs[i + 2].x;
-        cullSy[idx0] = newSs[0].y; cullSy[idx1] = newSs[i + 1].y; cullSy[idx2] = newSs[i + 2].y;
-        cullSz[idx0] = newSs[0].z; cullSz[idx1] = newSs[i + 1].z; cullSz[idx2] = newSs[i + 2].z;
-        cullSw[idx0] = newSs[0].w; cullSw[idx1] = newSs[i + 1].w; cullSw[idx2] = newSs[i + 2].w;
+        postSx[idx0] = newSs[0].x; postSx[idx1] = newSs[i + 1].x; postSx[idx2] = newSs[i + 2].x;
+        postSy[idx0] = newSs[0].y; postSy[idx1] = newSs[i + 1].y; postSy[idx2] = newSs[i + 2].y;
+        postSz[idx0] = newSs[0].z; postSz[idx1] = newSs[i + 1].z; postSz[idx2] = newSs[i + 2].z;
+        postSw[idx0] = newSs[0].w; postSw[idx1] = newSs[i + 1].w; postSw[idx2] = newSs[i + 2].w;
 
-        cullWx[idx0] = newWs[0].x; cullWx[idx1] = newWs[i + 1].x; cullWx[idx2] = newWs[i + 2].x;
-        cullWy[idx0] = newWs[0].y; cullWy[idx1] = newWs[i + 1].y; cullWy[idx2] = newWs[i + 2].y;
-        cullWz[idx0] = newWs[0].z; cullWz[idx1] = newWs[i + 1].z; cullWz[idx2] = newWs[i + 2].z;
+        postWx[idx0] = newWs[0].x; postWx[idx1] = newWs[i + 1].x; postWx[idx2] = newWs[i + 2].x;
+        postWy[idx0] = newWs[0].y; postWy[idx1] = newWs[i + 1].y; postWy[idx2] = newWs[i + 2].y;
+        postWz[idx0] = newWs[0].z; postWz[idx1] = newWs[i + 1].z; postWz[idx2] = newWs[i + 2].z;
 
-        cullTu[idx0] = newTs[0].x; cullTu[idx1] = newTs[i + 1].x; cullTu[idx2] = newTs[i + 2].x;
-        cullTv[idx0] = newTs[0].y; cullTv[idx1] = newTs[i + 1].y; cullTv[idx2] = newTs[i + 2].y;
+        postTu[idx0] = newTs[0].x; postTu[idx1] = newTs[i + 1].x; postTu[idx2] = newTs[i + 2].x;
+        postTv[idx0] = newTs[0].y; postTv[idx1] = newTs[i + 1].y; postTv[idx2] = newTs[i + 2].y;
 
-        cullNx[idx0] = newNs[0].x; cullNx[idx1] = newNs[i + 1].x; cullNx[idx2] = newNs[i + 2].x;
-        cullNy[idx0] = newNs[0].y; cullNy[idx1] = newNs[i + 1].y; cullNy[idx2] = newNs[i + 2].y;
-        cullNz[idx0] = newNs[0].z; cullNz[idx1] = newNs[i + 1].z; cullNz[idx2] = newNs[i + 2].z;
+        postNx[idx0] = newNs[0].x; postNx[idx1] = newNs[i + 1].x; postNx[idx2] = newNs[i + 2].x;
+        postNy[idx0] = newNs[0].y; postNy[idx1] = newNs[i + 1].y; postNy[idx2] = newNs[i + 2].y;
+        postNz[idx0] = newNs[0].z; postNz[idx1] = newNs[i + 1].z; postNz[idx2] = newNs[i + 2].z;
 
-        cullCr[idx0] = newCs[0].x; cullCr[idx1] = newCs[i + 1].x; cullCr[idx2] = newCs[i + 2].x;
-        cullCg[idx0] = newCs[0].y; cullCg[idx1] = newCs[i + 1].y; cullCg[idx2] = newCs[i + 2].y;
-        cullCb[idx0] = newCs[0].z; cullCb[idx1] = newCs[i + 1].z; cullCb[idx2] = newCs[i + 2].z;
-        cullCa[idx0] = newCs[0].w; cullCa[idx1] = newCs[i + 1].w; cullCa[idx2] = newCs[i + 2].w;
+        postCr[idx0] = newCs[0].x; postCr[idx1] = newCs[i + 1].x; postCr[idx2] = newCs[i + 2].x;
+        postCg[idx0] = newCs[0].y; postCg[idx1] = newCs[i + 1].y; postCg[idx2] = newCs[i + 2].y;
+        postCb[idx0] = newCs[0].z; postCb[idx1] = newCs[i + 1].z; postCb[idx2] = newCs[i + 2].z;
+        postCa[idx0] = newCs[0].w; postCa[idx1] = newCs[i + 1].w; postCa[idx2] = newCs[i + 2].w;
     }
-
-    return;
-
-    // For the time being we just gonna copy the face
-    ULInt idx0 = atomicAdd(cullCounter, 1) * 3;
-    ULInt idx1 = idx0 + 1;
-    ULInt idx2 = idx0 + 2;
-
-    cullSx[idx0] = runtimeSx[fIdx0]; cullSx[idx1] = runtimeSx[fIdx1]; cullSx[idx2] = runtimeSx[fIdx2];
-    cullSy[idx0] = runtimeSy[fIdx0]; cullSy[idx1] = runtimeSy[fIdx1]; cullSy[idx2] = runtimeSy[fIdx2];
-    cullSz[idx0] = runtimeSz[fIdx0]; cullSz[idx1] = runtimeSz[fIdx1]; cullSz[idx2] = runtimeSz[fIdx2];
-    cullSw[idx0] = runtimeSw[fIdx0]; cullSw[idx1] = runtimeSw[fIdx1]; cullSw[idx2] = runtimeSw[fIdx2];
-
-    cullWx[idx0] = runtimeWx[fIdx0]; cullWx[idx1] = runtimeWx[fIdx1]; cullWx[idx2] = runtimeWx[fIdx2];
-    cullWy[idx0] = runtimeWy[fIdx0]; cullWy[idx1] = runtimeWy[fIdx1]; cullWy[idx2] = runtimeWy[fIdx2];
-    cullWz[idx0] = runtimeWz[fIdx0]; cullWz[idx1] = runtimeWz[fIdx1]; cullWz[idx2] = runtimeWz[fIdx2];
-
-    cullTu[idx0] = runtimeTu[fIdx0]; cullTu[idx1] = runtimeTu[fIdx1]; cullTu[idx2] = runtimeTu[fIdx2];
-    cullTv[idx0] = runtimeTv[fIdx0]; cullTv[idx1] = runtimeTv[fIdx1]; cullTv[idx2] = runtimeTv[fIdx2];
-
-    cullNx[idx0] = runtimeNx[fIdx0]; cullNx[idx1] = runtimeNx[fIdx1]; cullNx[idx2] = runtimeNx[fIdx2];
-    cullNy[idx0] = runtimeNy[fIdx0]; cullNy[idx1] = runtimeNy[fIdx1]; cullNy[idx2] = runtimeNy[fIdx2];
-    cullNz[idx0] = runtimeNz[fIdx0]; cullNz[idx1] = runtimeNz[fIdx1]; cullNz[idx2] = runtimeNz[fIdx2];
-
-    cullCr[idx0] = runtimeCr[fIdx0]; cullCr[idx1] = runtimeCr[fIdx1]; cullCr[idx2] = runtimeCr[fIdx2];
-    cullCg[idx0] = runtimeCg[fIdx0]; cullCg[idx1] = runtimeCg[fIdx1]; cullCg[idx2] = runtimeCg[fIdx2];
-    cullCb[idx0] = runtimeCb[fIdx0]; cullCb[idx1] = runtimeCb[fIdx1]; cullCb[idx2] = runtimeCb[fIdx2];
-    cullCa[idx0] = runtimeCa[fIdx0]; cullCa[idx1] = runtimeCa[fIdx1]; cullCa[idx2] = runtimeCa[fIdx2];
 }
 
 // Depth map creation

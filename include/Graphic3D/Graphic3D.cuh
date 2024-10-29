@@ -9,7 +9,7 @@
 struct LightSrc {
     Vec3f dir = {0, 0, 1};
     float ambient = 0.1;
-    float specular = 1.4;
+    float specular = 1.1;
     Vec3f color = {1, 1, 1};
 
     std::string data() {
@@ -62,8 +62,8 @@ public:
     Mesh3D mesh;
 
     // For runtime faces
-    ULLInt faceCounter;
-    ULLInt *d_faceCounter;
+    ULLInt faceCount;
+    ULLInt *d_faceCount;
     size_t faceChunkSize = 5e5; // For chunking
     Face3D rtFaces;
 
@@ -71,14 +71,24 @@ public:
     void freeRuntimeFaces();
     void resizeRuntimeFaces();
 
-    // For culled faces
-    ULLInt cullCounter;
-    ULLInt *d_cullCounter;
-    Face3D cullFaces;
+    // For clipped  faces
 
-    void mallocCulledFaces();
-    void freeCulledFaces();
-    void resizeCulledFaces();
+    /* Explaination:
+
+    We will perform clipping on each plane of the frustum
+    clip 1 will be the input for clip 2
+    clip 2 will then be the input for the next clip 1
+    and so on until the last frustum plane
+    
+    */
+
+    ULLInt clip1Count, clip2Count;
+    ULLInt *d_clip1Count, *d_clip2Count;
+    Face3D clip1, clip2;
+
+    void mallocClippedFaces();
+    void freeClippedFaces();
+    void resizeClippedFaces();
 
     // Face stream for chunking
 
