@@ -30,3 +30,5 @@ assets/Models/Other/Stronghold.obj 1
 # assets/Models/Other/Street.obj 1 0 0 0 0 4.2 0
 
 # assets/Models/Shapes/Hollow.obj 100 0 0 0 0 100 0
+
+assets/Models/City/Building001.obj 1 0 0 0 0 0 0

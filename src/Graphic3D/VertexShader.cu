@@ -51,8 +51,8 @@ void VertexShader::frustumClipping() {
     cudaMemset(grphic.d_clip1Count, 0, sizeof(ULLInt));
     cudaMemset(grphic.d_clip2Count, 0, sizeof(ULLInt));
 
+    // Clip near plane
     size_t gridSize = (grphic.faceCount + 255) / 256;
-
     clipFrustumKernel<<<gridSize, 256>>>(
         grphic.rtFaces.sx, grphic.rtFaces.sy, grphic.rtFaces.sz, grphic.rtFaces.sw,
         grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
@@ -71,11 +71,10 @@ void VertexShader::frustumClipping() {
         camera.nearPlane
     );
     cudaDeviceSynchronize();
-
     cudaMemcpy(&grphic.clip1Count, grphic.d_clip1Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 
+    // Clip far plane
     size_t gridSizeNear = (grphic.clip1Count + 255) / 256;
-
     clipFrustumKernel<<<gridSizeNear, 256>>>(
         grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
         grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
@@ -94,7 +93,50 @@ void VertexShader::frustumClipping() {
         camera.farPlane
     );
     cudaDeviceSynchronize();
+    cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 
+    // Clip left plane
+    size_t gridSizeFar = (grphic.clip2Count + 255) / 256;
+    clipFrustumKernel<<<gridSizeFar, 256>>>(
+        grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
+        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
+        grphic.clip2.tu, grphic.clip2.tv,
+        grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
+        grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
+        grphic.clip2Count,
+
+        grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
+        grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
+        grphic.clip1.tu, grphic.clip1.tv,
+        grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
+        grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
+        grphic.d_clip1Count,
+
+        camera.leftPlane
+    );
+    cudaDeviceSynchronize();
+    cudaMemcpy(&grphic.clip1Count, grphic.d_clip1Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+
+    // Clip right plane
+    size_t gridSizeLeft = (grphic.clip1Count + 255) / 256;
+    clipFrustumKernel<<<gridSizeLeft, 256>>>(
+        grphic.clip1.sx, grphic.clip1.sy, grphic.clip1.sz, grphic.clip1.sw,
+        grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
+        grphic.clip1.tu, grphic.clip1.tv,
+        grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
+        grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
+        grphic.clip1Count,
+
+        grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
+        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
+        grphic.clip2.tu, grphic.clip2.tv,
+        grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
+        grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
+        grphic.d_clip2Count,
+
+        camera.rightPlane
+    );
+    cudaDeviceSynchronize();
     cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 

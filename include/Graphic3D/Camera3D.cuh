@@ -40,8 +40,8 @@ public:
 
     // BETA: camera plane
     Plane3D nearPlane, farPlane;
-    Plane3D upPlane, downPlane;
     Plane3D leftPlane, rightPlane;
+    Plane3D upPlane, downPlane;
     void updatePlane();
 
     // Debug
