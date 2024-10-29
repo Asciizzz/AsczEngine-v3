@@ -4,6 +4,7 @@
 
 void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
+    Camera3D &camera = grphic.camera;
     Mesh3D &mesh = grphic.mesh;
 
     cudaMemset(grphic.d_faceCount, 0, sizeof(ULLInt));
@@ -21,7 +22,9 @@ void VertexShader::createRuntimeFaces() {
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.d_faceCount
+        grphic.d_faceCount,
+
+        camera.mvp
     );
     cudaDeviceSynchronize();
 
@@ -32,25 +35,17 @@ void VertexShader::frustumClipping() {
     Graphic3D &grphic = Graphic3D::instance();
     Camera3D &camera = grphic.camera;
 
-    cudaMemset(grphic.d_clip1Count, 0, sizeof(ULLInt));
-    cudaMemset(grphic.d_clip2Count, 0, sizeof(ULLInt));
-
     size_t gridSize;
 
     // Clip near plane
     gridSize = (grphic.faceCount + 255) / 256;
+    cudaMemset(grphic.d_clip2Count, 0, sizeof(ULLInt));
     clipFrustumKernel<<<gridSize, 256>>>(
         grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
         grphic.d_faceCount,
-
-        // grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
-        // grphic.clip1.tu, grphic.clip1.tv,
-        // grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
-        // grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
-        // grphic.d_clip1Count,
 
         grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
         grphic.clip2.tu, grphic.clip2.tv,
@@ -61,8 +56,49 @@ void VertexShader::frustumClipping() {
         camera.nearPlane
     );
     cudaDeviceSynchronize();
-    // cudaMemcpy(&grphic.clip1Count, grphic.d_clip1Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
     cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+
+    // // Clip right plane
+    // gridSize = (grphic.clip2Count + 255) / 256;
+    // cudaMemset(grphic.d_clip1Count, 0, sizeof(ULLInt));
+    // clipFrustumKernel<<<gridSize, 256>>>(
+    //     grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
+    //     grphic.clip2.tu, grphic.clip2.tv,
+    //     grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
+    //     grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
+    //     grphic.d_clip2Count,
+
+    //     grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
+    //     grphic.clip1.tu, grphic.clip1.tv,
+    //     grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
+    //     grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
+    //     grphic.d_clip1Count,
+
+    //     camera.rightPlane
+    // );
+    // cudaDeviceSynchronize();
+    // cudaMemcpy(&grphic.clip1Count, grphic.d_clip1Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+
+    // // Clip left plane
+    // gridSize = (grphic.clip1Count + 255) / 256;
+    // cudaMemset(grphic.d_clip2Count, 0, sizeof(ULLInt));
+    // clipFrustumKernel<<<gridSize, 256>>>(
+    //     grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
+    //     grphic.clip1.tu, grphic.clip1.tv,
+    //     grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
+    //     grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
+    //     grphic.d_clip1Count,
+
+    //     grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
+    //     grphic.clip2.tu, grphic.clip2.tv,
+    //     grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
+    //     grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
+    //     grphic.d_clip2Count,
+
+    //     camera.leftPlane
+    // );
+    // cudaDeviceSynchronize();
+    // cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::cameraProjection() {
@@ -166,7 +202,9 @@ __global__ void createRuntimeFacesKernel(
     float *runtimeTu, float *runtimeTv,
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
     float *runtimeCr, float *runtimeCg, float *runtimeCb, float *runtimeCa,
-    ULLInt *faceCounter
+    ULLInt *faceCounter,
+
+    Mat4f mvp
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
@@ -182,6 +220,21 @@ __global__ void createRuntimeFacesKernel(
     ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
     ULLInt idx1 = idx0 + 1;
     ULLInt idx2 = idx0 + 2;
+
+    // Get the projected vertices
+    Vec4f t4[3] = {
+        mvp * Vec4f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]], 1),
+        mvp * Vec4f(worldX[fw[1]], worldY[fw[1]], worldZ[fw[1]], 1),
+        mvp * Vec4f(worldX[fw[2]], worldY[fw[2]], worldZ[fw[2]], 1)
+    };
+    if (t4[0].w < 0 && t4[1].w < 0 && t4[2].w < 0) return;
+    Vec3f t3[3] = {t4[0].toVec3f(), t4[1].toVec3f(), t4[2].toVec3f()};
+    if (t3[0].x < -1 && t3[1].x < -1 && t3[2].x < -1) return;
+    if (t3[0].x > 1 && t3[1].x > 1 && t3[2].x > 1) return;
+    if (t3[0].y < -1 && t3[1].y < -1 && t3[2].y < -1) return;
+    if (t3[0].y > 1 && t3[1].y > 1 && t3[2].y > 1) return;
+    if (t3[0].z < -1 && t3[1].z < -1 && t3[2].z < -1) return;
+    if (t3[0].z > 1 && t3[1].z > 1 && t3[2].z > 1) return;
 
     runtimeWx[idx0] = worldX[fw[0]]; runtimeWx[idx1] = worldX[fw[1]]; runtimeWx[idx2] = worldX[fw[2]];
     runtimeWy[idx0] = worldY[fw[0]]; runtimeWy[idx1] = worldY[fw[1]]; runtimeWy[idx2] = worldY[fw[2]];

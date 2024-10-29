@@ -56,7 +56,9 @@ __global__ void createRuntimeFacesKernel(
     float *runtimeTu, float *runtimeTv,
     float *runtimeNx, float *runtimeNy, float *runtimeNz,
     float *runtimeCr, float *runtimeCg, float *runtimeCb, float *runtimeCa,
-    ULLInt *faceCounter
+    ULLInt *faceCounter,
+
+    Mat4f mvp
 );
 
 // Frustum clipping

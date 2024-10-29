@@ -75,9 +75,8 @@ void Camera3D::updatePlane() {
     nearPlane = Plane3D(forward, pos + forward * near);
     farPlane = Plane3D(forward * -1, pos + forward * far);
 
-    /*
-    The right normal is basically just the forward vector rotated by fov/2 + 90 degrees.
-    */
+    // Bad news guys, everything doesn't seem to work as expected
+    // Keyword: "as expected"
 
     Vec3f rightNormal = Vec3f::rotate(forward, Vec3f(), Vec3f(0, fov / 2 + M_PI_2, 0));
     rightNormal.y = 0;
@@ -90,25 +89,6 @@ void Camera3D::updatePlane() {
     leftNormal.norm();
     leftNormal *= -1; // Facing inwards the frustum
     leftPlane = Plane3D(leftNormal, pos);
-
-    // Get the vertical fov
-    float vFov = 2 * atan(tan(fov / 2) / aspect);
-
-    float upAngle = vFov + M_PI_2;
-    float downAngle = -vFov - M_PI_2;
-
-    float cosU = cos(upAngle);
-    float sinU = sin(upAngle);
-    float cosD = cos(downAngle);
-    float sinD = sin(downAngle);
-
-    Vec3f upNormal = up * cosU + (right & up) * sinU + right * (right * up) * (1 - cosU);
-    upNormal.norm();
-    upPlane = Plane3D(upNormal, pos);
-
-    Vec3f downNormal = up * cosD + (right & up) * sinD + right * (right * up) * (1 - cosD);
-    downNormal.norm();
-    downPlane = Plane3D(downNormal, pos);
 }
 
 // Debug

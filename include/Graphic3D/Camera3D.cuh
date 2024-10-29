@@ -38,7 +38,6 @@ public:
     Plane3D upPlane, downPlane;
     void updatePlane();
 
-    
     // Some beta settings
     float mSens = 0.1f;
     bool focus = true;
