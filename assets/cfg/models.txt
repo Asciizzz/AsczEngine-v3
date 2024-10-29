@@ -27,7 +27,7 @@
 # assets/Models/Anime/Goku.obj .02 0 180 0 0 4 0
 # assets/Models/Anime/Miyu.obj 2
 
-assets/Models/Other/Street.obj 1 0 0 0 0 3.5 0
+assets/Models/Other/Street.obj 1 0 0 0 0 4.2 0
 
 # assets/Models/Shapes/Floor.obj 1 0 0 0 0 0 0
 
