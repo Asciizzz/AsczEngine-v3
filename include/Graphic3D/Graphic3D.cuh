@@ -62,23 +62,14 @@ public:
     Mesh3D mesh;
 
     // For runtime faces
-    ULLInt faceCount;
-    ULLInt *d_faceCount;
+    ULLInt rtCount;
+    ULLInt *d_rtCount;
     size_t faceChunkSize = 5e5; // For chunking
     Face3D rtFaces;
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();
     void resizeRuntimeFaces();
-
-    // For clipped  faces
-    ULLInt clip1Count, clip2Count;
-    ULLInt *d_clip1Count, *d_clip2Count;
-    Face3D clip1, clip2;
-
-    void mallocClippedFaces();
-    void freeClippedFaces();
-    void resizeClippedFaces();
 
     // Camera3D and Buffer3D
     Camera3D camera;

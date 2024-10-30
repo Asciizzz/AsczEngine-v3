@@ -27,55 +27,40 @@ THERE IS LITERALLY NO REASON TO INTERPOLATE
 SCREEN COORDINATES INSIDE THE CLIPPING KERNEL
 */
 
+struct Vertex {
+    Vec3f world;
+    Vec2f texture;
+    Vec3f normal;
+    Vec4f color;
+};
+
 class VertexShader {
 public:
     // Render pipeline
     static void createRuntimeFaces();
-    static void frustumClipping();
-    static void cameraProjection();
     static void createDepthMap();
     static void rasterization();
 };
 
-// Camera projection (MVP) kernel
-__global__ void cameraProjectionKernel(
-    float *screenX, float *screenY, float *screenZ, float *screenW,
-    float *worldX, float *worldY, float *worldZ,
-    Mat4f mvp, ULLInt numWs
-);
-
 // Filter visible faces
 __global__ void createRuntimeFacesKernel(
+    // Orginal mesh data
     const float *worldX, const float *worldY, const float *worldZ,
     const float *normalX, const float *normalY, const float *normalZ,
     const float *textureX, const float *textureY,
     const float *colorX, const float *colorY, const float *colorZ, float *colorW,
     const ULLInt *faceWs, const ULLInt *faceTs, const ULLInt *faceNs, ULLInt numFs,
 
-    float *runtimeWx, float *runtimeWy, float *runtimeWz,
-    float *runtimeTu, float *runtimeTv,
-    float *runtimeNx, float *runtimeNy, float *runtimeNz,
-    float *runtimeCr, float *runtimeCg, float *runtimeCb, float *runtimeCa,
-    ULLInt *faceCounter,
+    // Runtime faces
+    float *rtSx, float *rtSy, float *rtSz, float *rtSw,
+    float *rtWx, float *rtWy, float *rtWz,
+    float *rtTu, float *rtTv,
+    float *rtNx, float *rtNy, float *rtNz,
+    float *rtCr, float *rtCg, float *rtCb, float *rtCa,
+    ULLInt *rtCount,
 
-    Mat4f mvp
-);
-
-// Frustum clipping
-__global__ void clipFrustumKernel(
-    const float *preWx, const float *preWy, const float *preWz,
-    const float *preTu, const float *preTv,
-    const float *preNx, const float *preNy, const float *preNz,
-    const float *preCr, const float *preCg, const float *preCb, const float *preCa,
-    ULLInt *preCounter,
-
-    float *postWx, float *postWy, float *postWz,
-    float *postTu, float *postTv,
-    float *postNx, float *postNy, float *postNz,
-    float *postCr, float *postCg, float *postCb, float *postCa,
-    ULLInt *postCounter,
-
-    Plane3D plane
+    // Camera data (for projection and clipping)
+    Mat4f mvp, Plane3D near
 );
 
 // Tile-based depth map creation

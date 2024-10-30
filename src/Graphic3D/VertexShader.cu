@@ -7,10 +7,10 @@ void VertexShader::createRuntimeFaces() {
     Camera3D &camera = grphic.camera;
     Mesh3D &mesh = grphic.mesh;
 
-    cudaMemset(grphic.d_faceCount, 0, sizeof(ULLInt));
 
     size_t gridSize = (mesh.faces.size / 3 + 255) / 256;
 
+    cudaMemset(grphic.d_rtCount, 0, sizeof(ULLInt));
     createRuntimeFacesKernel<<<gridSize, 256>>>(
         mesh.world.x, mesh.world.y, mesh.world.z,
         mesh.normal.x, mesh.normal.y, mesh.normal.z,
@@ -18,127 +18,47 @@ void VertexShader::createRuntimeFaces() {
         mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
         mesh.faces.v, mesh.faces.t, mesh.faces.n, mesh.faces.size / 3,
 
+        grphic.rtFaces.sx, grphic.rtFaces.sy, grphic.rtFaces.sz, grphic.rtFaces.sw,
         grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.d_faceCount,
+        grphic.d_rtCount,
 
-        camera.mvp
+        camera.mvp, camera.nearPlane
     );
     cudaDeviceSynchronize();
-
-    cudaMemcpy(&grphic.faceCount, grphic.d_faceCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-}
-
-void VertexShader::frustumClipping() {
-    Graphic3D &grphic = Graphic3D::instance();
-    Camera3D &camera = grphic.camera;
-
-    size_t gridSize;
-
-    // Clip near plane
-    gridSize = (grphic.faceCount + 255) / 256;
-    cudaMemset(grphic.d_clip2Count, 0, sizeof(ULLInt));
-    clipFrustumKernel<<<gridSize, 256>>>(
-        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
-        grphic.rtFaces.tu, grphic.rtFaces.tv,
-        grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
-        grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.d_faceCount,
-
-        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
-        grphic.clip2.tu, grphic.clip2.tv,
-        grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
-        grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
-        grphic.d_clip2Count,
-
-        camera.nearPlane
-    );
-    cudaDeviceSynchronize();
-    cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-
-    // // Clip right plane
-    // gridSize = (grphic.clip2Count + 255) / 256;
-    // cudaMemset(grphic.d_clip1Count, 0, sizeof(ULLInt));
-    // clipFrustumKernel<<<gridSize, 256>>>(
-    //     grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
-    //     grphic.clip2.tu, grphic.clip2.tv,
-    //     grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
-    //     grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
-    //     grphic.d_clip2Count,
-
-    //     grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
-    //     grphic.clip1.tu, grphic.clip1.tv,
-    //     grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
-    //     grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
-    //     grphic.d_clip1Count,
-
-    //     camera.rightPlane
-    // );
-    // cudaDeviceSynchronize();
-    // cudaMemcpy(&grphic.clip1Count, grphic.d_clip1Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-
-    // // Clip left plane
-    // gridSize = (grphic.clip1Count + 255) / 256;
-    // cudaMemset(grphic.d_clip2Count, 0, sizeof(ULLInt));
-    // clipFrustumKernel<<<gridSize, 256>>>(
-    //     grphic.clip1.wx, grphic.clip1.wy, grphic.clip1.wz,
-    //     grphic.clip1.tu, grphic.clip1.tv,
-    //     grphic.clip1.nx, grphic.clip1.ny, grphic.clip1.nz,
-    //     grphic.clip1.cr, grphic.clip1.cg, grphic.clip1.cb, grphic.clip1.ca,
-    //     grphic.d_clip1Count,
-
-    //     grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
-    //     grphic.clip2.tu, grphic.clip2.tv,
-    //     grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
-    //     grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
-    //     grphic.d_clip2Count,
-
-    //     camera.leftPlane
-    // );
-    // cudaDeviceSynchronize();
-    // cudaMemcpy(&grphic.clip2Count, grphic.d_clip2Count, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-}
-
-void VertexShader::cameraProjection() {
-    Graphic3D &grphic = Graphic3D::instance();
-    Camera3D &camera = grphic.camera;
-
-    size_t gridSize = (grphic.clip2Count * 3 + 255) / 256;
-    cameraProjectionKernel<<<gridSize, 256>>>(
-        grphic.clip2.sx, grphic.clip2.sy, grphic.clip2.sz, grphic.clip2.sw,
-        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
-        camera.mvp, grphic.clip2Count * 3
-    );
-    cudaDeviceSynchronize();
+    cudaMemcpy(&grphic.rtCount, grphic.d_rtCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
+    Mesh3D &mesh = grphic.mesh;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
     // Split the faces into chunks
-    size_t chunkNum = (grphic.clip2Count + grphic.faceChunkSize - 1) 
+
+    size_t chunkNum = (grphic.rtCount + grphic.faceChunkSize - 1) 
                     /  grphic.faceChunkSize;
 
     dim3 blockSize(16, 32);
     for (size_t i = 0; i < chunkNum; i++) {
-        size_t faceOffset = grphic.faceChunkSize * i;
+        size_t chunkOffset = grphic.faceChunkSize * i;
 
         size_t curFaceCount = (i == chunkNum - 1) ?
-            grphic.clip2Count - faceOffset : grphic.faceChunkSize;
+            grphic.rtCount - chunkOffset : grphic.faceChunkSize;
+
         size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
         size_t blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
-            grphic.clip2.sx, grphic.clip2.sy,
-            grphic.clip2.sz, grphic.clip2.sw,
-            curFaceCount, faceOffset,
+            grphic.rtFaces.sx, grphic.rtFaces.sy,
+            grphic.rtFaces.sz, grphic.rtFaces.sw,
+            curFaceCount, chunkOffset,
 
             buffer.active, buffer.depth, buffer.faceID,
             buffer.bary.x, buffer.bary.y, buffer.bary.z,
@@ -155,11 +75,11 @@ void VertexShader::rasterization() {
     Buffer3D &buffer = grphic.buffer;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        grphic.clip2.sw,
-        grphic.clip2.wx, grphic.clip2.wy, grphic.clip2.wz,
-        grphic.clip2.tu, grphic.clip2.tv,
-        grphic.clip2.nx, grphic.clip2.ny, grphic.clip2.nz,
-        grphic.clip2.cr, grphic.clip2.cg, grphic.clip2.cb, grphic.clip2.ca,
+        grphic.rtFaces.sw,
+        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
+        grphic.rtFaces.tu, grphic.rtFaces.tv,
+        grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
+        grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
 
         buffer.active, buffer.faceID,
         buffer.bary.x, buffer.bary.y, buffer.bary.z,
@@ -172,171 +92,104 @@ void VertexShader::rasterization() {
     cudaDeviceSynchronize();
 }
 
-// Camera projection (MVP) kernel
-__global__ void cameraProjectionKernel(
-    float *screenX, float *screenY, float *screenZ, float *screenW,
-    float *worldX, float *worldY, float *worldZ,
-    Mat4f mvp, ULLInt numWs
-) {
-    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= numWs) return;
-
-    Vec4f v4(worldX[i], worldY[i], worldZ[i], 1);
-    Vec4f t4 = mvp * v4;
-
-    screenX[i] = -t4.x;
-    screenY[i] = t4.y;
-    screenZ[i] = t4.z;
-    screenW[i] = t4.w;
-}
-
 // Create runtime faces
 __global__ void createRuntimeFacesKernel(
+    // Orginal mesh data
     const float *worldX, const float *worldY, const float *worldZ,
     const float *normalX, const float *normalY, const float *normalZ,
     const float *textureX, const float *textureY,
     const float *colorX, const float *colorY, const float *colorZ, float *colorW,
     const ULLInt *faceWs, const ULLInt *faceTs, const ULLInt *faceNs, ULLInt numFs,
 
-    float *runtimeWx, float *runtimeWy, float *runtimeWz,
-    float *runtimeTu, float *runtimeTv,
-    float *runtimeNx, float *runtimeNy, float *runtimeNz,
-    float *runtimeCr, float *runtimeCg, float *runtimeCb, float *runtimeCa,
-    ULLInt *faceCounter,
+    // Runtime faces
+    float *rtSx, float *rtSy, float *rtSz, float *rtSw,
+    float *rtWx, float *rtWy, float *rtWz,
+    float *rtTu, float *rtTv,
+    float *rtNx, float *rtNy, float *rtNz,
+    float *rtCr, float *rtCg, float *rtCb, float *rtCa,
+    ULLInt *rtCount,
 
-    Mat4f mvp
+    // Camera data (for clipping)
+    Mat4f mvp, Plane3D near
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
 
-    ULLInt fIdx0 = fIdx * 3;
-    ULLInt fIdx1 = fIdx * 3 + 1;
-    ULLInt fIdx2 = fIdx * 3 + 2;
+    ULLInt idx0 = fIdx * 3;
+    ULLInt idx1 = fIdx * 3 + 1;
+    ULLInt idx2 = fIdx * 3 + 2;
 
-    ULLInt fw[3] = {faceWs[fIdx0], faceWs[fIdx1], faceWs[fIdx2]};
-    ULLInt ft[3] = {faceTs[fIdx0], faceTs[fIdx1], faceTs[fIdx2]};
-    ULLInt fn[3] = {faceNs[fIdx0], faceNs[fIdx1], faceNs[fIdx2]};
-
-    ULLInt idx0 = atomicAdd(faceCounter, 1) * 3;
-    ULLInt idx1 = idx0 + 1;
-    ULLInt idx2 = idx0 + 2;
-
-    // Get the projected vertices
-    Vec4f t4[3] = {
-        mvp * Vec4f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]], 1),
-        mvp * Vec4f(worldX[fw[1]], worldY[fw[1]], worldZ[fw[1]], 1),
-        mvp * Vec4f(worldX[fw[2]], worldY[fw[2]], worldZ[fw[2]], 1)
-    };
-    if (t4[0].w < 0 && t4[1].w < 0 && t4[2].w < 0) return;
-    Vec3f t3[3] = {t4[0].toVec3f(), t4[1].toVec3f(), t4[2].toVec3f()};
-    if (t3[0].x < -1 && t3[1].x < -1 && t3[2].x < -1) return;
-    if (t3[0].x > 1 && t3[1].x > 1 && t3[2].x > 1) return;
-    if (t3[0].y < -1 && t3[1].y < -1 && t3[2].y < -1) return;
-    if (t3[0].y > 1 && t3[1].y > 1 && t3[2].y > 1) return;
-    if (t3[0].z < -1 && t3[1].z < -1 && t3[2].z < -1) return;
-    if (t3[0].z > 1 && t3[1].z > 1 && t3[2].z > 1) return;
-
-    runtimeWx[idx0] = worldX[fw[0]]; runtimeWx[idx1] = worldX[fw[1]]; runtimeWx[idx2] = worldX[fw[2]];
-    runtimeWy[idx0] = worldY[fw[0]]; runtimeWy[idx1] = worldY[fw[1]]; runtimeWy[idx2] = worldY[fw[2]];
-    runtimeWz[idx0] = worldZ[fw[0]]; runtimeWz[idx1] = worldZ[fw[1]]; runtimeWz[idx2] = worldZ[fw[2]];
-
-    runtimeTu[idx0] = textureX[ft[0]]; runtimeTu[idx1] = textureX[ft[1]]; runtimeTu[idx2] = textureX[ft[2]];
-    runtimeTv[idx0] = textureY[ft[0]]; runtimeTv[idx1] = textureY[ft[1]]; runtimeTv[idx2] = textureY[ft[2]];
-
-    runtimeNx[idx0] = normalX[fn[0]]; runtimeNx[idx1] = normalX[fn[1]]; runtimeNx[idx2] = normalX[fn[2]];
-    runtimeNy[idx0] = normalY[fn[0]]; runtimeNy[idx1] = normalY[fn[1]]; runtimeNy[idx2] = normalY[fn[2]];
-    runtimeNz[idx0] = normalZ[fn[0]]; runtimeNz[idx1] = normalZ[fn[1]]; runtimeNz[idx2] = normalZ[fn[2]];
-
-    runtimeCr[idx0] = colorX[fw[0]]; runtimeCr[idx1] = colorX[fw[1]]; runtimeCr[idx2] = colorX[fw[2]];
-    runtimeCg[idx0] = colorY[fw[0]]; runtimeCg[idx1] = colorY[fw[1]]; runtimeCg[idx2] = colorY[fw[2]];
-    runtimeCb[idx0] = colorZ[fw[0]]; runtimeCb[idx1] = colorZ[fw[1]]; runtimeCb[idx2] = colorZ[fw[2]];
-    runtimeCa[idx0] = colorW[fw[0]]; runtimeCa[idx1] = colorW[fw[1]]; runtimeCa[idx2] = colorW[fw[2]];
-}
-
-// Frustum culling
-__global__ void clipFrustumKernel(
-    const float *preWx, const float *preWy, const float *preWz,
-    const float *preTu, const float *preTv,
-    const float *preNx, const float *preNy, const float *preNz,
-    const float *preCr, const float *preCg, const float *preCb, const float *preCa,
-    ULLInt *preCounter,
-
-    float *postWx, float *postWy, float *postWz,
-    float *postTu, float *postTv,
-    float *postNx, float *postNy, float *postNz,
-    float *postCr, float *postCg, float *postCb, float *postCa,
-    ULLInt *postCounter,
-
-    Plane3D plane
-) {
-    ULInt preIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (preIdx >= *preCounter) return;
-
-    ULInt preIdx0 = preIdx * 3;
-    ULInt preIdx1 = preIdx * 3 + 1;
-    ULInt preIdx2 = preIdx * 3 + 2;
+    ULLInt fw[3] = {faceWs[idx0], faceWs[idx1], faceWs[idx2]};
+    ULLInt ft[3] = {faceTs[idx0], faceTs[idx1], faceTs[idx2]};
+    ULLInt fn[3] = {faceNs[idx0], faceNs[idx1], faceNs[idx2]};
 
     Vec3f rtWs[3] = {
-        Vec3f(preWx[preIdx0], preWy[preIdx0], preWz[preIdx0]),
-        Vec3f(preWx[preIdx1], preWy[preIdx1], preWz[preIdx1]),
-        Vec3f(preWx[preIdx2], preWy[preIdx2], preWz[preIdx2])
+        Vec3f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]]),
+        Vec3f(worldX[fw[1]], worldY[fw[1]], worldZ[fw[1]]),
+        Vec3f(worldX[fw[2]], worldY[fw[2]], worldZ[fw[2]])
     };
     float side[3] = {
-        plane.equation(rtWs[0]),
-        plane.equation(rtWs[1]),
-        plane.equation(rtWs[2])
+        near.equation(rtWs[0]),
+        near.equation(rtWs[1]),
+        near.equation(rtWs[2])
     };
 
     // If all behind, return
     if (side[0] < 0 && side[1] < 0 && side[2] < 0) return;
 
     Vec2f rtTs[3] = {
-        Vec2f(preTu[preIdx0], preTv[preIdx0]),
-        Vec2f(preTu[preIdx1], preTv[preIdx1]),
-        Vec2f(preTu[preIdx2], preTv[preIdx2])
+        Vec2f(textureX[ft[0]], textureY[ft[0]]),
+        Vec2f(textureX[ft[1]], textureY[ft[1]]),
+        Vec2f(textureX[ft[2]], textureY[ft[2]])
     };
     Vec3f rtNs[3] = {
-        Vec3f(preNx[preIdx0], preNy[preIdx0], preNz[preIdx0]),
-        Vec3f(preNx[preIdx1], preNy[preIdx1], preNz[preIdx1]),
-        Vec3f(preNx[preIdx2], preNy[preIdx2], preNz[preIdx2])
+        Vec3f(normalX[fn[0]], normalY[fn[0]], normalZ[fn[0]]),
+        Vec3f(normalX[fn[1]], normalY[fn[1]], normalZ[fn[1]]),
+        Vec3f(normalX[fn[2]], normalY[fn[2]], normalZ[fn[2]])
     };
     Vec4f rtCs[3] = {
-        Vec4f(preCr[preIdx0], preCg[preIdx0], preCb[preIdx0], preCa[preIdx0]),
-        Vec4f(preCr[preIdx1], preCg[preIdx1], preCb[preIdx1], preCa[preIdx1]),
-        Vec4f(preCr[preIdx2], preCg[preIdx2], preCb[preIdx2], preCa[preIdx2])
+        Vec4f(colorX[fw[0]], colorY[fw[0]], colorZ[fw[0]], colorW[fw[0]]),
+        Vec4f(colorX[fw[1]], colorY[fw[1]], colorZ[fw[1]], colorW[fw[1]]),
+        Vec4f(colorX[fw[2]], colorY[fw[2]], colorZ[fw[2]], colorW[fw[2]])
     };
 
     // If all infront, copy
     if (side[0] >= 0 && side[1] >= 0 && side[2] >= 0) {
-        ULInt idx0 = atomicAdd(postCounter, 1) * 3;
-        ULInt idx1 = idx0 + 1;
-        ULInt idx2 = idx0 + 2;
+        ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
+        ULLInt idx1 = idx0 + 1;
+        ULLInt idx2 = idx0 + 2;
 
-        postWx[idx0] = rtWs[0].x; postWx[idx1] = rtWs[1].x; postWx[idx2] = rtWs[2].x;
-        postWy[idx0] = rtWs[0].y; postWy[idx1] = rtWs[1].y; postWy[idx2] = rtWs[2].y;
-        postWz[idx0] = rtWs[0].z; postWz[idx1] = rtWs[1].z; postWz[idx2] = rtWs[2].z;
+        Vec4f w4s[3] = {
+            mvp * Vec4f(rtWs[0].x, rtWs[0].y, rtWs[0].z, 1),
+            mvp * Vec4f(rtWs[1].x, rtWs[1].y, rtWs[1].z, 1),
+            mvp * Vec4f(rtWs[2].x, rtWs[2].y, rtWs[2].z, 1)
+        };
 
-        postTu[idx0] = rtTs[0].x; postTu[idx1] = rtTs[1].x; postTu[idx2] = rtTs[2].x;
-        postTv[idx0] = rtTs[0].y; postTv[idx1] = rtTs[1].y; postTv[idx2] = rtTs[2].y;
+        rtSx[idx0] = -w4s[0].x; rtSx[idx1] = -w4s[1].x; rtSx[idx2] = -w4s[2].x;
+        rtSy[idx0] = w4s[0].y; rtSy[idx1] = w4s[1].y; rtSy[idx2] = w4s[2].y;
+        rtSz[idx0] = w4s[0].z; rtSz[idx1] = w4s[1].z; rtSz[idx2] = w4s[2].z;
+        rtSw[idx0] = w4s[0].w; rtSw[idx1] = w4s[1].w; rtSw[idx2] = w4s[2].w;
 
-        postNx[idx0] = rtNs[0].x; postNx[idx1] = rtNs[1].x; postNx[idx2] = rtNs[2].x;
-        postNy[idx0] = rtNs[0].y; postNy[idx1] = rtNs[1].y; postNy[idx2] = rtNs[2].y;
-        postNz[idx0] = rtNs[0].z; postNz[idx1] = rtNs[1].z; postNz[idx2] = rtNs[2].z;
+        rtWx[idx0] = rtWs[0].x; rtWx[idx1] = rtWs[1].x; rtWx[idx2] = rtWs[2].x;
+        rtWy[idx0] = rtWs[0].y; rtWy[idx1] = rtWs[1].y; rtWy[idx2] = rtWs[2].y;
+        rtWz[idx0] = rtWs[0].z; rtWz[idx1] = rtWs[1].z; rtWz[idx2] = rtWs[2].z;
 
-        postCr[idx0] = rtCs[0].x; postCr[idx1] = rtCs[1].x; postCr[idx2] = rtCs[2].x;
-        postCg[idx0] = rtCs[0].y; postCg[idx1] = rtCs[1].y; postCg[idx2] = rtCs[2].y;
-        postCb[idx0] = rtCs[0].z; postCb[idx1] = rtCs[1].z; postCb[idx2] = rtCs[2].z;
-        postCa[idx0] = rtCs[0].w; postCa[idx1] = rtCs[1].w; postCa[idx2] = rtCs[2].w;
+        rtTu[idx0] = rtTs[0].x; rtTu[idx1] = rtTs[1].x; rtTu[idx2] = rtTs[2].x;
+        rtTv[idx0] = rtTs[0].y; rtTv[idx1] = rtTs[1].y; rtTv[idx2] = rtTs[2].y;
+
+        rtNx[idx0] = rtNs[0].x; rtNx[idx1] = rtNs[1].x; rtNx[idx2] = rtNs[2].x;
+        rtNy[idx0] = rtNs[0].y; rtNy[idx1] = rtNs[1].y; rtNy[idx2] = rtNs[2].y;
+        rtNz[idx0] = rtNs[0].z; rtNz[idx1] = rtNs[1].z; rtNz[idx2] = rtNs[2].z;
+
+        rtCr[idx0] = rtCs[0].x; rtCr[idx1] = rtCs[1].x; rtCr[idx2] = rtCs[2].x;
+        rtCg[idx0] = rtCs[0].y; rtCg[idx1] = rtCs[1].y; rtCg[idx2] = rtCs[2].y;
+        rtCb[idx0] = rtCs[0].z; rtCb[idx1] = rtCs[1].z; rtCb[idx2] = rtCs[2].z;
+        rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
 
         return;
     }
 
-    // Everything will be interpolated
-    Vec3f newWs[4];
-    Vec2f newTs[4];
-    Vec3f newNs[4];
-    Vec4f newCs[4];
-
+    Vertex vertices[4];
     int newVcount = 0;
 
     /* Explaination
@@ -355,72 +208,81 @@ __global__ void clipFrustumKernel(
     for (int a = 0; a < 3; a++) {
         int b = (a + 1) % 3;
 
-        // Find plane side
-        float sideA = side[a];
-        float sideB = side[b];
+        if (side[a] < 0 && side[b] < 0) continue;
 
-        if (sideA < 0 && sideB < 0) continue;
-
-        if (sideA >= 0 && sideB >= 0) {
-            newWs[newVcount] = rtWs[a];
-            newTs[newVcount] = rtTs[a];
-            newNs[newVcount] = rtNs[a];
-            newCs[newVcount] = rtCs[a];
+        if (side[a] >= 0 && side[b] >= 0) {
+            vertices[newVcount].world = rtWs[a];
+            vertices[newVcount].texture = rtTs[a];
+            vertices[newVcount].normal = rtNs[a];
+            vertices[newVcount].color = rtCs[a];
             newVcount++;
             continue;
         }
 
         // Find intersection
-        float tFact = -sideA / (sideB - sideA);
+        float tFact = -side[a] / (side[b] - side[a]);
 
         Vec3f w = rtWs[a] + (rtWs[b] - rtWs[a]) * tFact;
         Vec2f t = rtTs[a] + (rtTs[b] - rtTs[a]) * tFact;
         Vec3f n = rtNs[a] + (rtNs[b] - rtNs[a]) * tFact;
         Vec4f c = rtCs[a] + (rtCs[b] - rtCs[a]) * tFact;
 
-        if (sideA > 0) {
+        if (side[a] > 0) {
             // Append A
-            newWs[newVcount] = rtWs[a];
-            newTs[newVcount] = rtTs[a];
-            newNs[newVcount] = rtNs[a];
-            newCs[newVcount] = rtCs[a];
+            vertices[newVcount].world = rtWs[a];
+            vertices[newVcount].texture = rtTs[a];
+            vertices[newVcount].normal = rtNs[a];
+            vertices[newVcount].color = rtCs[a];
             newVcount++;
             // Append intersection
-            newWs[newVcount] = w;
-            newTs[newVcount] = t;
-            newNs[newVcount] = n;
-            newCs[newVcount] = c;
+            vertices[newVcount].world = w;
+            vertices[newVcount].texture = t;
+            vertices[newVcount].normal = n;
+            vertices[newVcount].color = c;
             newVcount++;
         } else {
-            newWs[newVcount] = w;
-            newTs[newVcount] = t;
-            newNs[newVcount] = n;
-            newCs[newVcount] = c;
+            vertices[newVcount].world = w;
+            vertices[newVcount].texture = t;
+            vertices[newVcount].normal = n;
+            vertices[newVcount].color = c;
             newVcount++;
         }
     }
 
+    if (newVcount < 3) return;
+
     // If 4 point: create 2 faces A B C, A C D
     for (int i = 0; i < newVcount - 2; i++) {
-        ULInt idx0 = atomicAdd(postCounter, 1) * 3;
-        ULInt idx1 = idx0 + 1;
-        ULInt idx2 = idx0 + 2;
+        ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
+        ULLInt idx1 = idx0 + 1;
+        ULLInt idx2 = idx0 + 2;
 
-        postWx[idx0] = newWs[0].x; postWx[idx1] = newWs[i + 1].x; postWx[idx2] = newWs[i + 2].x;
-        postWy[idx0] = newWs[0].y; postWy[idx1] = newWs[i + 1].y; postWy[idx2] = newWs[i + 2].y;
-        postWz[idx0] = newWs[0].z; postWz[idx1] = newWs[i + 1].z; postWz[idx2] = newWs[i + 2].z;
+        Vec4f w4s[3] = {
+            mvp * Vec4f(vertices[0].world.x, vertices[0].world.y, vertices[0].world.z, 1),
+            mvp * Vec4f(vertices[i + 1].world.x, vertices[i + 1].world.y, vertices[i + 1].world.z, 1),
+            mvp * Vec4f(vertices[i + 2].world.x, vertices[i + 2].world.y, vertices[i + 2].world.z, 1)
+        };
 
-        postTu[idx0] = newTs[0].x; postTu[idx1] = newTs[i + 1].x; postTu[idx2] = newTs[i + 2].x;
-        postTv[idx0] = newTs[0].y; postTv[idx1] = newTs[i + 1].y; postTv[idx2] = newTs[i + 2].y;
+        rtSx[idx0] = -w4s[0].x; rtSx[idx1] = -w4s[1].x; rtSx[idx2] = -w4s[2].x;
+        rtSy[idx0] = w4s[0].y; rtSy[idx1] = w4s[1].y; rtSy[idx2] = w4s[2].y;
+        rtSz[idx0] = w4s[0].z; rtSz[idx1] = w4s[1].z; rtSz[idx2] = w4s[2].z;
+        rtSw[idx0] = w4s[0].w; rtSw[idx1] = w4s[1].w; rtSw[idx2] = w4s[2].w;
 
-        postNx[idx0] = newNs[0].x; postNx[idx1] = newNs[i + 1].x; postNx[idx2] = newNs[i + 2].x;
-        postNy[idx0] = newNs[0].y; postNy[idx1] = newNs[i + 1].y; postNy[idx2] = newNs[i + 2].y;
-        postNz[idx0] = newNs[0].z; postNz[idx1] = newNs[i + 1].z; postNz[idx2] = newNs[i + 2].z;
+        rtWx[idx0] = vertices[0].world.x; rtWx[idx1] = vertices[i + 1].world.x; rtWx[idx2] = vertices[i + 2].world.x;
+        rtWy[idx0] = vertices[0].world.y; rtWy[idx1] = vertices[i + 1].world.y; rtWy[idx2] = vertices[i + 2].world.y;
+        rtWz[idx0] = vertices[0].world.z; rtWz[idx1] = vertices[i + 1].world.z; rtWz[idx2] = vertices[i + 2].world.z;
 
-        postCr[idx0] = newCs[0].x; postCr[idx1] = newCs[i + 1].x; postCr[idx2] = newCs[i + 2].x;
-        postCg[idx0] = newCs[0].y; postCg[idx1] = newCs[i + 1].y; postCg[idx2] = newCs[i + 2].y;
-        postCb[idx0] = newCs[0].z; postCb[idx1] = newCs[i + 1].z; postCb[idx2] = newCs[i + 2].z;
-        postCa[idx0] = newCs[0].w; postCa[idx1] = newCs[i + 1].w; postCa[idx2] = newCs[i + 2].w;
+        rtTu[idx0] = vertices[0].texture.x; rtTu[idx1] = vertices[i + 1].texture.x; rtTu[idx2] = vertices[i + 2].texture.x;
+        rtTv[idx0] = vertices[0].texture.y; rtTv[idx1] = vertices[i + 1].texture.y; rtTv[idx2] = vertices[i + 2].texture.y;
+
+        rtNx[idx0] = vertices[0].normal.x; rtNx[idx1] = vertices[i + 1].normal.x; rtNx[idx2] = vertices[i + 2].normal.x;
+        rtNy[idx0] = vertices[0].normal.y; rtNy[idx1] = vertices[i + 1].normal.y; rtNy[idx2] = vertices[i + 2].normal.y;
+        rtNz[idx0] = vertices[0].normal.z; rtNz[idx1] = vertices[i + 1].normal.z; rtNz[idx2] = vertices[i + 2].normal.z;
+
+        rtCr[idx0] = vertices[0].color.x; rtCr[idx1] = vertices[i + 1].color.x; rtCr[idx2] = vertices[i + 2].color.x;
+        rtCg[idx0] = vertices[0].color.y; rtCg[idx1] = vertices[i + 1].color.y; rtCg[idx2] = vertices[i + 2].color.y;
+        rtCb[idx0] = vertices[0].color.z; rtCb[idx1] = vertices[i + 1].color.z; rtCb[idx2] = vertices[i + 2].color.z;
+        rtCa[idx0] = vertices[0].color.w; rtCa[idx1] = vertices[i + 1].color.w; rtCa[idx2] = vertices[i + 2].color.w;
     }
 }
 

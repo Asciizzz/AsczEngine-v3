@@ -92,7 +92,6 @@ int main() {
     }
 
     GRAPHIC.mallocRuntimeFaces();
-    GRAPHIC.mallocClippedFaces();
 
     std::string texturePath = "";
     std::ifstream("assets/cfg/texture.txt") >> texturePath;
@@ -346,8 +345,6 @@ int main() {
 
         // Vertex Shader
         VertexShader::createRuntimeFaces();
-        VertexShader::frustumClipping();
-        VertexShader::cameraProjection();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 
@@ -400,7 +397,7 @@ int main() {
             " x " + std::to_string(height) +
             " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
             "| Tile Size: " + std::to_string(tileSizeX) + " x " + std::to_string(tileSizeY) + "\n" +
-            "| Clip Face: " + std::to_string(GRAPHIC.clip2Count) +
+            "| Clip Face: " + std::to_string(GRAPHIC.rtCount) +
             " / " + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );
