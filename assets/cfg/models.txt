@@ -1,7 +1,7 @@
-# .heavy/mountains.obj 1 0 0 0 0 0 0
+.heavy/mountains.obj 1 0 0 0 0 0 0
 
 # Back wall
-assets/Models/Shapes/Wall.obj 4 0 0 0 0 4 4
+#assets/Models/Shapes/Wall.obj 4 0 0 0 0 4 4
 # Left wall
 #assets/Models/Shapes/Wall.obj 4 0 -90 0 4 4 0
 # Right wall
