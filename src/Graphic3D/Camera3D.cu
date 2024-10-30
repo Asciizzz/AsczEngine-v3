@@ -1,7 +1,5 @@
 #include <Camera3D.cuh>
 
-Camera3D::Camera3D() {}
-
 void Camera3D::restrictRot() {
     if (rot.x <= -M_PI_2) rot.x = -M_PI_2 + 0.001;
     else if (rot.x >= M_PI_2) rot.x = M_PI_2 - 0.001;
@@ -58,18 +56,39 @@ void Camera3D::updateProjection() {
 }
 
 void Camera3D::updateMVP() {
-    updateView();
-    updateProjection();
-
     mvp = projection * view;
 }
 
-bool Camera3D::isInsideFrustum(Vec3f &v) {
-    Vec4f v4 = mvp * v.toVec4f();
+void Camera3D::update() {
+    restrictRot();
 
-    return  v4.x >= -v4.w && v4.x <= v4.w &&
-            v4.y >= -v4.w && v4.y <= v4.w &&
-            v4.z >= 0 && v4.z <= v4.w;
+    // Model-View-Projection matrix
+    updateView();
+    updateProjection();
+    updateMVP();
+
+    // Camera plane
+    updatePlane();
+}
+
+void Camera3D::updatePlane() {
+    nearPlane = Plane3D(forward, pos + forward * near);
+    farPlane = Plane3D(forward * -1, pos + forward * far);
+
+    // Bad news guys, everything doesn't seem to work as expected
+    // Keyword: "as expected"
+
+    Vec3f rightNormal = Vec3f::rotate(forward, Vec3f(), Vec3f(0, fov / 2 + M_PI_2, 0));
+    rightNormal.y = 0;
+    rightNormal.norm();
+    rightNormal *= -1; // Facing inwards the frustum
+    rightPlane = Plane3D(rightNormal, pos);
+
+    Vec3f leftNormal = Vec3f::rotate(forward, Vec3f(), Vec3f(0, -fov / 2 - M_PI_2, 0));
+    leftNormal.y = 0;
+    leftNormal.norm();
+    leftNormal *= -1; // Facing inwards the frustum
+    leftPlane = Plane3D(leftNormal, pos);
 }
 
 // Debug

@@ -6,7 +6,7 @@ ClearScreen:
 
 AsczEngine:
 	nvcc \
-		-I include \
+		-I include/Beta \
 		-I include/System \
 		-I include/MathLib \
 		-I include/Graphic3D \
@@ -19,15 +19,16 @@ AsczEngine:
 		\
 		src/MathLib/Vector.cu \
 		src/MathLib/Matrix.cu \
+		src/MathLib/Plane3D.cu \
 		src/Graphic3D/Mesh3D.cu \
 		src/Graphic3D/Camera3D.cu \
 		src/Graphic3D/Buffer3D.cu \
 		src/Graphic3D/Graphic3D.cu \
-		src/Shader3D/VertexShader.cu \
-		src/Shader3D/FragmentShader.cu \
+		src/Graphic3D/VertexShader.cu \
+		src/Graphic3D/FragmentShader.cu \
+		src/Graphic3D/SFMLTexture.cu \
 		src/System/FpsHandler.cu \
 		src/System/CsLogHandler.cu \
-		src/System/SFMLTexture.cu \
 		\
 		AsczEngine.cu \
 		\

@@ -6,24 +6,29 @@
 #include <SFMLTexture.cuh>
 
 #include <Playground.cuh>
+#include <Sphere3D.cuh>
+#include <Cube3D.cuh>
 
+// Main
 int main() {
     // Initialize Default stuff
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
-    int width, height, pixelSize, tileWidth, tileHeight;
+    int width, height, pixelSize, tileSizeX, tileSizeY;
     // Note: higher pixelSize = lower resolution
-    std::ifstream("cfg/resolution.txt")
-        >> width >> height >> pixelSize >> tileWidth >> tileHeight;
+    std::ifstream("assets/cfg/resolution.txt")
+        >> width >> height >> pixelSize >> tileSizeX >> tileSizeY;
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
     GRAPHIC.setResolution(width, height, pixelSize);
-    GRAPHIC.setTileSize(tileWidth, tileHeight);
+    GRAPHIC.setTileSize(tileSizeX, tileSizeY);
 
     Camera3D &CAMERA = GRAPHIC.camera;
-    std::ifstream("cfg/cameraPos.txt") >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
-    std::ifstream("cfg/cameraSpd.txt") >> CAMERA.slowFactor >> CAMERA.fastFactor;
+    std::ifstream("assets/cfg/cameraPos.txt")
+        >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
+    std::ifstream("assets/cfg/cameraSpd.txt")
+        >> CAMERA.velSpec >> CAMERA.slowFactor >> CAMERA.fastFactor;
 
     SFMLTexture SFTex = SFMLTexture(width, height);
     sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
@@ -33,183 +38,95 @@ int main() {
     ), window);
 
     // ===================== INITIALIZATION =====================
+    // Each model in models.txt will contain:
+    // src scl rotX rotY rotZ transX transY transZ
+    std::ifstream objsFile("assets/cfg/models.txt");
+    std::string line;
+    std::vector<Mesh> objs;
 
-    std::string objPath = "";
-    float objScale = 1;
-    // File: <path> <scale>
-    std::ifstream file("cfg/model.txt");
-    file >> objPath >> objScale;
+    std::string objsTxt = "";
+    int objsCount = 0;
+    while (std::getline(objsFile, line)) {
+        // If line start with #, it's a comment
+        if (line[0] == '#' || line.empty()) continue;
 
-    // Create a .obj mesh (Work in progress)
-    Mesh obj = Playground::readObjFile(0, objPath, true);
+        std::string objPath = "";
+        float scale = 1;
+        Vec3f translate;
+        Vec3f rotate;
 
-    // Testing the beta mesh
-    float c = 10;
-    Mesh cube;
-    cube.wx = { -c, c, c, -c, -c, c, c, -c };
-    cube.wy = { -c, -c, c, c, -c, -c, c, c };
-    cube.wz = { -c, -c, -c, -c, c, c, c, c };
+        std::stringstream ss(line);
 
-    for (int i = 0; i < 8; i++) {
-        cube.wx[i] += 10;
-        cube.wy[i] += 10;
-        cube.wz[i] += 10;
+        ss >> objPath >> scale;
+        ss >> rotate.x >> rotate.y >> rotate.z;
+        ss >> translate.x >> translate.y >> translate.z;
+        rotate *= M_PI / 180;
+
+        Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
+        obj.scaleIni(Vec3f(), Vec3f(scale));
+        obj.rotateIni(Vec3f(), rotate);
+        obj.translateIni(translate);
+
+        GRAPHIC.mesh += obj;
+        objs.push_back(obj);
+
+        // Write to log
+        objsTxt += "Obj " + std::to_string(objsCount) + " - " + objPath + "\n";
+        objsCount++;
     }
+    std::cout << objsTxt;
 
-    cube.nx = { -c, c, c, -c, -c, c, c, -c };
-    cube.ny = { -c, -c, c, c, -c, -c, c, c };
-    cube.nz = { -c, -c, -c, -c, c, c, c, c };
-    cube.tu = { 0, 1, 1, 0, 0, 1, 1, 0 };
-    cube.tv = { 0, 0, 1, 1, 0, 0, 1, 1 };
-    cube.cr = { 255, 0, 255, 0, 255, 0, 255, 0 };
-    cube.cg = { 0, 255, 0, 255, 0, 255, 0, 255 };
-    cube.cb = { 0, 255, 0, 255, 0, 255, 0, 255 };
-    cube.ca = { 255, 255, 255, 255, 255, 255, 255, 255 };
-    cube.fw = { 
-        0, 1, 2, 0, 2, 3,
-        4, 5, 6, 4, 6, 7,
-        0, 4, 7, 0, 7, 3,
-        1, 5, 6, 1, 6, 2,
-        0, 1, 5, 0, 5, 4,
-        3, 2, 6, 3, 6, 7
-    };
-    cube.ft = cube.fw;
-    cube.fn = cube.fw;
+    // Create a test sphere
+    Sphere3D sphere(Vec3f(0, 8, 0), 1);
+    sphere.vel = Vec3f(0.3, 0, 0.1);
+    sphere.angvel = Vec3f(M_PI * 2.8, 0, M_PI * 2.4);
+    // GRAPHIC.mesh += sphere.mesh;
 
-    // Graphing calculator for y = f(x, z)
-    Mesh graph;
-
-    // Append points to the grid
-    Vec2f rangeX(-200, 200);
-    Vec2f rangeZ(-200, 200);
-    Vec2f step(1, 1);
-
-    float maxY = -INFINITY;
-    float minY = INFINITY;
-    int numX = 0;
-    int numZ = 0;
-    for (float x = rangeX.x; x <= rangeX.y; x += step.x) {
-        numX++;
+    // Create test cubes
+    std::vector<Cube3D> cubes;
+    for (int i = 0; i < 10; i++) {
         break;
-
-        for (float z = rangeZ.x; z <= rangeZ.y; z += step.y) {
-            numZ++;
-
-            // World pos of the point
-            float y = sin(x / 5) * cos(z / 5) * 5;
-            // float y = rand() % 30 - 10;
-
-            maxY = std::max(maxY, y);
-            minY = std::min(minY, y);
-
-            graph.wx.push_back(x);
-            graph.wy.push_back(y);
-            graph.wz.push_back(z);
-
-            // x and z ratio (0 - 1)
-            float ratioX = (x - rangeX.x) / (rangeX.y - rangeX.x);
-            float ratioZ = (z - rangeZ.x) / (rangeZ.y - rangeZ.x);
-            // Texture
-            graph.tu.push_back(ratioX);
-            graph.tv.push_back(ratioZ);
-        }
+        Cube3D cube = Cube3D(Vec3f(0, i * 2 + 1, i * 2 + 1), 1);
+        GRAPHIC.mesh += cube.mesh;
+        cubes.push_back(cube);
     }
-    numZ /= numX;
-
-    for (ULLInt i = 0; i < graph.wx.size(); i++) {
-        // Set color based on ratio
-        float r = (graph.wx[i] - rangeX.x) / (rangeX.y - rangeX.x);
-        float g = (graph.wy[i] - minY) / (maxY - minY);
-        float b = (graph.wz[i] - rangeZ.x) / (rangeZ.y - rangeZ.x);
-
-        graph.cr.push_back(255 - r * 255);
-        graph.cg.push_back(g * 255);
-        graph.cb.push_back(b * 255);
-        graph.ca.push_back(255);
-
-        // Set normal based on the triangle of surrounding points
-        int x = i / numZ;
-        int z = i % numZ;
-
-        int edge = 1;
-        if (x < edge || x >= numX - edge || z < edge || z >= numZ - edge) {
-            graph.nx.push_back(0);
-            graph.ny.push_back(1);
-            graph.nz.push_back(0);
-            continue;
-        }
-
-        int idxLeft = x * numZ + z - 1;
-        int idxRight = x * numZ + z + 1;
-        int idxUp = (x - 1) * numZ + z;
-        int idxDown = (x + 1) * numZ + z;
-
-        std::vector<int> idxDir = {
-            idxLeft, idxRight, idxUp, idxDown
-        };
-
-        // Triangle group: mid left up, mid up right, mid right down, mid down left
-        std::vector<Vec3f> triNormals;
-
-        for (int j = 0; j < 4; j++) {
-            int idx = idxDir[j];
-            Vec3f mid = graph.w3f(i);
-            Vec3f left = graph.w3f(idxLeft);
-            Vec3f right = graph.w3f(idxRight);
-            Vec3f up = graph.w3f(idxUp);
-            Vec3f down = graph.w3f(idxDown);
-            
-            if (j == 0) triNormals.push_back((mid - left) & (up - left));
-            if (j == 1) triNormals.push_back((mid - up) & (right - up));
-            if (j == 2) triNormals.push_back((mid - right) & (down - right));
-            if (j == 3) triNormals.push_back((mid - down) & (left - down));
-        }
-
-        Vec3f avgNormal = Vec3f();
-        for (Vec3f triNormal : triNormals) {
-            avgNormal += triNormal;
-        }
-        avgNormal.norm();
-
-        graph.nx.push_back(avgNormal.x);
-        graph.ny.push_back(avgNormal.y);
-        graph.nz.push_back(avgNormal.z);
-    }
-
-    // Append faces to the grid
-    for (ULLInt x = 0; x < numX; x++) {
-        for (ULLInt z = 0; z < numZ; z++) {
-            ULLInt i = x * numZ + z;
-
-            graph.fw.push_back(i);
-            graph.fw.push_back(i + 1);
-            graph.fw.push_back(i + numZ);
-            graph.fw.push_back(i + 1);
-            graph.fw.push_back(i + numZ + 1);
-            graph.fw.push_back(i + numZ);
-            
-            graph.fn = graph.fw;
-            graph.ft = graph.fw;
-        }
-    }
-
-    // Append all the meshes here
-    GRAPHIC.mesh += obj;
-    // GRAPHIC.mesh += graph;
-    // GRAPHIC.mesh += cube;
 
     GRAPHIC.mallocRuntimeFaces();
-    GRAPHIC.mallocFaceStreams();
+
+    std::string texturePath = "";
+    std::ifstream("assets/cfg/texture.txt") >> texturePath;
+    GRAPHIC.createTexture(texturePath);
+
+    int shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY;
+    std::ifstream("assets/cfg/shadow.txt") >> shdwWidth >> shdwHeight >> shdwTileSizeX >> shdwTileSizeY;
+    GRAPHIC.createShadowMap(shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY);
 
     // To avoid floating point errors
     // We will use a float that doesnt have a lot of precision
     float fovDeg = 90;
 
     // Cool rainbow effect for title
-    double rainbowR = 255;
-    double rainbowG = 0;
-    double rainbowB = 0;
+    Vec3f rainbow;
     short cycle = 0;
+
+    // Turn on/off features
+    bool textureMode = true;
+    bool shadowMode = true;
+    bool shadeMode = true;
+
+    // Gif animation texture
+    Vec2ulli gifFrame = {0, 26};
+    Vec2f gifTime = {0, 0.03};
+
+    // Other miscellaneus stuff
+    bool k_t_hold = false;
+
+    bool moveMode = true;
+    bool moving = false;
+
+    // =====================================================
+    // ===================== MAIN LOOP =====================
+    // =====================================================
 
     while (window.isOpen()) {
         // Frame start
@@ -234,12 +151,33 @@ int main() {
 
                 // Press L to read light.txt file and set its prop
                 if (event.key.code == sf::Keyboard::L) {
-                    std::ifstream dir("cfg/lightDir.txt");
+                    std::ifstream dir("assets/cfg/lightDir.txt");
                     dir >> GRAPHIC.light.dir.x >> GRAPHIC.light.dir.y >> GRAPHIC.light.dir.z;
 
-                    std::ifstream color("cfg/lightColor.txt");
+                    std::ifstream color("assets/cfg/lightColor.txt");
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
                 }
+                
+                // Press f2 to read texture.txt file and set its prop
+                if (event.key.code == sf::Keyboard::F2) {
+                    std::string texturePath = "";
+                    std::ifstream("assets/cfg/texture.txt") >> texturePath;
+                    GRAPHIC.createTexture(texturePath);
+                }
+
+                // Press 1 to toggle texture mode
+                if (event.key.code == sf::Keyboard::Num1)
+                    textureMode = !textureMode;
+                // Press 2 to toggle shadow mode
+                if (event.key.code == sf::Keyboard::Num2)
+                    shadowMode = !shadowMode;
+                // Press 3 to toggle shade mode
+                if (event.key.code == sf::Keyboard::Num3)
+                    shadeMode = !shadeMode;
+
+                // Press Z to toggle move mode
+                if (event.key.code == sf::Keyboard::Z)
+                    moveMode = !moveMode;
             }
 
             // Scroll to zoom in/out
@@ -259,12 +197,19 @@ int main() {
         bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
         bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
         bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
-        bool k_r = sf::Keyboard::isKeyPressed(sf::Keyboard::R);
+
+        bool k_w = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
+        bool k_a = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+        bool k_s = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+        bool k_d = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+        bool k_space = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+
         bool k_q = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
         bool k_e = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
+        bool k_t = sf::Keyboard::isKeyPressed(sf::Keyboard::T);
 
+        // Mouse movement => Look around
         if (CAMERA.focus) {
-            // Mouse movement handling
             sf::Vector2i mousepos = sf::Mouse::getPosition(window);
             sf::Mouse::setPosition(sf::Vector2i(
                 GRAPHIC.res_half.x, GRAPHIC.res_half.y
@@ -276,29 +221,89 @@ int main() {
 
             // Camera look around
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
-            CAMERA.rot.y -= dMx * CAMERA.mSens * FPS.dTimeSec;
-            CAMERA.restrictRot();
-            CAMERA.updateMVP();
+            CAMERA.rot.y += dMx * CAMERA.mSens * FPS.dTimeSec;
+        }
 
-            // Mouse Click = move forward
-            float vel = 0;
-            // Move forward/backward
-            if (m_left && !m_right)      vel = 20;
-            else if (m_right && !m_left) vel = -20;
-            else                         vel = 0;
-            // Move slower/faster
+        // Update camera
+        CAMERA.update();
+
+        // Csgo perspective mode
+        if (CAMERA.focus && !moveMode) {
+            float vel = CAMERA.velSpec;
+            // Hold ctrl to go slow, hold shift to go fast
             if (k_ctrl && !k_shift)      vel *= CAMERA.slowFactor;
             else if (k_shift && !k_ctrl) vel *= CAMERA.fastFactor;
-            // Update camera World pos
-            CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
+            // Press W/S to move forward/backward
+            if (k_w && !k_s) CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
+            if (k_s && !k_w) CAMERA.pos -= CAMERA.forward * vel * FPS.dTimeSec;
+            // Press A/D to move left/right
+            if (k_a && !k_d) CAMERA.pos += CAMERA.right * vel * FPS.dTimeSec;
+            if (k_d && !k_a) CAMERA.pos -= CAMERA.right * vel * FPS.dTimeSec;
         }
 
-        // Press R to rotate the object
-        if (k_r) {
-            float rot = M_PI / 3 * FPS.dTimeSec;
-            if (k_ctrl) rot *= -1;
-            if (k_shift) rot *= 3;
+        if (CAMERA.focus && moveMode) {
+            // Gravity
+            CAMERA.vel.y -= 1.15 * FPS.dTimeSec;
+
+            // On ground
+            if (CAMERA.pos.y + CAMERA.vel.y < 1.5) {
+                CAMERA.vel.y = 0;
+                CAMERA.pos.y = 1.5;
+            }
+
+            // Jump
+            if (k_space && abs(CAMERA.vel.y) < 0.01) CAMERA.vel.y = .3;
+
+            float vel_xz = sqrt(
+                CAMERA.vel.x * CAMERA.vel.x + CAMERA.vel.z * CAMERA.vel.z
+            );
+
+            // Move
+            moving = false;
+            if (k_w && !k_s) {
+                moving = true;
+                CAMERA.vel.x += CAMERA.forward.x * FPS.dTimeSec;
+                CAMERA.vel.z += CAMERA.forward.z * FPS.dTimeSec;
+            }
+            if (k_s && !k_w) {
+                moving = true;
+                CAMERA.vel.x -= CAMERA.forward.x * FPS.dTimeSec;
+                CAMERA.vel.z -= CAMERA.forward.z * FPS.dTimeSec;
+            }
+            if (k_a && !k_d) {
+                moving = true;
+                CAMERA.vel.x += CAMERA.right.x * FPS.dTimeSec;
+                CAMERA.vel.z += CAMERA.right.z * FPS.dTimeSec;
+            }
+            if (k_d && !k_a) {
+                moving = true;
+                CAMERA.vel.x -= CAMERA.right.x * FPS.dTimeSec;
+                CAMERA.vel.z -= CAMERA.right.z * FPS.dTimeSec;
+            }
+            if (vel_xz > 0 && !moving) {
+                CAMERA.vel.x /= 1.5;
+                CAMERA.vel.z /= 1.5;
+            }
+
+            // Limit and restrict horizontal speed
+            if (vel_xz > 1) {
+                CAMERA.vel.x /= vel_xz;
+                CAMERA.vel.z /= vel_xz;
+            }
+
+            for (Cube3D &cube : cubes) cube.physic();
+            CAMERA.pos += CAMERA.vel;
         }
+
+        // Press T to read an transform.txt file and apply it
+        // Note: hold ctrl to switch keyT from hold to tap
+        if (k_t && (!k_t_hold || !k_ctrl)) {
+            k_t_hold = true;
+
+            Playground::applyTransformation(objs);
+        }
+        if (!k_t) k_t_hold = false;
+
         // Press Q to rotate light source in x axis
         if (k_q) {
             float rot = M_PI / 3 * FPS.dTimeSec;
@@ -307,28 +312,57 @@ int main() {
 
             GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(rot, 0, 0));
         }
-        // Press E to rotate light source in z axis
+        // Press E to rotate light source in y axis
         if (k_e) {
             float rot = M_PI / 3 * FPS.dTimeSec;
             if (k_ctrl) rot *= -1;
             if (k_shift) rot *= 3;
 
-            GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(0, 0, rot));
+            GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(0, rot, 0));
+        }
+
+        // ========== Playgrounds ==============
+
+        // 3 digit frame number (add additional 0s if needed)
+        std::string frameStr;
+        if (gifFrame.x < 10) frameStr = "00" + std::to_string(gifFrame.x);
+        else if (gifFrame.x < 100) frameStr = "0" + std::to_string(gifFrame.x);
+        else frameStr = std::to_string(gifFrame.x);
+        std::string gifPath = "assets/Gif/frame_" + frameStr + ".png";
+
+        if (gifTime.x < gifTime.y) {
+            gifTime.x += FPS.dTimeSec;
+        } else {
+            gifTime.x = 0;
+
+            gifFrame.x++;
+            if (gifFrame.x >= gifFrame.y) gifFrame.x = 0;
+
+            // GRAPHIC.createTexture(gifPath);
         }
 
         // ========== Render Pipeline ==========
 
-        VertexShader::cameraProjection();
+        // Vertex Shader
         VertexShader::createRuntimeFaces();
-        VertexShader::createDepthMapBeta();
+        VertexShader::createDepthMap();
         VertexShader::rasterization();
 
-        FragmentShader::phongShading();
+        // Fragment Shader (bunch of beta features)
+        if (textureMode) FragmentShader::applyTexture();
+        if (shadowMode) {
+            FragmentShader::resetShadowMap();
+            FragmentShader::createShadowMap();
+            FragmentShader::applyShadowMap();
+        }
+        if (shadeMode) FragmentShader::phongShading();
 
-        // From buffer to texture
-        // (clever way to incorporate CUDA into SFML)
+        // From buffer to SFMLtexture
         SFTex.updateTexture(
-            GRAPHIC.buffer.color,
+            GRAPHIC.buffer.color.x,
+            GRAPHIC.buffer.color.y,
+            GRAPHIC.buffer.color.z,
+            GRAPHIC.buffer.color.w,
             GRAPHIC.buffer.width,
             GRAPHIC.buffer.height,
             GRAPHIC.pixelSize
@@ -339,16 +373,16 @@ int main() {
         // Rainbow title
         double step = 120 * FPS.dTimeSec;
         if (cycle == 0) {
-            rainbowG += step; rainbowR -= step;
-            if (rainbowG >= 255) cycle = 1;
+            rainbow.y += step; rainbow.x -= step;
+            if (rainbow.y >= 255) cycle = 1;
         } else if (cycle == 1) {
-            rainbowB += step; rainbowG -= step;
-            if (rainbowB >= 255) cycle = 2;
+            rainbow.z += step; rainbow.y -= step;
+            if (rainbow.z >= 255) cycle = 2;
         } else if (cycle == 2) {
-            rainbowR += step; rainbowB -= step;
-            if (rainbowR >= 255) cycle = 0;
+            rainbow.x += step; rainbow.z -= step;
+            if (rainbow.x >= 255) cycle = 0;
         }
-        sf::Color rainbow = sf::Color(rainbowR, rainbowG, rainbowB);
+        sf::Color rainbowColor = sf::Color(rainbow.x, rainbow.y, rainbow.z);
 
         // Dynamic FPS color
         double gRatio = double(FPS.fps - 10) / 50;
@@ -356,19 +390,39 @@ int main() {
         sf::Color fpsColor((1 - gRatio) * 255, gRatio * 255, 0);
 
         // Log all the data
-        LOG.addLog("Welcome to AsczEngine 3.0", rainbow, 1);
+        LOG.addLog("Welcome to AsczEngine 3.0", rainbowColor, 1);
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
         LOG.addLog(
             "Screen:\n| Res: " + std::to_string(width) +
             " x " + std::to_string(height) +
             " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
-            "| Tile Size: " + std::to_string(tileWidth) + " x " + std::to_string(tileHeight) + "\n" +
-            "| Visible Face: " + std::to_string(GRAPHIC.faceCounter) +
+            "| Tile Size: " + std::to_string(tileSizeX) + " x " + std::to_string(tileSizeY) + "\n" +
+            "| Clip Face: " + std::to_string(GRAPHIC.rtCount) +
             " / " + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );
-        LOG.addLog(CAMERA.data(), sf::Color(160, 160, 255));
-        LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 255, 160));
+        LOG.addLog(CAMERA.data(), sf::Color(160, 255, 160));
+        LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 160, 255));
+        LOG.addLog("Shader (BETA)", sf::Color(255, 255, 255), 1);
+        LOG.addLog(
+            "| Texture: " + std::to_string(textureMode),
+            sf::Color(textureMode ? 255 : 100, 50, 50)
+        );
+        LOG.addLog(
+            "| Shadow: " + std::to_string(shadowMode),
+            sf::Color(50, shadowMode ? 255 : 100, 50)
+        );
+        LOG.addLog(
+            "| Shade: " + std::to_string(shadeMode),
+            sf::Color(50, 50, shadeMode ? 255 : 100)
+        );
+
+        LOG.addLog(
+            "vx: " + std::to_string(CAMERA.vel.x) +
+            " vy: " + std::to_string(CAMERA.vel.y) +
+            " vz: " + std::to_string(CAMERA.vel.z),
+            sf::Color(255, 255, 255)
+        );
 
         // Displays
         window.clear(sf::Color(0, 0, 0));

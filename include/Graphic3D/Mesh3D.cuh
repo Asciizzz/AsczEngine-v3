@@ -21,11 +21,28 @@ We will have 4 arrays for vertex data:
 #define Meshs3D std::vector<Mesh3D>
 
 struct Mesh {
+    /* VERY IMPORTANT NOTE:
+
+    Section 1 is only used for initialization
+    Once the global Mesh3D object append it
+    it will become practically useless
+
+    When we want to perform transformations
+    we will use the range values in section 2
+    to apply directly to the device memory
+    of the global Mesh3D object
+    */
+
+    // Section 1: initialization
     std::vector<float> wx, wy, wz;
     std::vector<float> nx, ny, nz;
     std::vector<float> tu, tv;
     std::vector<float> cr, cg, cb, ca;
     std::vector<ULLInt> fw, ft, fn;
+
+    // Section 2: runtime, note: i = [a, b)
+    Vec2ulli w_range, n_range, t_range, c_range;
+    Vec2ulli fw_range, ft_range, fn_range;
 
     Mesh(
         std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
@@ -36,28 +53,32 @@ struct Mesh {
     );
     Mesh();
 
+    // Return vertex data
     Vec3f w3f(ULLInt i);
     Vec3f n3f(ULLInt i);
     Vec2f t2f(ULLInt i);
     Vec4f c4f(ULLInt i);
-    Vec3ulli fw3ulli(ULLInt i);
-    Vec3ulli ft3ulli(ULLInt i);
-    Vec3ulli fn3ulli(ULLInt i);
+
+    // Section 1 transformations
+    void translateIni(Vec3f t);
+    void rotateIni(Vec3f origin, Vec3f rot, bool rotNormal=true);
+    void scaleIni(Vec3f origin, Vec3f scl, bool sclNormal=true);
+
+    // Section 2 transformations
+    void translateRuntime(Vec3f t);
+    void rotateRuntime(Vec3f origin, Vec3f rot);
+    void scaleRuntime(Vec3f origin, Vec3f scl);
 };
 
 // Cool device mesh (for parallel processing)
 class Mesh3D {
 public:
-    // Beta: SoA vertex data
-    Vecptr3f world;
-    Vecptr3f normal;
-    Vecptr2f texture;
-    Vecptr4f color;
-    Vecptr4f screen;
-
-    // Faces index (triangles)
-    // Every 3 indices is a face
-    Vecptr4ulli faces;
+    Vec3f_ptr world;
+    Vec3f_ptr normal;
+    Vec2f_ptr texture;
+    Vec4f_ptr color;
+    Vec4f_ptr screen;
+    Vec4ulli_ptr faces;
 
     Mesh3D(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
 
@@ -73,9 +94,37 @@ public:
 
     // Mesh operators
     void operator+=(Mesh &mesh);
+    void operator+=(std::vector<Mesh> &meshs);
 };
 
 // Kernel for preparing faces
 __global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs);
+
+// Kernel for transformations
+// Note: rotation and scaling also affects normals
+
+__global__ void translateKernel(
+    float *wx, float *wy, float *wz, float tx, float ty, float tz, ULLInt numWs
+);
+
+__global__ void rotateWsKernel(
+    float *wx, float *wy, float *wz,
+    float ox, float oy, float oz,
+    float rx, float ry, float rz, ULLInt numWs
+);
+__global__ void rotateNsKernel(
+    float *nx, float *ny, float *nz,
+    float rx, float ry, float rz, ULLInt numNs
+);
+
+__global__ void scaleWsKernel(
+    float *wx, float *wy, float *wz,
+    float ox, float oy, float oz,
+    float sx, float sy, float sz, ULLInt numWs
+);
+__global__ void scaleNsKernel(
+    float *nx, float *ny, float *nz,
+    float sx, float sy, float sz, ULLInt numNs
+);
 
 #endif

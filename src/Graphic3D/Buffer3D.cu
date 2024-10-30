@@ -12,64 +12,76 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
 
     cudaMalloc(&active, size * sizeof(bool));
     cudaMalloc(&depth, size * sizeof(float));
-    cudaMalloc(&color, size * sizeof(Vec4f));
-
-    cudaMalloc(&world, size * sizeof(Vec3f));
-    cudaMalloc(&normal, size * sizeof(Vec3f));
-    cudaMalloc(&texture, size * sizeof(Vec2f));
-
     cudaMalloc(&faceID, size * sizeof(ULLInt));
-    cudaMalloc(&bary, size * sizeof(Vec3f));
+    bary.malloc(size);
+    world.malloc(size);
+    texture.malloc(size);
+    normal.malloc(size);
+    color.malloc(size);
+
 }
 
 void Buffer3D::free() {
     if (active) cudaFree(active);
     if (depth) cudaFree(depth);
-    if (color) cudaFree(color);
-    if (world) cudaFree(world);
-    if (normal) cudaFree(normal);
-    if (texture) cudaFree(texture);
     if (faceID) cudaFree(faceID);
-    if (bary) cudaFree(bary);
+    bary.free();
+    world.free();
+    texture.free();
+    normal.free();
+    color.free();
 }
 
 void Buffer3D::clearBuffer() {
     clearBufferKernel<<<blockNum, blockSize>>>(
-        active, depth, color,
-        world, normal, texture,
-        faceID, bary, size
+        active, depth, faceID,
+        bary.x, bary.y, bary.z,
+        world.x, world.y, world.z,
+        texture.x, texture.y,
+        normal.x, normal.y, normal.z,
+        color.x, color.y, color.z, color.w,
+        size
     );
     cudaDeviceSynchronize();
 }
 
 // Kernel for clearing the buffer
 __global__ void clearBufferKernel(
-    bool *active, float *depth, Vec4f *color,
-    Vec3f *world, Vec3f *normal, Vec2f *texture,
-    ULLInt *faceID, Vec3f *bary, int size
+    bool *active, float *depth, ULLInt *faceID,
+    float *brx, float *bry, float *brz, // Bary
+    float *wx, float *wy, float *wz, // World
+    float *tu, float *tv, // Texture
+    float *nx, float *ny, float *nz, // Normal
+    float *cr, float *cg, float *cb, float *ca, // Color
+    int size
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= size) return;
 
     active[i] = false; // Inactive
     depth[i] = 1; // Furthest depth
-    color[i] = Vec4f(); // Black
-
-    world[i] = Vec3f(); // Limbo
-    normal[i] = Vec3f(); // Limbo
-    texture[i] = Vec2f(); // Limbo
-
     faceID[i] = NULL; // No face
-    bary[i] = Vec3f(); // Limbo
+
+    brx[i] = 0; bry[i] = 0; brz[i] = 0; // Limbo
+    wx[i] = 0; wy[i] = 0; wz[i] = 0; // Limbo
+    tu[i] = 0; tv[i] = 0; // Limbo
+    nx[i] = 0; ny[i] = 0; nz[i] = 0; // Limbo
+    cr[i] = 0; cg[i] = 0; cb[i] = 0; ca[i] = 0; // Limbo
 }
 
 // Night sky
 void Buffer3D::nightSky() {
-    nightSkyKernel<<<blockNum, blockSize>>>(color, width, height);
+    nightSkyKernel<<<blockNum, blockSize>>>(
+        color.x, color.y, color.z, color.w,
+        width, height
+    );
     cudaDeviceSynchronize();
 }
 
-__global__ void nightSkyKernel(Vec4f *color, int width, int height) {
+__global__ void nightSkyKernel(
+    float *cr, float *cg, float *cb, float *ca,
+    int width, int height
+) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= width * height) return;
 
@@ -79,8 +91,8 @@ __global__ void nightSkyKernel(Vec4f *color, int width, int height) {
     float ratioX = float(x) / float(width);
     float ratioY = float(y) / float(height);
 
-    color[i] = Vec4f(0, 0, 0, 255);
-    color[i].x = 4 * (1 - ratioY);
-    color[i].y = 10 * (1 - ratioX);
-    color[i].z = 20 * (1 - ratioY);
+    cr[i] = 4 * (1 - ratioY);
+    cg[i] = 10 * (1 - ratioX);
+    cb[i] = 20 * (1 - ratioY);
+    ca[i] = 255;
 }

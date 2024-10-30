@@ -15,8 +15,6 @@
 #define Vecs2f std::vector<Vec2f>
 #define Vecs3f std::vector<Vec3f>
 #define Vecs4f std::vector<Vec4f>
-#define Vecs3ulli std::vector<Vec3ulli>
-#define Vecs4ulli std::vector<Vec4ulli>
 
 #define M_PI 3.14159265358979323846 // 180 degrees
 #define M_PI_2 1.57079632679489661923 // 90 degrees
@@ -34,23 +32,6 @@ struct Vec2f {
     __host__ __device__ Vec2f operator-(const float t);
     __host__ __device__ Vec2f operator*(const float scl);
     __host__ __device__ Vec2f operator/(const float scl);
-};
-
-struct Vec3ulli { // For faces indices
-    ULLInt x, y, z;
-    __host__ __device__ Vec3ulli();
-    __host__ __device__ Vec3ulli(ULLInt x, ULLInt y, ULLInt z);
-    __host__ __device__ Vec3ulli(ULLInt a);
-
-    __host__ __device__ void operator+=(ULLInt t);
-    __host__ __device__ void operator-=(ULLInt t);
-};
-
-struct Vec4ulli {
-    ULLInt x, y, z, w;
-    __host__ __device__ Vec4ulli();
-    __host__ __device__ Vec4ulli(ULLInt x, ULLInt y, ULLInt z, ULLInt w);
-    __host__ __device__ Vec4ulli(ULLInt a);
 };
 
 struct Vec4f; // Forward declaration
@@ -109,43 +90,51 @@ struct Vec4f {
     __host__ __device__ void limit(float min, float max); // Limit the vector
 };
 
+struct Vec2ulli {
+    ULLInt x = 0, y = 0;
+};
+
 // SoA structure Vecs
 
-struct Vecptr2f {
+struct Vec2f_ptr {
     float *x, *y;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
-    void operator+=(Vecptr2f &vec);
+    void operator+=(Vec2f_ptr &vec);
 };
-struct Vecptr3f {
+struct Vec3f_ptr {
     float *x, *y, *z;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
 
-    void operator+=(Vecptr3f &vec);
+    void operator+=(Vec3f_ptr &vec);
 };
-struct Vecptr4f {
+struct Vec4f_ptr {
     float *x, *y, *z, *w;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
-    void operator+=(Vecptr4f &vec);
+    void operator+=(Vec4f_ptr &vec);
 };
 
 // Mainly used for faces
-struct Vecptr4ulli {
+struct Vec4ulli_ptr {
     // Vertex, texture, normal, and objId
     ULLInt *v, *t, *n, *o;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
-    void operator+=(Vecptr4ulli &vec);
+    void operator+=(Vec4ulli_ptr &vec);
 };
+
+// Atomic functions for float
+__device__ bool atomicMinFloat(float* addr, float value);
+__device__ bool atomicMinDouble(double* addr, double value);
 
 #endif

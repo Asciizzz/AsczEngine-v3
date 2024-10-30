@@ -7,9 +7,9 @@
 
 // BETA: LightSrc
 struct LightSrc {
-    Vec3f dir = {-1, -1, -1};
+    Vec3f dir = {0, 0, 1};
     float ambient = 0.1;
-    float specular = 1.2;
+    float specular = 1.1;
     Vec3f color = {1, 1, 1};
 
     std::string data() {
@@ -50,8 +50,8 @@ public:
     void setResolution(float w, float h, float ps=4);
 
     // For tile-based rasterization
-    int tileWidth = 20;
-    int tileHeight = 20;
+    int tileSizeX = 20;
+    int tileSizeY = 20;
     int tileNumX, tileNumY, tileNum;
     void setTileSize(int tw, int th);
 
@@ -62,34 +62,41 @@ public:
     Mesh3D mesh;
 
     // For runtime faces
-    ULLInt faceCounter;
-    ULLInt *d_faceCounter;
-    Face3D runtimeFaces;
+    ULLInt rtCount;
+    ULLInt *d_rtCount;
+    size_t faceChunkSize = 5e5; // For chunking
+    Face3D rtFaces;
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();
     void resizeRuntimeFaces();
 
-    // Face stream for chunking
-    cudaStream_t *faceStreams;
-    size_t chunkSize = 5e6;
-    int chunkNum;
-    void mallocFaceStreams();
-    void freeFaceStreams();
-    void resizeFaceStreams();
-
     // Camera3D and Buffer3D
     Camera3D camera;
     Buffer3D buffer;
 
-    // BETA: LightSrc and shadow mapping
+    // ========== BETAs SECTION ==========
+
+    // BETA: Texture mapping
+    int textureWidth, textureHeight;
+    Vec3f *d_texture; // Device texture
+    bool textureSet = false;
+    void createTexture(const std::string &path);
+    void freeTexture();
+
+    // BETA: LightSrc
     LightSrc light;
+
+    // BETA: Shadow mapping
+    float *shadowDepth;
+    int shdwWidth, shdwHeight;
+    int shdwTileSizeX, shdwTileSizeY;
+    int shdwTileNumX, shdwTileNumY, shdwTileNum;
+    void createShadowMap(int w, int h, int tw, int th);
+    void freeShadowMap();
 
 private:
     Graphic3D() {}
 };
-
-// Helpful device functions
-__device__ bool atomicMinFloat(float* addr, float value);
 
 #endif

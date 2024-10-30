@@ -23,22 +23,6 @@ Vec2f Vec2f::operator/(const float scl) {
     return Vec2f(x / scl, y / scl);
 }
 
-// VEC3ulli (unsigned long long int)
-Vec3ulli::Vec3ulli() : x(0), y(0), z(0) {}
-Vec3ulli::Vec3ulli(ULLInt x, ULLInt y, ULLInt z) : x(x), y(y), z(z) {}
-Vec3ulli::Vec3ulli(ULLInt a) : x(a), y(a), z(a) {}
-void Vec3ulli::operator+=(ULLInt t) {
-    x += t; y += t; z += t;
-}
-void Vec3ulli::operator-=(ULLInt t) {
-    x -= t; y -= t; z -= t;
-}
-
-// VEC4ulli
-Vec4ulli::Vec4ulli() : x(0), y(0), z(0), w(0) {}
-Vec4ulli::Vec4ulli(ULLInt x, ULLInt y, ULLInt z, ULLInt w) : x(x), y(y), z(z), w(w) {}
-Vec4ulli::Vec4ulli(ULLInt a) : x(a), y(a), z(a), w(a) {}
-
 // VEC3f
 Vec3f::Vec3f() : x(0), y(0), z(0) {}
 Vec3f::Vec3f(float x, float y, float z) : x(x), y(y), z(z) {}
@@ -112,6 +96,7 @@ Vec3f Vec3f::translate(Vec3f& vec, const Vec3f& t) {
 Vec3f Vec3f::rotate(Vec3f& vec, const Vec3f& origin, const Vec3f& rot) {
     // Translate to origin
     Vec3f diff = vec - origin;
+    Vec4f diff4 = diff.toVec4f();
 
     float cosX = cos(rot.x), sinX = sin(rot.x);
     float cosY = cos(rot.y), sinY = sin(rot.y);
@@ -136,9 +121,13 @@ Vec3f Vec3f::rotate(Vec3f& vec, const Vec3f& origin, const Vec3f& rot) {
         {0, 0, 1, 0},
         {0, 0, 0, 1}
     };
-    Mat4f rMat = Mat4f(rX) * Mat4f(rY) * Mat4f(rZ);
 
-    Vec4f rVec4 = rMat * diff.toVec4f();
+    Mat4f rMatX = Mat4f(rX);
+    Mat4f rMatY = Mat4f(rY);
+    Mat4f rMatZ = Mat4f(rZ);
+
+    Vec4f rVec4 = rMatZ * (rMatY * (rMatX * diff4));
+
     Vec3f rVec3 = rVec4.toVec3f();
     rVec3 += origin;
 
@@ -204,18 +193,18 @@ void Vec4f::limit(float min, float max) {
 
 // SoA structure Vecs
 
-void Vecptr2f::malloc(ULLInt size) {
+void Vec2f_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&x, size * sizeof(float));
     cudaMalloc(&y, size * sizeof(float));
 }
-void Vecptr2f::free() {
+void Vec2f_ptr::free() {
     this->size = 0;
     cudaFree(x);
     cudaFree(y);
 }
-void Vecptr2f::operator+=(Vecptr2f& vec) {
-    Vecptr2f newVec;
+void Vec2f_ptr::operator+=(Vec2f_ptr& vec) {
+    Vec2f_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data
@@ -234,20 +223,20 @@ void Vecptr2f::operator+=(Vecptr2f& vec) {
     *this = newVec;
 }
 
-void Vecptr3f::malloc(ULLInt size) {
+void Vec3f_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&x, size * sizeof(float));
     cudaMalloc(&y, size * sizeof(float));
     cudaMalloc(&z, size * sizeof(float));
 }
-void Vecptr3f::free() {
+void Vec3f_ptr::free() {
     this->size = 0;
     cudaFree(x);
     cudaFree(y);
     cudaFree(z);
 }
-void Vecptr3f::operator+=(Vecptr3f& vec) {
-    Vecptr3f newVec;
+void Vec3f_ptr::operator+=(Vec3f_ptr& vec) {
+    Vec3f_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data
@@ -268,22 +257,22 @@ void Vecptr3f::operator+=(Vecptr3f& vec) {
     *this = newVec;
 }
 
-void Vecptr4f::malloc(ULLInt size) {
+void Vec4f_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&x, size * sizeof(float));
     cudaMalloc(&y, size * sizeof(float));
     cudaMalloc(&z, size * sizeof(float));
     cudaMalloc(&w, size * sizeof(float));
 }
-void Vecptr4f::free() {
+void Vec4f_ptr::free() {
     this->size = 0;
     cudaFree(x);
     cudaFree(y);
     cudaFree(z);
     cudaFree(w);
 }
-void Vecptr4f::operator+=(Vecptr4f& vec) {
-    Vecptr4f newVec;
+void Vec4f_ptr::operator+=(Vec4f_ptr& vec) {
+    Vec4f_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data
@@ -306,22 +295,22 @@ void Vecptr4f::operator+=(Vecptr4f& vec) {
     *this = newVec;
 }
 
-void Vecptr4ulli::malloc(ULLInt size) {
+void Vec4ulli_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&v, size * sizeof(ULLInt));
     cudaMalloc(&t, size * sizeof(ULLInt));
     cudaMalloc(&n, size * sizeof(ULLInt));
     cudaMalloc(&o, size * sizeof(ULLInt));
 }
-void Vecptr4ulli::free() {
+void Vec4ulli_ptr::free() {
     this->size = 0;
     cudaFree(v);
     cudaFree(t);
     cudaFree(n);
     cudaFree(o);
 }
-void Vecptr4ulli::operator+=(Vecptr4ulli& vec) {
-    Vecptr4ulli newVec;
+void Vec4ulli_ptr::operator+=(Vec4ulli_ptr& vec) {
+    Vec4ulli_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data
@@ -342,4 +331,29 @@ void Vecptr4ulli::operator+=(Vecptr4ulli& vec) {
 
     // Update
     *this = newVec;
+}
+
+// Atomics
+__device__ bool atomicMinFloat(float* addr, float value) {
+    int* addr_as_int = (int*)addr;
+    int old = *addr_as_int, assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(addr_as_int, assumed, __float_as_int(fminf(value, __int_as_float(assumed))));
+    } while (assumed != old);
+
+    return __int_as_float(old) > value;
+}
+
+__device__ bool atomicMinDouble(double* addr, double value) {
+    unsigned long long int* addr_as_ull = (unsigned long long int*)addr;
+    unsigned long long int old = *addr_as_ull, assumed;
+
+    do {
+        assumed = old;
+        old = atomicCAS(addr_as_ull, assumed, __double_as_longlong(fmin(value, __longlong_as_double(assumed))));
+    } while (assumed != old);
+
+    return __longlong_as_double(old) > value;
 }

@@ -1,5 +1,4 @@
 .vscode/
-backup/
-assets/Heavy/
-
-test/
+.backup/
+.heavy/
+.test/
