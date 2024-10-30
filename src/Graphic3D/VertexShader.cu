@@ -267,15 +267,23 @@ __global__ void createRuntimeFacesKernel(
 
     // If 4 point: create 2 faces A B C, A C D
     for (int i = 0; i < newVcount - 2; i++) {
-        ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
-        ULLInt idx1 = idx0 + 1;
-        ULLInt idx2 = idx0 + 2;
-
         Vec4f w4s[3] = {
             mvp * Vec4f(vertices[0].world.x, vertices[0].world.y, vertices[0].world.z, 1),
             mvp * Vec4f(vertices[i + 1].world.x, vertices[i + 1].world.y, vertices[i + 1].world.z, 1),
             mvp * Vec4f(vertices[i + 2].world.x, vertices[i + 2].world.y, vertices[i + 2].world.z, 1)
         };
+
+        // Triangle entirely outside the frustum
+        if ((w4s[0].x > w4s[0].w && w4s[1].x > w4s[1].w && w4s[2].x > w4s[2].w) ||
+            (w4s[0].x < -w4s[0].w && w4s[1].x < -w4s[1].w && w4s[2].x < -w4s[2].w) ||
+            (w4s[0].y > w4s[0].w && w4s[1].y > w4s[1].w && w4s[2].y > w4s[2].w) ||
+            (w4s[0].y < -w4s[0].w && w4s[1].y < -w4s[1].w && w4s[2].y < -w4s[2].w) ||
+            (w4s[0].z > w4s[0].w && w4s[1].z > w4s[1].w && w4s[2].z > w4s[2].w) ||
+            (w4s[0].z < -w4s[0].w && w4s[1].z < -w4s[1].w && w4s[2].z < -w4s[2].w)) continue;
+
+        ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
+        ULLInt idx1 = idx0 + 1;
+        ULLInt idx2 = idx0 + 2;
 
         rtSx[idx0] = -w4s[0].x; rtSx[idx1] = -w4s[1].x; rtSx[idx2] = -w4s[2].x;
         rtSy[idx0] = w4s[0].y; rtSy[idx1] = w4s[1].y; rtSy[idx2] = w4s[2].y;
