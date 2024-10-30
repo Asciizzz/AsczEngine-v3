@@ -34,7 +34,6 @@ void VertexShader::createRuntimeFaces() {
 void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
-    Mesh3D &mesh = grphic.mesh;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
@@ -133,6 +132,21 @@ __global__ void createRuntimeFacesKernel(
         near.equation(rtWs[1]),
         near.equation(rtWs[2])
     };
+
+    /* CREATOR NOTE:
+
+    In the future we are going to use a scan and scatter algorithm
+
+    Therefore we should be clear on whether 1 or 2 faces are created:
+
+    - 3 side < 0 -> 0 vertex -> 0 face
+    - 2 side < 0 -> 2 intersection + 1 vertex -> 3 vertices -> 1 face
+    - 1 side < 0 -> 2 intersection + 2 vertex -> 4 vertices -> 2 faces
+
+    General formula: 
+    - Face = 3 - num(side < 0)
+
+    */
 
     // If all behind, return
     if (side[0] < 0 && side[1] < 0 && side[2] < 0) return;
