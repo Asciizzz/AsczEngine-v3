@@ -1,11 +1,11 @@
 #include <FpsHandler.cuh>
 #include <CsLogHandler.cuh>
+#include <Utility.cuh>
 
 #include <VertexShader.cuh>
 #include <FragmentShader.cuh>
 #include <SFMLTexture.cuh>
 
-#include <Playground.cuh>
 #include <Sphere3D.cuh>
 #include <Cube3D.cuh>
 
@@ -29,6 +29,8 @@ int main() {
         >> CAMERA.pos.x >> CAMERA.pos.y >> CAMERA.pos.z;
     std::ifstream("assets/cfg/cameraSpd.txt")
         >> CAMERA.velSpec >> CAMERA.slowFactor >> CAMERA.fastFactor;
+    std::ifstream("assets/cfg/cameraView.txt")
+        >> CAMERA.near >> CAMERA.far;
 
     SFMLTexture SFTex = SFMLTexture(width, height);
     sf::RenderWindow window(sf::VideoMode(width, height), "AsczEngine");
@@ -62,7 +64,7 @@ int main() {
         ss >> translate.x >> translate.y >> translate.z;
         rotate *= M_PI / 180;
 
-        Mesh obj = Playground::readObjFile(objPath, 1, 1, true);
+        Mesh obj = Utils::readObjFile(objPath, 1, 1, true);
         obj.scaleIni(Vec3f(), Vec3f(scale));
         obj.rotateIni(Vec3f(), rotate);
         obj.translateIni(translate);
@@ -86,7 +88,7 @@ int main() {
     std::vector<Cube3D> cubes;
     for (int i = 0; i < 10; i++) {
         break;
-        Cube3D cube = Cube3D(Vec3f(0, i * 2 + 1, i * 2 + 1), 1);
+        Cube3D cube = Cube3D(Vec3f(i + 0.5, i + 0.5, i + 0.5), 0.5);
         GRAPHIC.mesh += cube.mesh;
         cubes.push_back(cube);
     }
@@ -111,8 +113,10 @@ int main() {
 
     // Turn on/off features
     bool textureMode = true;
-    bool shadowMode = true;
+    bool shadowMode = false;
     bool shadeMode = true;
+    bool gifMode = false;
+    bool moveMode = true;
 
     // Gif animation texture
     Vec2ulli gifFrame = {0, 26};
@@ -120,9 +124,6 @@ int main() {
 
     // Other miscellaneus stuff
     bool k_t_hold = false;
-
-    bool moveMode = true;
-    bool moving = false;
 
     // =====================================================
     // ===================== MAIN LOOP =====================
@@ -148,15 +149,6 @@ int main() {
                         GRAPHIC.res_half.x, GRAPHIC.res_half.y
                     ), window);
                 }
-
-                // Press L to read light.txt file and set its prop
-                if (event.key.code == sf::Keyboard::L) {
-                    std::ifstream dir("assets/cfg/lightDir.txt");
-                    dir >> GRAPHIC.light.dir.x >> GRAPHIC.light.dir.y >> GRAPHIC.light.dir.z;
-
-                    std::ifstream color("assets/cfg/lightColor.txt");
-                    color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
-                }
                 
                 // Press f2 to read texture.txt file and set its prop
                 if (event.key.code == sf::Keyboard::F2) {
@@ -174,10 +166,22 @@ int main() {
                 // Press 3 to toggle shade mode
                 if (event.key.code == sf::Keyboard::Num3)
                     shadeMode = !shadeMode;
+                // Press 4 to toggle gif mode
+                if (event.key.code == sf::Keyboard::Num4)
+                    gifMode = !gifMode;
 
                 // Press Z to toggle move mode
                 if (event.key.code == sf::Keyboard::Z)
                     moveMode = !moveMode;
+
+                // Press L to read light.txt file and set its prop
+                if (event.key.code == sf::Keyboard::L) {
+                    std::ifstream dir("assets/cfg/lightDir.txt");
+                    dir >> GRAPHIC.light.dir.x >> GRAPHIC.light.dir.y >> GRAPHIC.light.dir.z;
+
+                    std::ifstream color("assets/cfg/lightColor.txt");
+                    color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
+                }
             }
 
             // Scroll to zoom in/out
@@ -259,7 +263,7 @@ int main() {
             );
 
             // Move
-            moving = false;
+            bool moving = false;
             if (k_w && !k_s) {
                 moving = true;
                 CAMERA.vel.x += CAMERA.forward.x * FPS.dTimeSec;
@@ -300,7 +304,7 @@ int main() {
         if (k_t && (!k_t_hold || !k_ctrl)) {
             k_t_hold = true;
 
-            Playground::applyTransformation(objs);
+            Utils::applyTransformation(objs);
         }
         if (!k_t) k_t_hold = false;
 
@@ -338,7 +342,7 @@ int main() {
             gifFrame.x++;
             if (gifFrame.x >= gifFrame.y) gifFrame.x = 0;
 
-            // GRAPHIC.createTexture(gifPath);
+            if (gifMode) GRAPHIC.createTexture(gifPath);
         }
 
         // ========== Render Pipeline ==========

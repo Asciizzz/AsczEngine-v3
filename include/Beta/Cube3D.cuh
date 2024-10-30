@@ -1,7 +1,7 @@
 #ifndef CUBE3D_CUH
 #define CUBE3D_CUH
 
-#include <Playground.cuh>
+#include <Utility.cuh>
 
 #include <FpsHandler.cuh>
 
@@ -23,7 +23,7 @@ public:
         world[6] = center + Vec3f(-h_size, h_size, h_size);
         world[7] = center + Vec3f(h_size, h_size, h_size);
 
-        mesh = Playground::readObjFile(
+        mesh = Utils::readObjFile(
             "assets/Models/Shapes/Cube.obj", 1, 1, true
         ); // Cube file x, y, z = +-1
         mesh.translateIni(center); // Translate first

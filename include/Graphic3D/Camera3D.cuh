@@ -20,7 +20,7 @@ public:
     float fov = M_PI_2;
     float aspect = 1;
     float near = 0.1;
-    float far = 43210;
+    float far = 10000;
     Mat4f projection;
     void updateProjection();
     

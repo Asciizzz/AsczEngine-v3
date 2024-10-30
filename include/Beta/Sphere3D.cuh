@@ -1,7 +1,7 @@
 #ifndef SPHERE3D_CUH
 #define SPHERE3D_CUH
 
-#include <Playground.cuh>
+#include <Utility.cuh>
 
 #include <FpsHandler.cuh>
 
@@ -16,7 +16,7 @@ public:
     Mesh mesh;
 
     Sphere3D(Vec3f center, float radius) : center(center), radius(radius) {
-        mesh = Playground::readObjFile(
+        mesh = Utils::readObjFile(
             "assets/Models/Shapes/Sphere.obj", 1, 1, true
         );
         mesh.translateIni(center); // Translate first
