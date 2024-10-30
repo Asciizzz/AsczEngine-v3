@@ -15,7 +15,7 @@
 # assets/Models/Shapes/Sphere.obj 1 0 0 0 0 0 0
 # assets/Models/Shapes/Hollow.obj 100 0 0 0 0 100 0
 
-# assets/Models/Weapon/Awp.obj 1.2 0 90 0 0 0 0
+assets/Models/Weapon/Awp.obj 1.2 0 90 0 0 0 0
 # assets/Models/Weapon/M4A1.obj .5 0 90 45 0 0 .3
 # assets/Models/Weapon/Ak47.obj .5 0 90 45 0 0 -.6
 
@@ -27,7 +27,7 @@
 # assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
 # assets/Models/Anime/Miyu.obj 2
 # assets/Models/Anime/MalevolentShrine.obj 1
-.heavy/Ikaros.obj 1
+# .heavy/Ikaros.obj 1
 
 # assets/Models/Other/Street.obj 1 0 0 0 0 4.2 0
 # assets/Models/City/Building001.obj 1 0 0 0 0 0 0
