@@ -345,6 +345,9 @@ int main() {
             if (gifMode) GRAPHIC.createTexture(gifPath);
         }
 
+        // Set light position to camera position
+        GRAPHIC.light.dir = CAMERA.pos;
+
         // ========== Render Pipeline ==========
 
         // Vertex Shader

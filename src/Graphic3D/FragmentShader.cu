@@ -120,14 +120,15 @@ __global__ void phongShadingKernel(
     buffCb[i] *= light.color.z;
 
     // Find the light direction
-    Vec3f lightDir = light.dir * -1;
+    // Vec3f lightDir = light.dir * -1;
+    Vec3f lightDir = light.dir - Vec3f(buffWx[i], buffWy[i], buffWz[i]);
     Vec3f n = Vec3f(buffNx[i], buffNy[i], buffNz[i]);
 
     // Calculate the cosine of the angle between the normal and the light direction
     float dot = n * lightDir;
     
     float cosA = dot / (n.mag() * lightDir.mag());
-    if (cosA < 0) cosA = 0;
+    if (cosA < 0) cosA = -cosA;
 
     float diff = light.ambient * (1 - cosA) + light.specular * cosA;
 
