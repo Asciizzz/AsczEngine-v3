@@ -1,5 +1,12 @@
 #include <VertexShader.cuh>
 
+// Static functions
+__device__ bool VertexShader::insideFrustum(const Vec4f &v) {
+    return  v.x >= -v.w && v.x <= v.w &&
+            v.y >= -v.w && v.y <= v.w &&
+            v.z >= -v.w && v.z <= v.w;
+}
+
 // Render pipeline
 
 void VertexShader::cameraProjection() {
@@ -43,6 +50,24 @@ void VertexShader::createRuntimeFaces() {
     );
     cudaDeviceSynchronize();
     cudaMemcpy(&grphic.rtCount, grphic.d_rtCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+
+    return;
+
+    // Debugging
+    float *wx = new float[grphic.rtCount * 3];
+    float *wy = new float[grphic.rtCount * 3];
+    float *wz = new float[grphic.rtCount * 3];
+
+    cudaMemcpy(wx, grphic.rtFaces.wx, sizeof(float) * grphic.rtCount * 3, cudaMemcpyDeviceToHost);
+    cudaMemcpy(wy, grphic.rtFaces.wy, sizeof(float) * grphic.rtCount * 3, cudaMemcpyDeviceToHost);
+    cudaMemcpy(wz, grphic.rtFaces.wz, sizeof(float) * grphic.rtCount * 3, cudaMemcpyDeviceToHost);
+
+    for (size_t i = 0; i < grphic.rtCount * 3; i++) {
+        std::cout << "(" << wx[i] << " " << wy[i] << " " << wz[i] << ") -";
+    }
+    std::cout << std::endl;
+
+    delete[] wx, wy, wz;
 }
 
 void VertexShader::createDepthMap() {
@@ -156,12 +181,14 @@ __global__ void createRuntimeFacesKernel(
     ULLInt ft[3] = {faceTs[idx0], faceTs[idx1], faceTs[idx2]};
     ULLInt fn[3] = {faceNs[idx0], faceNs[idx1], faceNs[idx2]};
 
+    // Early culling (for outside the frustum)
     Vec4f rtSs[3] = {
         Vec4f(screenX[fw[0]], screenY[fw[0]], screenZ[fw[0]], screenW[fw[0]]),
         Vec4f(screenX[fw[1]], screenY[fw[1]], screenZ[fw[1]], screenW[fw[1]]),
         Vec4f(screenX[fw[2]], screenY[fw[2]], screenZ[fw[2]], screenW[fw[2]])
     };
 
+    // If all outside, ignore
     bool allOutLeft = rtSs[0].x < -rtSs[0].w && rtSs[1].x < -rtSs[1].w && rtSs[2].x < -rtSs[2].w;
     bool allOutRight = rtSs[0].x > rtSs[0].w && rtSs[1].x > rtSs[1].w && rtSs[2].x > rtSs[2].w;
     bool allOutTop = rtSs[0].y < -rtSs[0].w && rtSs[1].y < -rtSs[1].w && rtSs[2].y < -rtSs[2].w;
@@ -170,21 +197,11 @@ __global__ void createRuntimeFacesKernel(
     bool allOutFar = rtSs[0].z > rtSs[0].w && rtSs[1].z > rtSs[1].w && rtSs[2].z > rtSs[2].w;
     if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutNear || allOutFar) return;
 
-
     Vec3f rtWs[3] = {
         Vec3f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]]),
         Vec3f(worldX[fw[1]], worldY[fw[1]], worldZ[fw[1]]),
         Vec3f(worldX[fw[2]], worldY[fw[2]], worldZ[fw[2]])
     };
-    float side[3] = {
-        near.equation(rtWs[0]),
-        near.equation(rtWs[1]),
-        near.equation(rtWs[2])
-    };
-
-    // If all behind, return
-    if (side[0] < 0 && side[1] < 0 && side[2] < 0) return;
-
     Vec2f rtTs[3] = {
         Vec2f(textureX[ft[0]], textureY[ft[0]]),
         Vec2f(textureX[ft[1]], textureY[ft[1]]),
@@ -201,8 +218,11 @@ __global__ void createRuntimeFacesKernel(
         Vec4f(colorX[fw[2]], colorY[fw[2]], colorZ[fw[2]], colorW[fw[2]])
     };
 
-    // If all infront, copy
-    if (side[0] >= 0 && side[1] >= 0 && side[2] >= 0) {
+    // If all inside, return
+    bool inside1 = VertexShader::insideFrustum(rtSs[0]);
+    bool inside2 = VertexShader::insideFrustum(rtSs[1]);
+    bool inside3 = VertexShader::insideFrustum(rtSs[2]);
+    if (inside1 && inside2 && inside3) {
         ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
@@ -231,6 +251,15 @@ __global__ void createRuntimeFacesKernel(
         return;
     }
 
+    float side[3] = {
+        near.equation(rtWs[0]),
+        near.equation(rtWs[1]),
+        near.equation(rtWs[2])
+    };
+
+    // If all behind, ignore
+    if (side[0] < 0 && side[1] < 0 && side[2] < 0) return;
+
     Vertex vertices[4];
     int newVcount = 0;
 
@@ -245,14 +274,28 @@ __global__ void createRuntimeFacesKernel(
 
     Note: front and back here are relative to the frustum plane
     not to just the near plane
+
+    Editor Note:
+
+    Currently clipping is performed in actual 3D space
+    We want to perform it in clip space instead
     */
+
+
+    // These will be used for perspective correction in the interpolation
+    Vec4f sDivW[3] = { rtSs[0]/rtSs[0].w, rtSs[1]/rtSs[1].w, rtSs[2]/rtSs[2].w };
+    Vec3f wDivW[3] = { rtWs[0]/rtSs[0].w, rtWs[1]/rtSs[1].w, rtWs[2]/rtSs[2].w };
+    Vec2f tDivW[3] = { rtTs[0]/rtSs[0].w, rtTs[1]/rtSs[1].w, rtTs[2]/rtSs[2].w };
+    Vec3f nDivW[3] = { rtNs[0]/rtSs[0].w, rtNs[1]/rtSs[1].w, rtNs[2]/rtSs[2].w };
+    Vec4f cDivW[3] = { rtCs[0]/rtSs[0].w, rtCs[1]/rtSs[1].w, rtCs[2]/rtSs[2].w };
 
     for (int a = 0; a < 3; a++) {
         int b = (a + 1) % 3;
 
-        if (side[a] < 0 && side[b] < 0) continue;
+        if (rtSs[a].z < -rtSs[a].w && rtSs[b].z < -rtSs[b].w) continue;
 
-        if (side[a] >= 0 && side[b] >= 0) {
+        if (rtSs[a].z >= -rtSs[a].w && rtSs[b].z >= -rtSs[b].w) {
+            vertices[newVcount].screen = rtSs[a];
             vertices[newVcount].world = rtWs[a];
             vertices[newVcount].texture = rtTs[a];
             vertices[newVcount].normal = rtNs[a];
@@ -261,16 +304,28 @@ __global__ void createRuntimeFacesKernel(
             continue;
         }
 
-        // Find intersection
-        float tFact = -side[a] / (side[b] - side[a]);
+        // Find interpolation factor
+        float tFact =
+            (-1 - rtSs[a].z/rtSs[a].w) /
+            (rtSs[b].z/rtSs[b].w - rtSs[a].z/rtSs[a].w);
 
-        Vec3f w = rtWs[a] + (rtWs[b] - rtWs[a]) * tFact;
-        Vec2f t = rtTs[a] + (rtTs[b] - rtTs[a]) * tFact;
-        Vec3f n = rtNs[a] + (rtNs[b] - rtNs[a]) * tFact;
-        Vec4f c = rtCs[a] + (rtCs[b] - rtCs[a]) * tFact;
+        float homo1DivW = 1/rtSs[a].w + (1/rtSs[b].w - 1/rtSs[a].w) * tFact;
 
-        if (side[a] > 0) {
+        Vec4f s_w = sDivW[a] + (sDivW[b] - sDivW[a]) * tFact;
+        Vec3f w_w = wDivW[a] + (wDivW[b] - wDivW[a]) * tFact;
+        Vec2f t_w = tDivW[a] + (tDivW[b] - tDivW[a]) * tFact;
+        Vec3f n_w = nDivW[a] + (nDivW[b] - nDivW[a]) * tFact;
+        Vec4f c_w = cDivW[a] + (cDivW[b] - cDivW[a]) * tFact;
+
+        Vec4f s = s_w / homo1DivW;
+        Vec3f w = w_w / homo1DivW;
+        Vec2f t = t_w / homo1DivW;
+        Vec3f n = n_w / homo1DivW;
+        Vec4f c = c_w / homo1DivW;
+
+        if (rtSs[a].z >= -rtSs[a].w) {
             // Append A
+            vertices[newVcount].screen = rtSs[a];
             vertices[newVcount].world = rtWs[a];
             vertices[newVcount].texture = rtTs[a];
             vertices[newVcount].normal = rtNs[a];
@@ -278,6 +333,7 @@ __global__ void createRuntimeFacesKernel(
             newVcount++;
         }
 
+        vertices[newVcount].screen = s;
         vertices[newVcount].world = w;
         vertices[newVcount].texture = t;
         vertices[newVcount].normal = n;
@@ -289,28 +345,25 @@ __global__ void createRuntimeFacesKernel(
 
     // If 4 point: create 2 faces A B C, A C D
     for (int i = 0; i < newVcount - 2; i++) {
-        Vec4f w4s[3] = {
-            mvp * Vec4f(vertices[0].world.x, vertices[0].world.y, vertices[0].world.z, 1),
-            mvp * Vec4f(vertices[i + 1].world.x, vertices[i + 1].world.y, vertices[i + 1].world.z, 1),
-            mvp * Vec4f(vertices[i + 2].world.x, vertices[i + 2].world.y, vertices[i + 2].world.z, 1)
-        };
-
-        // Triangle entirely outside the frustum
-        if ((w4s[0].x > w4s[0].w && w4s[1].x > w4s[1].w && w4s[2].x > w4s[2].w) ||
-            (w4s[0].x < -w4s[0].w && w4s[1].x < -w4s[1].w && w4s[2].x < -w4s[2].w) ||
-            (w4s[0].y > w4s[0].w && w4s[1].y > w4s[1].w && w4s[2].y > w4s[2].w) ||
-            (w4s[0].y < -w4s[0].w && w4s[1].y < -w4s[1].w && w4s[2].y < -w4s[2].w) ||
-            (w4s[0].z > w4s[0].w && w4s[1].z > w4s[1].w && w4s[2].z > w4s[2].w) ||
-            (w4s[0].z < -w4s[0].w && w4s[1].z < -w4s[1].w && w4s[2].z < -w4s[2].w)) continue;
-
         ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
-        rtSx[idx0] = -w4s[0].x; rtSx[idx1] = -w4s[1].x; rtSx[idx2] = -w4s[2].x;
-        rtSy[idx0] = w4s[0].y; rtSy[idx1] = w4s[1].y; rtSy[idx2] = w4s[2].y;
-        rtSz[idx0] = w4s[0].z; rtSz[idx1] = w4s[1].z; rtSz[idx2] = w4s[2].z;
-        rtSw[idx0] = w4s[0].w; rtSw[idx1] = w4s[1].w; rtSw[idx2] = w4s[2].w;
+        rtSx[idx0] = vertices[0].screen.x; rtSx[idx1] = vertices[i + 1].screen.x; rtSx[idx2] = vertices[i + 2].screen.x;
+        rtSy[idx0] = vertices[0].screen.y; rtSy[idx1] = vertices[i + 1].screen.y; rtSy[idx2] = vertices[i + 2].screen.y;
+        rtSz[idx0] = vertices[0].screen.z; rtSz[idx1] = vertices[i + 1].screen.z; rtSz[idx2] = vertices[i + 2].screen.z;
+        rtSw[idx0] = vertices[0].screen.w; rtSw[idx1] = vertices[i + 1].screen.w; rtSw[idx2] = vertices[i + 2].screen.w;
+
+        // For debugging
+        // Vec4f ss[3] = {
+        //     mvp * Vec4f(vertices[0].world.x, vertices[0].world.y, vertices[0].world.z, 1),
+        //     mvp * Vec4f(vertices[i + 1].world.x, vertices[i + 1].world.y, vertices[i + 1].world.z, 1),
+        //     mvp * Vec4f(vertices[i + 2].world.x, vertices[i + 2].world.y, vertices[i + 2].world.z, 1)
+        // };
+        // rtSx[idx0] = -ss[0].x; rtSx[idx1] = -ss[1].x; rtSx[idx2] = -ss[2].x;
+        // rtSy[idx0] = ss[0].y; rtSy[idx1] = ss[1].y; rtSy[idx2] = ss[2].y;
+        // rtSz[idx0] = ss[0].z; rtSz[idx1] = ss[1].z; rtSz[idx2] = ss[2].z;
+        // rtSw[idx0] = ss[0].w; rtSw[idx1] = ss[1].w; rtSw[idx2] = ss[2].w;
 
         rtWx[idx0] = vertices[0].world.x; rtWx[idx1] = vertices[i + 1].world.x; rtWx[idx2] = vertices[i + 2].world.x;
         rtWy[idx0] = vertices[0].world.y; rtWy[idx1] = vertices[i + 1].world.y; rtWy[idx2] = vertices[i + 2].world.y;

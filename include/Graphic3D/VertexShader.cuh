@@ -37,6 +37,8 @@ struct Vertex {
 
 class VertexShader {
 public:
+    __device__ static bool insideFrustum(const Vec4f &v);
+
     // Render pipeline
     static void cameraProjection();
     static void createRuntimeFaces();
