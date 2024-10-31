@@ -182,7 +182,7 @@ __global__ void createRuntimeFacesKernel(
         Vec4f(screenX[fw[2]], screenY[fw[2]], screenZ[fw[2]], screenW[fw[2]])
     };
 
-    // If all outside, ignore
+    // If all on one side, ignore
     bool allOutLeft = rtSs[0].x < -rtSs[0].w && rtSs[1].x < -rtSs[1].w && rtSs[2].x < -rtSs[2].w;
     bool allOutRight = rtSs[0].x > rtSs[0].w && rtSs[1].x > rtSs[1].w && rtSs[2].x > rtSs[2].w;
     bool allOutTop = rtSs[0].y < -rtSs[0].w && rtSs[1].y < -rtSs[1].w && rtSs[2].y < -rtSs[2].w;
@@ -245,16 +245,16 @@ __global__ void createRuntimeFacesKernel(
         return;
     }
 
-    Vertex vertices[4];
-    int newVcount = 0;
+    Vertex clipN[4];
+    int clipNcount = 0;
 
-    /* Explaination
+    /* Explanation
 
-    We will go AB, BC, CA, with the first vertices being the anchor
+    We will go AB, BC, CA, with the first vertex being the anchor
 
     Both in front: append A
     Both in back: ignore
-    A in front, B in back: append A and intersect AB
+    A in front, B in back: append A and intersection
     B in front, A in back: append intersection
 
     Note: front and back here are relative to the frustum plane
@@ -265,7 +265,6 @@ __global__ void createRuntimeFacesKernel(
     Currently clipping is performed in actual 3D space
     We want to perform it in clip space instead
     */
-
 
     // These will be used for perspective correction in the interpolation
     Vec4f sDivW[3] = { rtSs[0]/rtSs[0].w, rtSs[1]/rtSs[1].w, rtSs[2]/rtSs[2].w };
@@ -280,19 +279,17 @@ __global__ void createRuntimeFacesKernel(
         if (rtSs[a].z < -rtSs[a].w && rtSs[b].z < -rtSs[b].w) continue;
 
         if (rtSs[a].z >= -rtSs[a].w && rtSs[b].z >= -rtSs[b].w) {
-            vertices[newVcount].screen = rtSs[a];
-            vertices[newVcount].world = rtWs[a];
-            vertices[newVcount].texture = rtTs[a];
-            vertices[newVcount].normal = rtNs[a];
-            vertices[newVcount].color = rtCs[a];
-            newVcount++;
+            clipN[clipNcount].screen = rtSs[a];
+            clipN[clipNcount].world = rtWs[a];
+            clipN[clipNcount].texture = rtTs[a];
+            clipN[clipNcount].normal = rtNs[a];
+            clipN[clipNcount].color = rtCs[a];
+            clipNcount++;
             continue;
         }
 
         // Find interpolation factor
-        float tFact =
-            (-1 - rtSs[a].z/rtSs[a].w) /
-            (rtSs[b].z/rtSs[b].w - rtSs[a].z/rtSs[a].w);
+        float tFact = (-1 - sDivW[a].z) / (sDivW[b].z - sDivW[a].z);
 
         float homo1DivW = 1/rtSs[a].w + (1/rtSs[b].w - 1/rtSs[a].w) * tFact;
 
@@ -310,50 +307,50 @@ __global__ void createRuntimeFacesKernel(
 
         if (rtSs[a].z >= -rtSs[a].w) {
             // Append A
-            vertices[newVcount].screen = rtSs[a];
-            vertices[newVcount].world = rtWs[a];
-            vertices[newVcount].texture = rtTs[a];
-            vertices[newVcount].normal = rtNs[a];
-            vertices[newVcount].color = rtCs[a];
-            newVcount++;
+            clipN[clipNcount].screen = rtSs[a];
+            clipN[clipNcount].world = rtWs[a];
+            clipN[clipNcount].texture = rtTs[a];
+            clipN[clipNcount].normal = rtNs[a];
+            clipN[clipNcount].color = rtCs[a];
+            clipNcount++;
         }
 
-        vertices[newVcount].screen = s;
-        vertices[newVcount].world = w;
-        vertices[newVcount].texture = t;
-        vertices[newVcount].normal = n;
-        vertices[newVcount].color = c;
-        newVcount++;
+        clipN[clipNcount].screen = s;
+        clipN[clipNcount].world = w;
+        clipN[clipNcount].texture = t;
+        clipN[clipNcount].normal = n;
+        clipN[clipNcount].color = c;
+        clipNcount++;
     }
 
-    if (newVcount < 3) return;
+    if (clipNcount < 3) return;
 
     // If 4 point: create 2 faces A B C, A C D
-    for (int i = 0; i < newVcount - 2; i++) {
+    for (int i = 0; i < clipNcount - 2; i++) {
         ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
-        rtSx[idx0] = vertices[0].screen.x; rtSx[idx1] = vertices[i + 1].screen.x; rtSx[idx2] = vertices[i + 2].screen.x;
-        rtSy[idx0] = vertices[0].screen.y; rtSy[idx1] = vertices[i + 1].screen.y; rtSy[idx2] = vertices[i + 2].screen.y;
-        rtSz[idx0] = vertices[0].screen.z; rtSz[idx1] = vertices[i + 1].screen.z; rtSz[idx2] = vertices[i + 2].screen.z;
-        rtSw[idx0] = vertices[0].screen.w; rtSw[idx1] = vertices[i + 1].screen.w; rtSw[idx2] = vertices[i + 2].screen.w;
+        rtSx[idx0] = clipN[0].screen.x; rtSx[idx1] = clipN[i + 1].screen.x; rtSx[idx2] = clipN[i + 2].screen.x;
+        rtSy[idx0] = clipN[0].screen.y; rtSy[idx1] = clipN[i + 1].screen.y; rtSy[idx2] = clipN[i + 2].screen.y;
+        rtSz[idx0] = clipN[0].screen.z; rtSz[idx1] = clipN[i + 1].screen.z; rtSz[idx2] = clipN[i + 2].screen.z;
+        rtSw[idx0] = clipN[0].screen.w; rtSw[idx1] = clipN[i + 1].screen.w; rtSw[idx2] = clipN[i + 2].screen.w;
 
-        rtWx[idx0] = vertices[0].world.x; rtWx[idx1] = vertices[i + 1].world.x; rtWx[idx2] = vertices[i + 2].world.x;
-        rtWy[idx0] = vertices[0].world.y; rtWy[idx1] = vertices[i + 1].world.y; rtWy[idx2] = vertices[i + 2].world.y;
-        rtWz[idx0] = vertices[0].world.z; rtWz[idx1] = vertices[i + 1].world.z; rtWz[idx2] = vertices[i + 2].world.z;
+        rtWx[idx0] = clipN[0].world.x; rtWx[idx1] = clipN[i + 1].world.x; rtWx[idx2] = clipN[i + 2].world.x;
+        rtWy[idx0] = clipN[0].world.y; rtWy[idx1] = clipN[i + 1].world.y; rtWy[idx2] = clipN[i + 2].world.y;
+        rtWz[idx0] = clipN[0].world.z; rtWz[idx1] = clipN[i + 1].world.z; rtWz[idx2] = clipN[i + 2].world.z;
 
-        rtTu[idx0] = vertices[0].texture.x; rtTu[idx1] = vertices[i + 1].texture.x; rtTu[idx2] = vertices[i + 2].texture.x;
-        rtTv[idx0] = vertices[0].texture.y; rtTv[idx1] = vertices[i + 1].texture.y; rtTv[idx2] = vertices[i + 2].texture.y;
+        rtTu[idx0] = clipN[0].texture.x; rtTu[idx1] = clipN[i + 1].texture.x; rtTu[idx2] = clipN[i + 2].texture.x;
+        rtTv[idx0] = clipN[0].texture.y; rtTv[idx1] = clipN[i + 1].texture.y; rtTv[idx2] = clipN[i + 2].texture.y;
 
-        rtNx[idx0] = vertices[0].normal.x; rtNx[idx1] = vertices[i + 1].normal.x; rtNx[idx2] = vertices[i + 2].normal.x;
-        rtNy[idx0] = vertices[0].normal.y; rtNy[idx1] = vertices[i + 1].normal.y; rtNy[idx2] = vertices[i + 2].normal.y;
-        rtNz[idx0] = vertices[0].normal.z; rtNz[idx1] = vertices[i + 1].normal.z; rtNz[idx2] = vertices[i + 2].normal.z;
+        rtNx[idx0] = clipN[0].normal.x; rtNx[idx1] = clipN[i + 1].normal.x; rtNx[idx2] = clipN[i + 2].normal.x;
+        rtNy[idx0] = clipN[0].normal.y; rtNy[idx1] = clipN[i + 1].normal.y; rtNy[idx2] = clipN[i + 2].normal.y;
+        rtNz[idx0] = clipN[0].normal.z; rtNz[idx1] = clipN[i + 1].normal.z; rtNz[idx2] = clipN[i + 2].normal.z;
 
-        rtCr[idx0] = vertices[0].color.x; rtCr[idx1] = vertices[i + 1].color.x; rtCr[idx2] = vertices[i + 2].color.x;
-        rtCg[idx0] = vertices[0].color.y; rtCg[idx1] = vertices[i + 1].color.y; rtCg[idx2] = vertices[i + 2].color.y;
-        rtCb[idx0] = vertices[0].color.z; rtCb[idx1] = vertices[i + 1].color.z; rtCb[idx2] = vertices[i + 2].color.z;
-        rtCa[idx0] = vertices[0].color.w; rtCa[idx1] = vertices[i + 1].color.w; rtCa[idx2] = vertices[i + 2].color.w;
+        rtCr[idx0] = clipN[0].color.x; rtCr[idx1] = clipN[i + 1].color.x; rtCr[idx2] = clipN[i + 2].color.x;
+        rtCg[idx0] = clipN[0].color.y; rtCg[idx1] = clipN[i + 1].color.y; rtCg[idx2] = clipN[i + 2].color.y;
+        rtCb[idx0] = clipN[0].color.z; rtCb[idx1] = clipN[i + 1].color.z; rtCb[idx2] = clipN[i + 2].color.z;
+        rtCa[idx0] = clipN[0].color.w; rtCa[idx1] = clipN[i + 1].color.w; rtCa[idx2] = clipN[i + 2].color.w;
     }
 }
 
