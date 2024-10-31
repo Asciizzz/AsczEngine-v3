@@ -1,4 +1,4 @@
-# .heavy/mountains.obj 1 0 0 0 0 0 0
+.heavy/mountains.obj 1 0 0 0 0 0 0
 
 # Back wall
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 4 4
@@ -30,4 +30,4 @@
 # .heavy/Ikaros.obj 1
 
 # assets/Models/Other/Street.obj 1 0 0 0 0 4.2 0
-assets/Models/City/Building001.obj 1 0 0 0 0 2 0
+# assets/Models/City/Building001.obj 1 0 0 0 0 2 0
