@@ -37,14 +37,23 @@ struct Vertex {
 class VertexShader {
 public:
     // Render pipeline
+    static void cameraProjection();
     static void createRuntimeFaces();
     static void createDepthMap();
     static void rasterization();
 };
 
-// Filter visible faces
+// Camera projection
+__global__ void cameraProjectionKernel(
+    const float *worldX, const float *worldY, const float *worldZ,
+    float *screenX, float *screenY, float *screenZ, float *screenW,
+    Mat4f mvp, ULLInt numVs
+);
+
+// I dont know what to call this
 __global__ void createRuntimeFacesKernel(
     // Orginal mesh data
+    const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
     const float *worldX, const float *worldY, const float *worldZ,
     const float *normalX, const float *normalY, const float *normalZ,
     const float *textureX, const float *textureY,

@@ -351,6 +351,7 @@ int main() {
         // ========== Render Pipeline ==========
 
         // Vertex Shader
+        VertexShader::cameraProjection();
         VertexShader::createRuntimeFaces();
         VertexShader::createDepthMap();
         VertexShader::rasterization();

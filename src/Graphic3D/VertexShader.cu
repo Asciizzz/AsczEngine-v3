@@ -2,16 +2,30 @@
 
 // Render pipeline
 
+void VertexShader::cameraProjection() {
+    Graphic3D &grphic = Graphic3D::instance();
+    Camera3D &camera = grphic.camera;
+    Mesh3D &mesh = grphic.mesh;
+
+    size_t gridSize = (mesh.world.size + 255) / 256;
+
+    cameraProjectionKernel<<<gridSize, 256>>>(
+        mesh.world.x, mesh.world.y, mesh.world.z,
+        mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
+        camera.mvp, mesh.world.size
+    );
+}
+
 void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
     Camera3D &camera = grphic.camera;
     Mesh3D &mesh = grphic.mesh;
 
-
     size_t gridSize = (mesh.faces.size / 3 + 255) / 256;
 
     cudaMemset(grphic.d_rtCount, 0, sizeof(ULLInt));
     createRuntimeFacesKernel<<<gridSize, 256>>>(
+        mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
         mesh.world.x, mesh.world.y, mesh.world.z,
         mesh.normal.x, mesh.normal.y, mesh.normal.z,
         mesh.texture.x, mesh.texture.y,
@@ -91,9 +105,29 @@ void VertexShader::rasterization() {
     cudaDeviceSynchronize();
 }
 
+/////////////////////////////////////////////////////////////////////////
+
+// Camera projection
+__global__ void cameraProjectionKernel(
+    const float *worldX, const float *worldY, const float *worldZ,
+    float *screenX, float *screenY, float *screenZ, float *screenW,
+    Mat4f mvp, ULLInt numVs
+) {
+    ULLInt vIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (vIdx >= numVs) return;
+
+    Vec4f screen = mvp * Vec4f(worldX[vIdx], worldY[vIdx], worldZ[vIdx], 1);
+
+    screenX[vIdx] = -screen.x; // Flip X
+    screenY[vIdx] = screen.y;
+    screenZ[vIdx] = screen.z;
+    screenW[vIdx] = screen.w;
+}
+
 // Create runtime faces
 __global__ void createRuntimeFacesKernel(
     // Orginal mesh data
+    const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
     const float *worldX, const float *worldY, const float *worldZ,
     const float *normalX, const float *normalY, const float *normalZ,
     const float *textureX, const float *textureY,
@@ -122,15 +156,15 @@ __global__ void createRuntimeFacesKernel(
     ULLInt ft[3] = {faceTs[idx0], faceTs[idx1], faceTs[idx2]};
     ULLInt fn[3] = {faceNs[idx0], faceNs[idx1], faceNs[idx2]};
 
+    Vec4f rtSs[3] = {
+        Vec4f(screenX[fw[0]], screenY[fw[0]], screenZ[fw[0]], screenW[fw[0]]),
+        Vec4f(screenX[fw[1]], screenY[fw[1]], screenZ[fw[1]], screenW[fw[1]]),
+        Vec4f(screenX[fw[2]], screenY[fw[2]], screenZ[fw[2]], screenW[fw[2]])
+    };
     Vec3f rtWs[3] = {
         Vec3f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]]),
         Vec3f(worldX[fw[1]], worldY[fw[1]], worldZ[fw[1]]),
         Vec3f(worldX[fw[2]], worldY[fw[2]], worldZ[fw[2]])
-    };
-    Vec4f rtSs[3] = {
-        mvp * Vec4f(rtWs[0].x, rtWs[0].y, rtWs[0].z, 1),
-        mvp * Vec4f(rtWs[1].x, rtWs[1].y, rtWs[1].z, 1),
-        mvp * Vec4f(rtWs[2].x, rtWs[2].y, rtWs[2].z, 1)
     };
 
     float side[3] = {
@@ -179,7 +213,7 @@ __global__ void createRuntimeFacesKernel(
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
-        rtSx[idx0] = -rtSs[0].x; rtSx[idx1] = -rtSs[1].x; rtSx[idx2] = -rtSs[2].x;
+        rtSx[idx0] = rtSs[0].x; rtSx[idx1] = rtSs[1].x; rtSx[idx2] = rtSs[2].x;
         rtSy[idx0] = rtSs[0].y; rtSy[idx1] = rtSs[1].y; rtSy[idx2] = rtSs[2].y;
         rtSz[idx0] = rtSs[0].z; rtSz[idx1] = rtSs[1].z; rtSz[idx2] = rtSs[2].z;
         rtSw[idx0] = rtSs[0].w; rtSw[idx1] = rtSs[1].w; rtSw[idx2] = rtSs[2].w;
