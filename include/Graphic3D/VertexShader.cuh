@@ -28,6 +28,7 @@ SCREEN COORDINATES INSIDE THE CLIPPING KERNEL
 */
 
 struct Vertex {
+    Vec4f screen;
     Vec3f world;
     Vec2f texture;
     Vec3f normal;

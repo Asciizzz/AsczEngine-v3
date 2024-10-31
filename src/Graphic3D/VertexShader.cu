@@ -161,32 +161,26 @@ __global__ void createRuntimeFacesKernel(
         Vec4f(screenX[fw[1]], screenY[fw[1]], screenZ[fw[1]], screenW[fw[1]]),
         Vec4f(screenX[fw[2]], screenY[fw[2]], screenZ[fw[2]], screenW[fw[2]])
     };
+
+    bool allOutLeft = rtSs[0].x < -rtSs[0].w && rtSs[1].x < -rtSs[1].w && rtSs[2].x < -rtSs[2].w;
+    bool allOutRight = rtSs[0].x > rtSs[0].w && rtSs[1].x > rtSs[1].w && rtSs[2].x > rtSs[2].w;
+    bool allOutTop = rtSs[0].y < -rtSs[0].w && rtSs[1].y < -rtSs[1].w && rtSs[2].y < -rtSs[2].w;
+    bool allOutBottom = rtSs[0].y > rtSs[0].w && rtSs[1].y > rtSs[1].w && rtSs[2].y > rtSs[2].w;
+    bool allOutNear = rtSs[0].z < -rtSs[0].w && rtSs[1].z < -rtSs[1].w && rtSs[2].z < -rtSs[2].w;
+    bool allOutFar = rtSs[0].z > rtSs[0].w && rtSs[1].z > rtSs[1].w && rtSs[2].z > rtSs[2].w;
+    if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutNear || allOutFar) return;
+
+
     Vec3f rtWs[3] = {
         Vec3f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]]),
         Vec3f(worldX[fw[1]], worldY[fw[1]], worldZ[fw[1]]),
         Vec3f(worldX[fw[2]], worldY[fw[2]], worldZ[fw[2]])
     };
-
     float side[3] = {
         near.equation(rtWs[0]),
         near.equation(rtWs[1]),
         near.equation(rtWs[2])
     };
-
-    /* CREATOR NOTE:
-
-    In the future we are going to use a scan and scatter algorithm
-
-    Therefore we should be clear on whether 1 or 2 faces are created:
-
-    - 3 side < 0 -> 0 vertex -> 0 face
-    - 2 side < 0 -> 2 intersection + 1 vertex -> 3 vertices -> 1 face
-    - 1 side < 0 -> 2 intersection + 2 vertex -> 4 vertices -> 2 faces
-
-    General formula: 
-    - Face = 3 - num(side < 0)
-
-    */
 
     // If all behind, return
     if (side[0] < 0 && side[1] < 0 && side[2] < 0) return;
@@ -282,19 +276,13 @@ __global__ void createRuntimeFacesKernel(
             vertices[newVcount].normal = rtNs[a];
             vertices[newVcount].color = rtCs[a];
             newVcount++;
-            // Append intersection
-            vertices[newVcount].world = w;
-            vertices[newVcount].texture = t;
-            vertices[newVcount].normal = n;
-            vertices[newVcount].color = c;
-            newVcount++;
-        } else {
-            vertices[newVcount].world = w;
-            vertices[newVcount].texture = t;
-            vertices[newVcount].normal = n;
-            vertices[newVcount].color = c;
-            newVcount++;
         }
+
+        vertices[newVcount].world = w;
+        vertices[newVcount].texture = t;
+        vertices[newVcount].normal = n;
+        vertices[newVcount].color = c;
+        newVcount++;
     }
 
     if (newVcount < 3) return;
