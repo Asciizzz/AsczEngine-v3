@@ -28,11 +28,11 @@ SCREEN COORDINATES INSIDE THE CLIPPING KERNEL
 */
 
 struct Vertex {
-    Vec4f screen;
-    Vec3f world;
-    Vec2f texture;
-    Vec3f normal;
-    Vec4f color;
+    Vec4f s;
+    Vec3f w;
+    Vec2f t;
+    Vec3f n;
+    Vec4f c;
 };
 
 class VertexShader {

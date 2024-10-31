@@ -189,7 +189,8 @@ __global__ void createRuntimeFacesKernel(
     bool allOutBottom = rtSs[0].y > rtSs[0].w && rtSs[1].y > rtSs[1].w && rtSs[2].y > rtSs[2].w;
     bool allOutNear = rtSs[0].z < -rtSs[0].w && rtSs[1].z < -rtSs[1].w && rtSs[2].z < -rtSs[2].w;
     bool allOutFar = rtSs[0].z > rtSs[0].w && rtSs[1].z > rtSs[1].w && rtSs[2].z > rtSs[2].w;
-    if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutNear || allOutFar) return;
+    bool allBehind = rtSs[0].w < 0 && rtSs[1].w < 0 && rtSs[2].w < 0;
+    if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutNear || allOutFar || allBehind) return;
 
     Vec3f rtWs[3] = {
         Vec3f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]]),
@@ -245,59 +246,49 @@ __global__ void createRuntimeFacesKernel(
         return;
     }
 
-    Vertex clipN[4];
-    int clipNcount = 0;
+    int temp1Count = 3;
+    Vec4f tempS1[36] = { rtSs[0], rtSs[1], rtSs[2] };
+    Vec3f tempW1[36] = { rtWs[0], rtWs[1], rtWs[2] };
+    Vec2f tempT1[36] = { rtTs[0], rtTs[1], rtTs[2] };
+    Vec3f tempN1[36] = { rtNs[0], rtNs[1], rtNs[2] };
+    Vec4f tempC1[36] = { rtCs[0], rtCs[1], rtCs[2] };
 
-    /* Explanation
+    int temp2Count = 0;
+    Vec4f tempS2[36];
+    Vec3f tempW2[36];
+    Vec2f tempT2[36];
+    Vec3f tempN2[36];
+    Vec4f tempC2[36];
 
-    We will go AB, BC, CA, with the first vertex being the anchor
+    // Clip to near plane
+    for (int a = 0; a < temp1Count; a++) {
+        int b = (a + 1) % temp1Count;
 
-    Both in front: append A
-    Both in back: ignore
-    A in front, B in back: append A and intersection
-    B in front, A in back: append intersection
+        float wA = tempS1[a].w;
+        float wB = tempS1[b].w;
 
-    Note: front and back here are relative to the frustum plane
-    not to just the near plane
+        if ((wA < 0 && wB < 0) &&
+            (tempS1[a].z < -wA && tempS1[b].z < -wB)) continue;
 
-    Editor Note:
-
-    Currently clipping is performed in actual 3D space
-    We want to perform it in clip space instead
-    */
-
-    // These will be used for perspective correction in the interpolation
-    Vec4f sDivW[3] = { rtSs[0]/rtSs[0].w, rtSs[1]/rtSs[1].w, rtSs[2]/rtSs[2].w };
-    Vec3f wDivW[3] = { rtWs[0]/rtSs[0].w, rtWs[1]/rtSs[1].w, rtWs[2]/rtSs[2].w };
-    Vec2f tDivW[3] = { rtTs[0]/rtSs[0].w, rtTs[1]/rtSs[1].w, rtTs[2]/rtSs[2].w };
-    Vec3f nDivW[3] = { rtNs[0]/rtSs[0].w, rtNs[1]/rtSs[1].w, rtNs[2]/rtSs[2].w };
-    Vec4f cDivW[3] = { rtCs[0]/rtSs[0].w, rtCs[1]/rtSs[1].w, rtCs[2]/rtSs[2].w };
-
-    for (int a = 0; a < 3; a++) {
-        int b = (a + 1) % 3;
-
-        if (rtSs[a].z < -rtSs[a].w && rtSs[b].z < -rtSs[b].w) continue;
-
-        if (rtSs[a].z >= -rtSs[a].w && rtSs[b].z >= -rtSs[b].w) {
-            clipN[clipNcount].screen = rtSs[a];
-            clipN[clipNcount].world = rtWs[a];
-            clipN[clipNcount].texture = rtTs[a];
-            clipN[clipNcount].normal = rtNs[a];
-            clipN[clipNcount].color = rtCs[a];
-            clipNcount++;
+        if ((wA >= 0 && wB >= 0) &&
+            (tempS1[a].z >= -wA && tempS1[b].z >= -wB)) {
+            tempS2[temp2Count] = tempS1[a];
+            tempW2[temp2Count] = tempW1[a];
+            tempT2[temp2Count] = tempT1[a];
+            tempN2[temp2Count] = tempN1[a];
+            tempC2[temp2Count] = tempC1[a];
+            temp2Count++;
             continue;
         }
 
-        // Find interpolation factor
-        float tFact = (-1 - sDivW[a].z) / (sDivW[b].z - sDivW[a].z);
+        float tFact = (-1 - tempS1[a].z/wA) / (tempS1[b].z/wB - tempS1[a].z/wA);
+        float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
 
-        float homo1DivW = 1/rtSs[a].w + (1/rtSs[b].w - 1/rtSs[a].w) * tFact;
-
-        Vec4f s_w = sDivW[a] + (sDivW[b] - sDivW[a]) * tFact;
-        Vec3f w_w = wDivW[a] + (wDivW[b] - wDivW[a]) * tFact;
-        Vec2f t_w = tDivW[a] + (tDivW[b] - tDivW[a]) * tFact;
-        Vec3f n_w = nDivW[a] + (nDivW[b] - nDivW[a]) * tFact;
-        Vec4f c_w = cDivW[a] + (cDivW[b] - cDivW[a]) * tFact;
+        Vec4f s_w = tempS1[a]/wA + (tempS1[b]/wB - tempS1[a]/wA) * tFact;
+        Vec3f w_w = tempW1[a]/wA + (tempW1[b]/wB - tempW1[a]/wA) * tFact;
+        Vec2f t_w = tempT1[a]/wA + (tempT1[b]/wB - tempT1[a]/wA) * tFact;
+        Vec3f n_w = tempN1[a]/wA + (tempN1[b]/wB - tempN1[a]/wA) * tFact;
+        Vec4f c_w = tempC1[a]/wA + (tempC1[b]/wB - tempC1[a]/wA) * tFact;
 
         Vec4f s = s_w / homo1DivW;
         Vec3f w = w_w / homo1DivW;
@@ -305,52 +296,267 @@ __global__ void createRuntimeFacesKernel(
         Vec3f n = n_w / homo1DivW;
         Vec4f c = c_w / homo1DivW;
 
-        if (rtSs[a].z >= -rtSs[a].w) {
-            // Append A
-            clipN[clipNcount].screen = rtSs[a];
-            clipN[clipNcount].world = rtWs[a];
-            clipN[clipNcount].texture = rtTs[a];
-            clipN[clipNcount].normal = rtNs[a];
-            clipN[clipNcount].color = rtCs[a];
-            clipNcount++;
+        if (tempS1[a].z >= -wA && wA > 0) {
+            tempS2[temp2Count] = tempS1[a];
+            tempW2[temp2Count] = tempW1[a];
+            tempT2[temp2Count] = tempT1[a];
+            tempN2[temp2Count] = tempN1[a];
+            tempC2[temp2Count] = tempC1[a];
+            temp2Count++;
         }
 
-        clipN[clipNcount].screen = s;
-        clipN[clipNcount].world = w;
-        clipN[clipNcount].texture = t;
-        clipN[clipNcount].normal = n;
-        clipN[clipNcount].color = c;
-        clipNcount++;
+        tempS2[temp2Count] = s;
+        tempW2[temp2Count] = w;
+        tempT2[temp2Count] = t;
+        tempN2[temp2Count] = n;
+        tempC2[temp2Count] = c;
+        temp2Count++;
     }
+    if (temp2Count < 3) return;
 
-    if (clipNcount < 3) return;
+    // Clip to left plane
+    temp1Count = 0;
+    for (int a = 0; a < temp2Count; a++) {
+        int b = (a + 1) % temp2Count;
 
-    // If 4 point: create 2 faces A B C, A C D
-    for (int i = 0; i < clipNcount - 2; i++) {
-        ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
+        float wA = tempS2[a].w;
+        float wB = tempS2[b].w;
+
+        if (tempS2[a].x < -wA && tempS2[b].x < -wB) continue;
+
+        if (tempS2[a].x >= -wA && tempS2[b].x >= -wB) {
+            tempS1[temp1Count] = tempS2[a];
+            tempW1[temp1Count] = tempW2[a];
+            tempT1[temp1Count] = tempT2[a];
+            tempN1[temp1Count] = tempN2[a];
+            tempC1[temp1Count] = tempC2[a];
+            temp1Count++;
+            continue;
+        }
+
+        float tFact = (-1 - tempS2[a].x/wA) / (tempS2[b].x/wB - tempS2[a].x/wA);
+        float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
+
+        Vec4f s_w = tempS2[a]/wA + (tempS2[b]/wB - tempS2[a]/wA) * tFact;
+        Vec3f w_w = tempW2[a]/wA + (tempW2[b]/wB - tempW2[a]/wA) * tFact;
+        Vec2f t_w = tempT2[a]/wA + (tempT2[b]/wB - tempT2[a]/wA) * tFact;
+        Vec3f n_w = tempN2[a]/wA + (tempN2[b]/wB - tempN2[a]/wA) * tFact;
+        Vec4f c_w = tempC2[a]/wA + (tempC2[b]/wB - tempC2[a]/wA) * tFact;
+
+        Vec4f s = s_w / homo1DivW;
+        Vec3f w = w_w / homo1DivW;
+        Vec2f t = t_w / homo1DivW;
+        Vec3f n = n_w / homo1DivW;
+        Vec4f c = c_w / homo1DivW;
+
+        if (tempS2[a].x >= -wA) {
+            tempS1[temp1Count] = tempS2[a];
+            tempW1[temp1Count] = tempW2[a];
+            tempT1[temp1Count] = tempT2[a];
+            tempN1[temp1Count] = tempN2[a];
+            tempC1[temp1Count] = tempC2[a];
+            temp1Count++;
+        }
+
+        tempS1[temp1Count] = s;
+        tempW1[temp1Count] = w;
+        tempT1[temp1Count] = t;
+        tempN1[temp1Count] = n;
+        tempC1[temp1Count] = c;
+        temp1Count++;
+    }
+    if (temp1Count < 3) return;
+
+    // Clip to right plane
+    temp2Count = 0;
+    for (int a = 0; a < temp1Count; a++) {
+        int b = (a + 1) % temp1Count;
+
+        float wA = tempS1[a].w;
+        float wB = tempS1[b].w;
+
+        if (tempS1[a].x > wA && tempS1[b].x > wB) continue;
+
+        if (tempS1[a].x <= wA && tempS1[b].x <= wB) {
+            tempS2[temp2Count] = tempS1[a];
+            tempW2[temp2Count] = tempW1[a];
+            tempT2[temp2Count] = tempT1[a];
+            tempN2[temp2Count] = tempN1[a];
+            tempC2[temp2Count] = tempC1[a];
+            temp2Count++;
+            continue;
+        }
+
+        float tFact = (1 - tempS1[a].x/wA) / (tempS1[b].x/wB - tempS1[a].x/wA);
+        float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
+
+        Vec4f s_w = tempS1[a]/wA + (tempS1[b]/wB - tempS1[a]/wA) * tFact;
+        Vec3f w_w = tempW1[a]/wA + (tempW1[b]/wB - tempW1[a]/wA) * tFact;
+        Vec2f t_w = tempT1[a]/wA + (tempT1[b]/wB - tempT1[a]/wA) * tFact;
+        Vec3f n_w = tempN1[a]/wA + (tempN1[b]/wB - tempN1[a]/wA) * tFact;
+        Vec4f c_w = tempC1[a]/wA + (tempC1[b]/wB - tempC1[a]/wA) * tFact;
+
+        Vec4f s = s_w / homo1DivW;
+        Vec3f w = w_w / homo1DivW;
+        Vec2f t = t_w / homo1DivW;
+        Vec3f n = n_w / homo1DivW;
+        Vec4f c = c_w / homo1DivW;
+
+        s.x = s.w;
+
+        if (tempS1[a].x <= wA) {
+            tempS2[temp2Count] = tempS1[a];
+            tempW2[temp2Count] = tempW1[a];
+            tempT2[temp2Count] = tempT1[a];
+            tempN2[temp2Count] = tempN1[a];
+            tempC2[temp2Count] = tempC1[a];
+            temp2Count++;
+        }
+
+        tempS2[temp2Count] = s;
+        tempW2[temp2Count] = w;
+        tempT2[temp2Count] = t;
+        tempN2[temp2Count] = n;
+        tempC2[temp2Count] = c;
+        temp2Count++;
+    }
+    if (temp2Count < 3) return;
+
+    // Clip to bottom plane
+    temp1Count = 0;
+    for (int a = 0; a < temp2Count; a++) {
+        int b = (a + 1) % temp2Count;
+
+        float wA = tempS2[a].w;
+        float wB = tempS2[b].w;
+
+        if (tempS2[a].y < -wA && tempS2[b].y < -wB) continue;
+
+        if (tempS2[a].y >= -wA && tempS2[b].y >= -wB) {
+            tempS1[temp1Count] = tempS2[a];
+            tempW1[temp1Count] = tempW2[a];
+            tempT1[temp1Count] = tempT2[a];
+            tempN1[temp1Count] = tempN2[a];
+            tempC1[temp1Count] = tempC2[a];
+            temp1Count++;
+            continue;
+        }
+
+        float tFact = (-1 - tempS2[a].y/wA) / (tempS2[b].y/wB - tempS2[a].y/wA);
+        float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
+
+        Vec4f s_w = tempS2[a]/wA + (tempS2[b]/wB - tempS2[a]/wA) * tFact;
+        Vec3f w_w = tempW2[a]/wA + (tempW2[b]/wB - tempW2[a]/wA) * tFact;
+        Vec2f t_w = tempT2[a]/wA + (tempT2[b]/wB - tempT2[a]/wA) * tFact;
+        Vec3f n_w = tempN2[a]/wA + (tempN2[b]/wB - tempN2[a]/wA) * tFact;
+        Vec4f c_w = tempC2[a]/wA + (tempC2[b]/wB - tempC2[a]/wA) * tFact;
+
+        Vec4f s = s_w / homo1DivW;
+        Vec3f w = w_w / homo1DivW;
+        Vec2f t = t_w / homo1DivW;
+        Vec3f n = n_w / homo1DivW;
+        Vec4f c = c_w / homo1DivW;
+
+        s.y = -s.w;
+
+        if (tempS2[a].y >= -wA) {
+            tempS1[temp1Count] = tempS2[a];
+            tempW1[temp1Count] = tempW2[a];
+            tempT1[temp1Count] = tempT2[a];
+            tempN1[temp1Count] = tempN2[a];
+            tempC1[temp1Count] = tempC2[a];
+            temp1Count++;
+        }
+
+        tempS1[temp1Count] = s;
+        tempW1[temp1Count] = w;
+        tempT1[temp1Count] = t;
+        tempN1[temp1Count] = n;
+        tempC1[temp1Count] = c;
+        temp1Count++;
+    }
+    if (temp1Count < 3) return;
+
+    // Clip to top plane
+    temp2Count = 0;
+    for (int a = 0; a < temp1Count; a++) {
+        int b = (a + 1) % temp1Count;
+
+        float wA = tempS1[a].w;
+        float wB = tempS1[b].w;
+
+        if (tempS1[a].y > wA && tempS1[b].y > wB) continue;
+
+        if (tempS1[a].y <= wA && tempS1[b].y <= wB) {
+            tempS2[temp2Count] = tempS1[a];
+            tempW2[temp2Count] = tempW1[a];
+            tempT2[temp2Count] = tempT1[a];
+            tempN2[temp2Count] = tempN1[a];
+            tempC2[temp2Count] = tempC1[a];
+            temp2Count++;
+            continue;
+        }
+
+        float tFact = (1 - tempS1[a].y/wA) / (tempS1[b].y/wB - tempS1[a].y/wA);
+        float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
+
+        Vec4f s_w = tempS1[a]/wA + (tempS1[b]/wB - tempS1[a]/wA) * tFact;
+        Vec3f w_w = tempW1[a]/wA + (tempW1[b]/wB - tempW1[a]/wA) * tFact;
+        Vec2f t_w = tempT1[a]/wA + (tempT1[b]/wB - tempT1[a]/wA) * tFact;
+        Vec3f n_w = tempN1[a]/wA + (tempN1[b]/wB - tempN1[a]/wA) * tFact;
+        Vec4f c_w = tempC1[a]/wA + (tempC1[b]/wB - tempC1[a]/wA) * tFact;
+
+        Vec4f s = s_w / homo1DivW;
+        Vec3f w = w_w / homo1DivW;
+        Vec2f t = t_w / homo1DivW;
+        Vec3f n = n_w / homo1DivW;
+        Vec4f c = c_w / homo1DivW;
+
+        if (tempS1[a].y <= wA) {
+            tempS2[temp2Count] = tempS1[a];
+            tempW2[temp2Count] = tempW1[a];
+            tempT2[temp2Count] = tempT1[a];
+            tempN2[temp2Count] = tempN1[a];
+            tempC2[temp2Count] = tempC1[a];
+            temp2Count++;
+        }
+
+        tempS2[temp2Count] = s;
+        tempW2[temp2Count] = w;
+        tempT2[temp2Count] = t;
+        tempN2[temp2Count] = n;
+        tempC2[temp2Count] = c;
+        temp2Count++;
+    }
+    if (temp2Count < 3) return;
+
+    // n points = n - 2 triangles
+    ULLInt idx = atomicAdd(rtCount, temp2Count - 2) * 3;
+    for (int i = 0; i < temp2Count - 2; i++) {
+        ULLInt idx0 = idx + i * 3;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
-        rtSx[idx0] = clipN[0].screen.x; rtSx[idx1] = clipN[i + 1].screen.x; rtSx[idx2] = clipN[i + 2].screen.x;
-        rtSy[idx0] = clipN[0].screen.y; rtSy[idx1] = clipN[i + 1].screen.y; rtSy[idx2] = clipN[i + 2].screen.y;
-        rtSz[idx0] = clipN[0].screen.z; rtSz[idx1] = clipN[i + 1].screen.z; rtSz[idx2] = clipN[i + 2].screen.z;
-        rtSw[idx0] = clipN[0].screen.w; rtSw[idx1] = clipN[i + 1].screen.w; rtSw[idx2] = clipN[i + 2].screen.w;
+        rtSx[idx0] = tempS2[0].x; rtSx[idx1] = tempS2[i + 1].x; rtSx[idx2] = tempS2[i + 2].x;
+        rtSy[idx0] = tempS2[0].y; rtSy[idx1] = tempS2[i + 1].y; rtSy[idx2] = tempS2[i + 2].y;
+        rtSz[idx0] = tempS2[0].z; rtSz[idx1] = tempS2[i + 1].z; rtSz[idx2] = tempS2[i + 2].z;
+        rtSw[idx0] = tempS2[0].w; rtSw[idx1] = tempS2[i + 1].w; rtSw[idx2] = tempS2[i + 2].w;
 
-        rtWx[idx0] = clipN[0].world.x; rtWx[idx1] = clipN[i + 1].world.x; rtWx[idx2] = clipN[i + 2].world.x;
-        rtWy[idx0] = clipN[0].world.y; rtWy[idx1] = clipN[i + 1].world.y; rtWy[idx2] = clipN[i + 2].world.y;
-        rtWz[idx0] = clipN[0].world.z; rtWz[idx1] = clipN[i + 1].world.z; rtWz[idx2] = clipN[i + 2].world.z;
+        rtWx[idx0] = tempW2[0].x; rtWx[idx1] = tempW2[i + 1].x; rtWx[idx2] = tempW2[i + 2].x;
+        rtWy[idx0] = tempW2[0].y; rtWy[idx1] = tempW2[i + 1].y; rtWy[idx2] = tempW2[i + 2].y;
+        rtWz[idx0] = tempW2[0].z; rtWz[idx1] = tempW2[i + 1].z; rtWz[idx2] = tempW2[i + 2].z;
 
-        rtTu[idx0] = clipN[0].texture.x; rtTu[idx1] = clipN[i + 1].texture.x; rtTu[idx2] = clipN[i + 2].texture.x;
-        rtTv[idx0] = clipN[0].texture.y; rtTv[idx1] = clipN[i + 1].texture.y; rtTv[idx2] = clipN[i + 2].texture.y;
+        rtTu[idx0] = tempT2[0].x; rtTu[idx1] = tempT2[i + 1].x; rtTu[idx2] = tempT2[i + 2].x;
+        rtTv[idx0] = tempT2[0].y; rtTv[idx1] = tempT2[i + 1].y; rtTv[idx2] = tempT2[i + 2].y;
 
-        rtNx[idx0] = clipN[0].normal.x; rtNx[idx1] = clipN[i + 1].normal.x; rtNx[idx2] = clipN[i + 2].normal.x;
-        rtNy[idx0] = clipN[0].normal.y; rtNy[idx1] = clipN[i + 1].normal.y; rtNy[idx2] = clipN[i + 2].normal.y;
-        rtNz[idx0] = clipN[0].normal.z; rtNz[idx1] = clipN[i + 1].normal.z; rtNz[idx2] = clipN[i + 2].normal.z;
+        rtNx[idx0] = tempN2[0].x; rtNx[idx1] = tempN2[i + 1].x; rtNx[idx2] = tempN2[i + 2].x;
+        rtNy[idx0] = tempN2[0].y; rtNy[idx1] = tempN2[i + 1].y; rtNy[idx2] = tempN2[i + 2].y;
+        rtNz[idx0] = tempN2[0].z; rtNz[idx1] = tempN2[i + 1].z; rtNz[idx2] = tempN2[i + 2].z;
 
-        rtCr[idx0] = clipN[0].color.x; rtCr[idx1] = clipN[i + 1].color.x; rtCr[idx2] = clipN[i + 2].color.x;
-        rtCg[idx0] = clipN[0].color.y; rtCg[idx1] = clipN[i + 1].color.y; rtCg[idx2] = clipN[i + 2].color.y;
-        rtCb[idx0] = clipN[0].color.z; rtCb[idx1] = clipN[i + 1].color.z; rtCb[idx2] = clipN[i + 2].color.z;
-        rtCa[idx0] = clipN[0].color.w; rtCa[idx1] = clipN[i + 1].color.w; rtCa[idx2] = clipN[i + 2].color.w;
+        rtCr[idx0] = tempC2[0].x; rtCr[idx1] = tempC2[i + 1].x; rtCr[idx2] = tempC2[i + 2].x;
+        rtCg[idx0] = tempC2[0].y; rtCg[idx1] = tempC2[i + 1].y; rtCg[idx2] = tempC2[i + 2].y;
+        rtCb[idx0] = tempC2[0].z; rtCb[idx1] = tempC2[i + 1].z; rtCb[idx2] = tempC2[i + 2].z;
+        rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
     }
 }
 
