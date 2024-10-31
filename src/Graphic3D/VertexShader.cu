@@ -127,6 +127,12 @@ __global__ void createRuntimeFacesKernel(
         Vec3f(worldX[fw[1]], worldY[fw[1]], worldZ[fw[1]]),
         Vec3f(worldX[fw[2]], worldY[fw[2]], worldZ[fw[2]])
     };
+    Vec4f rtSs[3] = {
+        mvp * Vec4f(rtWs[0].x, rtWs[0].y, rtWs[0].z, 1),
+        mvp * Vec4f(rtWs[1].x, rtWs[1].y, rtWs[1].z, 1),
+        mvp * Vec4f(rtWs[2].x, rtWs[2].y, rtWs[2].z, 1)
+    };
+
     float side[3] = {
         near.equation(rtWs[0]),
         near.equation(rtWs[1]),
@@ -173,16 +179,10 @@ __global__ void createRuntimeFacesKernel(
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
-        Vec4f w4s[3] = {
-            mvp * Vec4f(rtWs[0].x, rtWs[0].y, rtWs[0].z, 1),
-            mvp * Vec4f(rtWs[1].x, rtWs[1].y, rtWs[1].z, 1),
-            mvp * Vec4f(rtWs[2].x, rtWs[2].y, rtWs[2].z, 1)
-        };
-
-        rtSx[idx0] = -w4s[0].x; rtSx[idx1] = -w4s[1].x; rtSx[idx2] = -w4s[2].x;
-        rtSy[idx0] = w4s[0].y; rtSy[idx1] = w4s[1].y; rtSy[idx2] = w4s[2].y;
-        rtSz[idx0] = w4s[0].z; rtSz[idx1] = w4s[1].z; rtSz[idx2] = w4s[2].z;
-        rtSw[idx0] = w4s[0].w; rtSw[idx1] = w4s[1].w; rtSw[idx2] = w4s[2].w;
+        rtSx[idx0] = -rtSs[0].x; rtSx[idx1] = -rtSs[1].x; rtSx[idx2] = -rtSs[2].x;
+        rtSy[idx0] = rtSs[0].y; rtSy[idx1] = rtSs[1].y; rtSy[idx2] = rtSs[2].y;
+        rtSz[idx0] = rtSs[0].z; rtSz[idx1] = rtSs[1].z; rtSz[idx2] = rtSs[2].z;
+        rtSw[idx0] = rtSs[0].w; rtSw[idx1] = rtSs[1].w; rtSw[idx2] = rtSs[2].w;
 
         rtWx[idx0] = rtWs[0].x; rtWx[idx1] = rtWs[1].x; rtWx[idx2] = rtWs[2].x;
         rtWy[idx0] = rtWs[0].y; rtWy[idx1] = rtWs[1].y; rtWy[idx2] = rtWs[2].y;

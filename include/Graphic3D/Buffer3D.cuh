@@ -1,7 +1,7 @@
 #ifndef BUFFER3D_CUH
 #define BUFFER3D_CUH
 
-#include <Matrix.cuh>
+#include <Vector.cuh>
 #include <cuda_runtime.h>
 
 /* Note:

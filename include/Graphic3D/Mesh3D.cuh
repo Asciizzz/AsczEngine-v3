@@ -1,7 +1,7 @@
 #ifndef MESH3D_CUH
 #define MESH3D_CUH
 
-#include <Matrix.cuh>
+#include <Vector.cuh>
 #include <cuda_runtime.h>
 
 /* HYBRID AOS-SOA MEMORY LAYOUT
