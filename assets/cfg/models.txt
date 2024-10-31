@@ -1,4 +1,7 @@
+# For very large models
 # .heavy/mountains.obj 1 0 0 0 0 0 0
+# .heavy/NightCity.obj 1 0 0 0 0 6 0
+# .heavy/Ikaros.obj 1
 
 # Back wall
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 -20
@@ -20,7 +23,7 @@
 # assets/Models/Weapon/Ak47.obj .5 0 90 45 0 0 -.6
 
 # assets/Models/Structure/Stronghold.obj 1
-assets/Models/Structure/Medieval.obj 1 0 0 0 0 6 0
+# assets/Models/Structure/Medieval.obj 1 0 0 0 0 6 0
 
 # assets/Models/Shapes/Cube.obj .4 45 1 0 .4 0 -2
 # assets/Models/Shapes/Cube.obj 1
@@ -29,7 +32,6 @@ assets/Models/Structure/Medieval.obj 1 0 0 0 0 6 0
 # assets/Models/Anime/Sukuna.obj 1 0 0 0 0 0 0
 # assets/Models/Anime/Miyu.obj 2
 # assets/Models/Anime/MalevolentShrine.obj 1
-# .heavy/Ikaros.obj 1
 
 # assets/Models/Other/Street.obj 1 0 0 0 0 4.2 0
 # assets/Models/City/Building001.obj 1 0 0 0 0 2.2 0
