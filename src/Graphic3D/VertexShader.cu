@@ -25,7 +25,6 @@ void VertexShader::cameraProjection() {
 
 void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
-    Camera3D &camera = grphic.camera;
     Mesh3D &mesh = grphic.mesh;
 
     size_t gridSize = (mesh.faces.size / 3 + 255) / 256;
@@ -44,9 +43,7 @@ void VertexShader::createRuntimeFaces() {
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.d_rtCount,
-
-        camera.mvp, camera.nearPlane
+        grphic.d_rtCount
     );
     cudaDeviceSynchronize();
     cudaMemcpy(&grphic.rtCount, grphic.d_rtCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
@@ -165,10 +162,7 @@ __global__ void createRuntimeFacesKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    ULLInt *rtCount,
-
-    // Camera data (for clipping)
-    Mat4f mvp, Plane3D near
+    ULLInt *rtCount
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
@@ -250,15 +244,6 @@ __global__ void createRuntimeFacesKernel(
 
         return;
     }
-
-    float side[3] = {
-        near.equation(rtWs[0]),
-        near.equation(rtWs[1]),
-        near.equation(rtWs[2])
-    };
-
-    // If all behind, ignore
-    if (side[0] < 0 && side[1] < 0 && side[2] < 0) return;
 
     Vertex vertices[4];
     int newVcount = 0;
@@ -353,17 +338,6 @@ __global__ void createRuntimeFacesKernel(
         rtSy[idx0] = vertices[0].screen.y; rtSy[idx1] = vertices[i + 1].screen.y; rtSy[idx2] = vertices[i + 2].screen.y;
         rtSz[idx0] = vertices[0].screen.z; rtSz[idx1] = vertices[i + 1].screen.z; rtSz[idx2] = vertices[i + 2].screen.z;
         rtSw[idx0] = vertices[0].screen.w; rtSw[idx1] = vertices[i + 1].screen.w; rtSw[idx2] = vertices[i + 2].screen.w;
-
-        // For debugging
-        // Vec4f ss[3] = {
-        //     mvp * Vec4f(vertices[0].world.x, vertices[0].world.y, vertices[0].world.z, 1),
-        //     mvp * Vec4f(vertices[i + 1].world.x, vertices[i + 1].world.y, vertices[i + 1].world.z, 1),
-        //     mvp * Vec4f(vertices[i + 2].world.x, vertices[i + 2].world.y, vertices[i + 2].world.z, 1)
-        // };
-        // rtSx[idx0] = -ss[0].x; rtSx[idx1] = -ss[1].x; rtSx[idx2] = -ss[2].x;
-        // rtSy[idx0] = ss[0].y; rtSy[idx1] = ss[1].y; rtSy[idx2] = ss[2].y;
-        // rtSz[idx0] = ss[0].z; rtSz[idx1] = ss[1].z; rtSz[idx2] = ss[2].z;
-        // rtSw[idx0] = ss[0].w; rtSw[idx1] = ss[1].w; rtSw[idx2] = ss[2].w;
 
         rtWx[idx0] = vertices[0].world.x; rtWx[idx1] = vertices[i + 1].world.x; rtWx[idx2] = vertices[i + 2].world.x;
         rtWy[idx0] = vertices[0].world.y; rtWy[idx1] = vertices[i + 1].world.y; rtWy[idx2] = vertices[i + 2].world.y;

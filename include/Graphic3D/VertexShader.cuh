@@ -69,10 +69,7 @@ __global__ void createRuntimeFacesKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    ULLInt *rtCount,
-
-    // Camera data (for projection and clipping)
-    Mat4f mvp, Plane3D near
+    ULLInt *rtCount
 );
 
 // Tile-based depth map creation
