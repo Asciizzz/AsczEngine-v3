@@ -578,17 +578,21 @@ __global__ void createDepthMapKernel(
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
 
-    float sx0 = (runtimeSx[idx0] / runtimeSw[idx0] + 1) * buffWidth / 2;
-    float sx1 = (runtimeSx[idx1] / runtimeSw[idx1] + 1) * buffWidth / 2;
-    float sx2 = (runtimeSx[idx2] / runtimeSw[idx2] + 1) * buffWidth / 2;
+    float sw0 = runtimeSw[idx0];
+    float sw1 = runtimeSw[idx1];
+    float sw2 = runtimeSw[idx2];
 
-    float sy0 = (1 - runtimeSy[idx0] / runtimeSw[idx0]) * buffHeight / 2;
-    float sy1 = (1 - runtimeSy[idx1] / runtimeSw[idx1]) * buffHeight / 2;
-    float sy2 = (1 - runtimeSy[idx2] / runtimeSw[idx2]) * buffHeight / 2;
+    float bx0 = (runtimeSx[idx0] / sw0 + 1) * buffWidth / 2;
+    float bx1 = (runtimeSx[idx1] / sw1 + 1) * buffWidth / 2;
+    float bx2 = (runtimeSx[idx2] / sw2 + 1) * buffWidth / 2;
 
-    float sz0 = runtimeSz[idx0] / runtimeSw[idx0];
-    float sz1 = runtimeSz[idx1] / runtimeSw[idx1];
-    float sz2 = runtimeSz[idx2] / runtimeSw[idx2];
+    float by0 = (1 - runtimeSy[idx0] / sw0) * buffHeight / 2;
+    float by1 = (1 - runtimeSy[idx1] / sw1) * buffHeight / 2;
+    float by2 = (1 - runtimeSy[idx2] / sw2) * buffHeight / 2;
+
+    float bz0 = runtimeSz[idx0] / sw0;
+    float bz1 = runtimeSz[idx1] / sw1;
+    float bz2 = runtimeSz[idx2] / sw2;
 
     // Buffer bounding box based on the tile
 
@@ -601,10 +605,10 @@ __global__ void createDepthMapKernel(
     int bufferMaxY = bufferMinY + tileSizeY;
 
     // Bounding box
-    int minX = min(min(sx0, sx1), sx2);
-    int maxX = max(max(sx0, sx1), sx2);
-    int minY = min(min(sy0, sy1), sy2);
-    int maxY = max(max(sy0, sy1), sy2);
+    int minX = min(min(bx0, bx1), bx2);
+    int maxX = max(max(bx0, bx1), bx2);
+    int minY = min(min(by0, by1), by2);
+    int maxY = max(max(by0, by1), by2);
 
     // If bounding box not in tile area, return
     if (minX > bufferMaxX ||
@@ -623,15 +627,15 @@ __global__ void createDepthMapKernel(
         int bIdx = x + y * buffWidth;
 
         Vec3f bary = Vec3f::bary(
-            Vec2f(x, y), Vec2f(sx0, sy0), Vec2f(sx1, sy1), Vec2f(sx2, sy2)
+            Vec2f(x, y), Vec2f(bx0, by0), Vec2f(bx1, by1), Vec2f(bx2, by2)
         );
         // Ignore if out of bound
         if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;
 
-        float zDepth = bary.x * sz0 + bary.y * sz1 + bary.z * sz2;
+        float bz = bary.x * bz0 + bary.y * bz1 + bary.z * bz2;
 
-        if (atomicMinFloat(&buffDepth[bIdx], zDepth)) {
-            buffDepth[bIdx] = zDepth;
+        if (atomicMinFloat(&buffDepth[bIdx], bz)) {
+            buffDepth[bIdx] = bz;
             buffActive[bIdx] = true;
             buffFaceId[bIdx] = fIdx;
 
