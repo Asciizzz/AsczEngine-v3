@@ -16,7 +16,7 @@
 
 # assets/Models/Shapes/Octo.obj 4 0 0 0 0 0 0
 # assets/Models/Shapes/Sphere.obj 1 0 0 0 0 0 0
-#assets/Models/Shapes/Hollow.obj 2 0 0 0 0 2 0
+# assets/Models/Shapes/Hollow.obj 2 0 0 0 0 2 0
 
 # assets/Models/Weapon/Awp.obj 1.2 0 90 0 0 0 0
 # assets/Models/Weapon/M4A1.obj .5 0 90 45 0 0 .3
@@ -34,4 +34,4 @@
 # assets/Models/Anime/MalevolentShrine.obj 1
 
 # assets/Models/Other/Street.obj 1 0 0 0 0 4.2 0
-assets/Models/City/Building001.obj 1 0 0 0 0 2.2 0
+# assets/Models/City/Building001.obj 1 0 0 0 0 2.2 0

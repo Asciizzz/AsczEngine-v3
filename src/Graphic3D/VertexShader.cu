@@ -590,9 +590,9 @@ __global__ void createDepthMapKernel(
     float by1 = (1 - runtimeSy[idx1] / sw1) * buffHeight / 2;
     float by2 = (1 - runtimeSy[idx2] / sw2) * buffHeight / 2;
 
-    float bz0 = runtimeSz[idx0] / sw0;
-    float bz1 = runtimeSz[idx1] / sw1;
-    float bz2 = runtimeSz[idx2] / sw2;
+    float bz0 = runtimeSz[idx0];
+    float bz1 = runtimeSz[idx1];
+    float bz2 = runtimeSz[idx2];
 
     // Buffer bounding box based on the tile
 
@@ -633,9 +633,11 @@ __global__ void createDepthMapKernel(
         if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;
 
         float bz = bary.x * bz0 + bary.y * bz1 + bary.z * bz2;
+        float sw = bary.x * sw0 + bary.y * sw1 + bary.z * sw2;
+        float depth = bz / sw;
 
-        if (atomicMinFloat(&buffDepth[bIdx], bz)) {
-            buffDepth[bIdx] = bz;
+        if (atomicMinFloat(&buffDepth[bIdx], depth)) {
+            buffDepth[bIdx] = depth;
             buffActive[bIdx] = true;
             buffFaceId[bIdx] = fIdx;
 
