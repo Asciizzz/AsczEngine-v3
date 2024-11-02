@@ -1,16 +1,16 @@
 # For very large models
-.heavy/mountains.obj 1 0 0 0 0 0 0
+# .heavy/mountains.obj 1 0 0 0 0 0 0
 # .heavy/NightCity.obj 1 0 0 0 0 6 0
 # .heavy/Ikaros.obj 1
 
 # Back wall
-#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 -20
+#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
 # Left wall
-#assets/Models/Shapes/Wall.obj 4 0 -90 0 4 4 0
+#assets/Models/Shapes/Wall.obj 4 0 -90 0 4 0 0
 # Right wall
-#assets/Models/Shapes/Wall.obj 4 0 90 0 -4 4 0
+#assets/Models/Shapes/Wall.obj 4 0 90 0 -4 0 0
 # Ceiling
-#assets/Models/Shapes/Wall.obj 4 -90 0 0 0 8 0
+#assets/Models/Shapes/Wall.obj 4 -90 0 0 0 4 0
 # Floor
 #assets/Models/Shapes/Wall.obj 4 90 0 0 0 0 0
 
@@ -35,3 +35,11 @@
 
 # assets/Models/Other/Street.obj 1 0 0 0 0 4.2 0
 # assets/Models/City/Building001.obj 1 0 0 0 0 2.2 0
+
+#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
+#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 6
+#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 8
+#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 10
+
+
+assets/Models/Shapes/WallLong.obj 4 0 0 0 0 0 4

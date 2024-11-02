@@ -267,11 +267,9 @@ __global__ void createRuntimeFacesKernel(
         float wA = tempS1[a].w;
         float wB = tempS1[b].w;
 
-        if ((wA < 0 && wB < 0) &&
-            (tempS1[a].z < -wA && tempS1[b].z < -wB)) continue;
+        if (tempS1[a].z < -wA && tempS1[b].z < -wB) continue;
 
-        if ((wA >= 0 && wB >= 0) &&
-            (tempS1[a].z >= -wA && tempS1[b].z >= -wB)) {
+        if (tempS1[a].z >= -wA && tempS1[b].z >= -wB) {
             tempS2[temp2Count] = tempS1[a];
             tempW2[temp2Count] = tempW1[a];
             tempT2[temp2Count] = tempT1[a];
@@ -296,7 +294,7 @@ __global__ void createRuntimeFacesKernel(
         Vec3f n = n_w / homo1DivW;
         Vec4f c = c_w / homo1DivW;
 
-        if (tempS1[a].z >= -wA && wA > 0) {
+        if (tempS1[a].z >= -wA) {
             tempS2[temp2Count] = tempS1[a];
             tempW2[temp2Count] = tempW1[a];
             tempT2[temp2Count] = tempT1[a];
@@ -314,117 +312,126 @@ __global__ void createRuntimeFacesKernel(
     }
     if (temp2Count < 3) return;
 
-    // Clip to left plane
-    temp1Count = 0;
-    for (int a = 0; a < temp2Count; a++) {
-        int b = (a + 1) % temp2Count;
+    // // Clip to left plane
+    // temp1Count = 0;
+    // for (int a = 0; a < temp2Count; a++) {
+    //     int b = (a + 1) % temp2Count;
 
-        float wA = tempS2[a].w;
-        float wB = tempS2[b].w;
+    //     float wA = tempS2[a].w;
+    //     float wB = tempS2[b].w;
 
-        if (tempS2[a].x < -wA && tempS2[b].x < -wB) continue;
+    //     if (tempS2[a].x < -wA && tempS2[b].x < -wB) continue;
 
-        if (tempS2[a].x >= -wA && tempS2[b].x >= -wB) {
-            tempS1[temp1Count] = tempS2[a];
-            tempW1[temp1Count] = tempW2[a];
-            tempT1[temp1Count] = tempT2[a];
-            tempN1[temp1Count] = tempN2[a];
-            tempC1[temp1Count] = tempC2[a];
-            temp1Count++;
-            continue;
-        }
+    //     if (tempS2[a].x >= -wA && tempS2[b].x >= -wB) {
+    //         tempS1[temp1Count] = tempS2[a];
+    //         tempW1[temp1Count] = tempW2[a];
+    //         tempT1[temp1Count] = tempT2[a];
+    //         tempN1[temp1Count] = tempN2[a];
+    //         tempC1[temp1Count] = tempC2[a];
+    //         temp1Count++;
+    //         continue;
+    //     }
 
-        float tFact = (-1 - tempS2[a].x/wA) / (tempS2[b].x/wB - tempS2[a].x/wA);
-        float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
+    //     float tFact = (-1 - tempS2[a].x/wA) / (tempS2[b].x/wB - tempS2[a].x/wA);
+    //     float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
 
-        Vec4f s_w = tempS2[a]/wA + (tempS2[b]/wB - tempS2[a]/wA) * tFact;
-        Vec3f w_w = tempW2[a]/wA + (tempW2[b]/wB - tempW2[a]/wA) * tFact;
-        Vec2f t_w = tempT2[a]/wA + (tempT2[b]/wB - tempT2[a]/wA) * tFact;
-        Vec3f n_w = tempN2[a]/wA + (tempN2[b]/wB - tempN2[a]/wA) * tFact;
-        Vec4f c_w = tempC2[a]/wA + (tempC2[b]/wB - tempC2[a]/wA) * tFact;
+    //     Vec4f s_w = tempS2[a]/wA + (tempS2[b]/wB - tempS2[a]/wA) * tFact;
+    //     Vec3f w_w = tempW2[a]/wA + (tempW2[b]/wB - tempW2[a]/wA) * tFact;
+    //     Vec2f t_w = tempT2[a]/wA + (tempT2[b]/wB - tempT2[a]/wA) * tFact;
+    //     Vec3f n_w = tempN2[a]/wA + (tempN2[b]/wB - tempN2[a]/wA) * tFact;
+    //     Vec4f c_w = tempC2[a]/wA + (tempC2[b]/wB - tempC2[a]/wA) * tFact;
 
-        Vec4f s = s_w / homo1DivW;
-        Vec3f w = w_w / homo1DivW;
-        Vec2f t = t_w / homo1DivW;
-        Vec3f n = n_w / homo1DivW;
-        Vec4f c = c_w / homo1DivW;
+    //     Vec4f s = s_w / homo1DivW;
+    //     Vec3f w = w_w / homo1DivW;
+    //     Vec2f t = t_w / homo1DivW;
+    //     Vec3f n = n_w / homo1DivW;
+    //     Vec4f c = c_w / homo1DivW;
 
-        if (tempS2[a].x >= -wA) {
-            tempS1[temp1Count] = tempS2[a];
-            tempW1[temp1Count] = tempW2[a];
-            tempT1[temp1Count] = tempT2[a];
-            tempN1[temp1Count] = tempN2[a];
-            tempC1[temp1Count] = tempC2[a];
-            temp1Count++;
-        }
+    //     if (tempS2[a].x >= -wA) {
+    //         tempS1[temp1Count] = tempS2[a];
+    //         tempW1[temp1Count] = tempW2[a];
+    //         tempT1[temp1Count] = tempT2[a];
+    //         tempN1[temp1Count] = tempN2[a];
+    //         tempC1[temp1Count] = tempC2[a];
+    //         temp1Count++;
+    //     }
 
-        tempS1[temp1Count] = s;
-        tempW1[temp1Count] = w;
-        tempT1[temp1Count] = t;
-        tempN1[temp1Count] = n;
-        tempC1[temp1Count] = c;
-        temp1Count++;
-    }
-    if (temp1Count < 3) return;
+    //     tempS1[temp1Count] = s;
+    //     tempW1[temp1Count] = w;
+    //     tempT1[temp1Count] = t;
+    //     tempN1[temp1Count] = n;
+    //     tempC1[temp1Count] = c;
+    //     temp1Count++;
+    // }
+    // if (temp1Count < 3) return;
 
-    // Clip to right plane
-    temp2Count = 0;
-    for (int a = 0; a < temp1Count; a++) {
-        int b = (a + 1) % temp1Count;
+    // // Clip to right plane
+    // temp2Count = 0;
+    // for (int a = 0; a < temp1Count; a++) {
+    //     int b = (a + 1) % temp1Count;
 
-        float wA = tempS1[a].w;
-        float wB = tempS1[b].w;
+    //     float wA = tempS1[a].w;
+    //     float wB = tempS1[b].w;
 
-        if (tempS1[a].x > wA && tempS1[b].x > wB) continue;
+    //     if (tempS1[a].x > wA && tempS1[b].x > wB) continue;
 
-        if (tempS1[a].x <= wA && tempS1[b].x <= wB) {
-            tempS2[temp2Count] = tempS1[a];
-            tempW2[temp2Count] = tempW1[a];
-            tempT2[temp2Count] = tempT1[a];
-            tempN2[temp2Count] = tempN1[a];
-            tempC2[temp2Count] = tempC1[a];
-            temp2Count++;
-            continue;
-        }
+    //     if (tempS1[a].x <= wA && tempS1[b].x <= wB) {
+    //         tempS2[temp2Count] = tempS1[a];
+    //         tempW2[temp2Count] = tempW1[a];
+    //         tempT2[temp2Count] = tempT1[a];
+    //         tempN2[temp2Count] = tempN1[a];
+    //         tempC2[temp2Count] = tempC1[a];
+    //         temp2Count++;
+    //         continue;
+    //     }
 
-        float tFact = (1 - tempS1[a].x/wA) / (tempS1[b].x/wB - tempS1[a].x/wA);
-        float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
+    //     float tFact = (1 - tempS1[a].x/wA) / (tempS1[b].x/wB - tempS1[a].x/wA);
+    //     float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
 
-        Vec4f s_w = tempS1[a]/wA + (tempS1[b]/wB - tempS1[a]/wA) * tFact;
-        Vec3f w_w = tempW1[a]/wA + (tempW1[b]/wB - tempW1[a]/wA) * tFact;
-        Vec2f t_w = tempT1[a]/wA + (tempT1[b]/wB - tempT1[a]/wA) * tFact;
-        Vec3f n_w = tempN1[a]/wA + (tempN1[b]/wB - tempN1[a]/wA) * tFact;
-        Vec4f c_w = tempC1[a]/wA + (tempC1[b]/wB - tempC1[a]/wA) * tFact;
+    //     Vec4f s_w = tempS1[a]/wA + (tempS1[b]/wB - tempS1[a]/wA) * tFact;
+    //     Vec3f w_w = tempW1[a]/wA + (tempW1[b]/wB - tempW1[a]/wA) * tFact;
+    //     Vec2f t_w = tempT1[a]/wA + (tempT1[b]/wB - tempT1[a]/wA) * tFact;
+    //     Vec3f n_w = tempN1[a]/wA + (tempN1[b]/wB - tempN1[a]/wA) * tFact;
+    //     Vec4f c_w = tempC1[a]/wA + (tempC1[b]/wB - tempC1[a]/wA) * tFact;
 
-        Vec4f s = s_w / homo1DivW;
-        Vec3f w = w_w / homo1DivW;
-        Vec2f t = t_w / homo1DivW;
-        Vec3f n = n_w / homo1DivW;
-        Vec4f c = c_w / homo1DivW;
+    //     Vec4f s = s_w / homo1DivW;
+    //     Vec3f w = w_w / homo1DivW;
+    //     Vec2f t = t_w / homo1DivW;
+    //     Vec3f n = n_w / homo1DivW;
+    //     Vec4f c = c_w / homo1DivW;
 
-        s.x = s.w;
+    //     s.x = s.w;
 
-        if (tempS1[a].x <= wA) {
-            tempS2[temp2Count] = tempS1[a];
-            tempW2[temp2Count] = tempW1[a];
-            tempT2[temp2Count] = tempT1[a];
-            tempN2[temp2Count] = tempN1[a];
-            tempC2[temp2Count] = tempC1[a];
-            temp2Count++;
-        }
+    //     if (tempS1[a].x <= wA) {
+    //         tempS2[temp2Count] = tempS1[a];
+    //         tempW2[temp2Count] = tempW1[a];
+    //         tempT2[temp2Count] = tempT1[a];
+    //         tempN2[temp2Count] = tempN1[a];
+    //         tempC2[temp2Count] = tempC1[a];
+    //         temp2Count++;
+    //     }
 
-        tempS2[temp2Count] = s;
-        tempW2[temp2Count] = w;
-        tempT2[temp2Count] = t;
-        tempN2[temp2Count] = n;
-        tempC2[temp2Count] = c;
-        temp2Count++;
-    }
-    if (temp2Count < 3) return;
+    //     tempS2[temp2Count] = s;
+    //     tempW2[temp2Count] = w;
+    //     tempT2[temp2Count] = t;
+    //     tempN2[temp2Count] = n;
+    //     tempC2[temp2Count] = c;
+    //     temp2Count++;
+    // }
+    // if (temp2Count < 3) return;
 
     // Clip to bottom plane
     temp1Count = 0;
     for (int a = 0; a < temp2Count; a++) {
+        // Debugging
+        tempS1[temp1Count] = tempS2[a];
+        tempW1[temp1Count] = tempW2[a];
+        tempT1[temp1Count] = tempT2[a];
+        tempN1[temp1Count] = tempN2[a];
+        tempC1[temp1Count] = tempC2[a];
+        temp1Count++;
+        continue;
+
         int b = (a + 1) % temp2Count;
 
         float wA = tempS2[a].w;
@@ -590,9 +597,9 @@ __global__ void createDepthMapKernel(
     float by1 = (1 - runtimeSy[idx1] / sw1) * buffHeight / 2;
     float by2 = (1 - runtimeSy[idx2] / sw2) * buffHeight / 2;
 
-    float sz0 = runtimeSz[idx0];
-    float sz1 = runtimeSz[idx1];
-    float sz2 = runtimeSz[idx2];
+    float bz0 = (runtimeSz[idx0] / sw0 + 1) / 2;
+    float bz1 = (runtimeSz[idx1] / sw1 + 1) / 2;
+    float bz2 = (runtimeSz[idx2] / sw2 + 1) / 2;
 
     // Buffer bounding box based on the tile
 
@@ -632,9 +639,7 @@ __global__ void createDepthMapKernel(
         // Ignore if out of bound
         if (bary.x < 0 || bary.y < 0 || bary.z < 0) continue;
 
-        float sz = bary.x * sz0 + bary.y * sz1 + bary.z * sz2;
-        float sw = bary.x * sw0 + bary.y * sw1 + bary.z * sw2;
-        float depth = sz / sw;
+        float depth = bary.x * bz0 + bary.y * bz1 + bary.z * bz2; 
 
         if (atomicMinFloat(&buffDepth[bIdx], depth)) {
             buffDepth[bIdx] = depth;
