@@ -12,6 +12,8 @@ public:
     static void resetShadowMap();
     static void createShadowMap();
     static void applyShadowMap();
+
+    static void customShader();
 };
 
 __global__ void applyTextureKernel( // Beta
@@ -53,6 +55,16 @@ __global__ void applyShadowMapKernel(
     int buffWidth, int buffHeight,
 
     float *shadowDepth, int shdwWidth, int shdwHeight
+);
+
+__global__ void customShaderKernel(
+    bool *buffActive, ULLInt *buffFaceId, float *buffDepth,
+    float *buffBrx, float *buffBry, float *buffBrz, // Bary
+    float *buffWx, float *buffWy, float *buffWz, // World
+    float *buffTu, float *buffTv, // Texture
+    float *buffNx, float *buffNy, float *buffNz, // Normal
+    float *buffCr, float *buffCg, float *buffCb, float *buffCa, // Color
+    int buffWidth, int buffHeight
 );
 
 #endif

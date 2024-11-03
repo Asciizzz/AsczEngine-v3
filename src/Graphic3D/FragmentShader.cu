@@ -79,6 +79,22 @@ void FragmentShader::applyShadowMap() {
     cudaDeviceSynchronize();
 }
 
+void FragmentShader::customShader() {
+    Graphic3D &grphic = Graphic3D::instance();
+    Buffer3D &buffer = grphic.buffer;
+
+    customShaderKernel<<<buffer.blockNum, buffer.blockSize>>>(
+        buffer.active, buffer.faceID, buffer.depth,
+        buffer.bary.x, buffer.bary.y, buffer.bary.z,
+        buffer.world.x, buffer.world.y, buffer.world.z,
+        buffer.texture.x, buffer.texture.y,
+        buffer.normal.x, buffer.normal.y, buffer.normal.z,
+        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
+        buffer.width, buffer.height
+    );
+    cudaDeviceSynchronize();
+}
+
 // ======================== Kernels ========================
 
 __global__ void applyTextureKernel( // Beta
@@ -260,4 +276,28 @@ __global__ void applyShadowMapKernel(
     buffCr[i] *= 0.15;
     buffCg[i] *= 0.15;
     buffCb[i] *= 0.15;
+}
+
+__global__ void customShaderKernel(
+    bool *buffActive, ULLInt *buffFaceId, float *buffDepth,
+    float *buffBrx, float *buffBry, float *buffBrz, // Bary
+    float *buffWx, float *buffWy, float *buffWz, // World
+    float *buffTu, float *buffTv, // Texture
+    float *buffNx, float *buffNy, float *buffNz, // Normal
+    float *buffCr, float *buffCg, float *buffCb, float *buffCa, // Color
+    int buffWidth, int buffHeight
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+
+    ULLInt fIdx = buffFaceId[i];
+
+    // If fId even, red, else blue
+    float red = fIdx % 2 == 0 ? 255 : 100;
+    float blue = fIdx % 2 == 0 ? 100 : 255;
+
+    buffCr[i] = red;
+    buffCg[i] = 100;
+    buffCb[i] = blue;
+    buffCa[i] = 255;
 }

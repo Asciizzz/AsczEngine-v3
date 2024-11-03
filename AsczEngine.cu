@@ -115,6 +115,8 @@ int main() {
     bool textureMode = true;
     bool shadowMode = false;
     bool shadeMode = true;
+    bool customMode = false;
+
     bool gifMode = false;
     bool moveMode = true;
 
@@ -166,8 +168,12 @@ int main() {
                 // Press 3 to toggle shade mode
                 if (event.key.code == sf::Keyboard::Num3)
                     shadeMode = !shadeMode;
-                // Press 4 to toggle gif mode
+                // Press 4 to toggle custom mode
                 if (event.key.code == sf::Keyboard::Num4)
+                    customMode = !customMode;
+
+                // Press 5 to toggle gif mode
+                if (event.key.code == sf::Keyboard::Num5)
                     gifMode = !gifMode;
 
                 // Press Z to toggle move mode
@@ -364,6 +370,7 @@ int main() {
             FragmentShader::applyShadowMap();
         }
         if (shadeMode) FragmentShader::phongShading();
+        if (customMode) FragmentShader::customShader();
 
         // From buffer to SFMLtexture
         SFTex.updateTexture(
@@ -423,6 +430,10 @@ int main() {
         LOG.addLog(
             "| Shade: " + std::to_string(shadeMode),
             sf::Color(50, 50, shadeMode ? 255 : 100)
+        );
+        LOG.addLog(
+            "| Custom: " + std::to_string(customMode),
+            sf::Color(customMode ? 255 : 100, 50, customMode ? 255 : 100)
         );
 
         LOG.addLog(
