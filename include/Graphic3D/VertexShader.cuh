@@ -27,20 +27,13 @@ THERE IS LITERALLY NO REASON TO INTERPOLATE
 SCREEN COORDINATES INSIDE THE CLIPPING KERNEL
 */
 
-struct Vertex {
-    Vec4f s;
-    Vec3f w;
-    Vec2f t;
-    Vec3f n;
-    Vec4f c;
-};
-
 class VertexShader {
 public:
     __device__ static bool insideFrustum(const Vec4f &v);
 
     // Render pipeline
     static void cameraProjection();
+    static void resetRuntimeFaces();
     static void createRuntimeFaces();
     static void createDepthMap();
     static void rasterization();
@@ -54,6 +47,8 @@ __global__ void cameraProjectionKernel(
 );
 
 // I dont know what to call this
+__global__ void resetRuntimeFacesKernel(bool *rtActive, ULLInt numRtFs);
+
 __global__ void createRuntimeFacesKernel(
     // Orginal mesh data
     const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
@@ -69,11 +64,12 @@ __global__ void createRuntimeFacesKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    ULLInt *rtCount
+    bool *rtActive, ULLInt *rtCount
 );
 
 // Tile-based depth map creation
 __global__ void createDepthMapKernel(
+    const bool *runtimeActive,
     const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw, ULLInt faceCounter, ULLInt faceOffset,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
     float *buffBaryX, float *buffBaryY, float *buffBaryZ,

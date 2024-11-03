@@ -4,6 +4,7 @@
 // Face3D
 
 void Face3D::malloc(ULLInt size) {
+    this->size = size;
     cudaMalloc(&wx, sizeof(float) * size);
     cudaMalloc(&wy, sizeof(float) * size);
     cudaMalloc(&wz, sizeof(float) * size);
@@ -20,13 +21,16 @@ void Face3D::malloc(ULLInt size) {
     cudaMalloc(&sy, sizeof(float) * size);
     cudaMalloc(&sz, sizeof(float) * size);
     cudaMalloc(&sw, sizeof(float) * size);
+    cudaMalloc(&active, sizeof(bool) * size / 3);
 }
 void Face3D::free() {
+    size = 0;
     if (wx) cudaFree(wx); if (wy) cudaFree(wy); if (wz) cudaFree(wz);
     if (nx) cudaFree(nx); if (ny) cudaFree(ny); if (nz) cudaFree(nz);
     if (tu) cudaFree(tu); if (tv) cudaFree(tv);
     if (cr) cudaFree(cr); if (cg) cudaFree(cg); if (cb) cudaFree(cb); if (ca) cudaFree(ca);
     if (sx) cudaFree(sx); if (sy) cudaFree(sy); if (sz) cudaFree(sz); if (sw) cudaFree(sw);
+    if (active) cudaFree(active);
 }
 
 // Graphic stuff below
@@ -70,7 +74,7 @@ void Graphic3D::free() {
 // Graphic faces (runtime)
 void Graphic3D::mallocRuntimeFaces() {
     cudaMalloc(&d_rtCount, sizeof(ULLInt));
-    rtFaces.malloc(mesh.faces.size * 12);
+    rtFaces.malloc(mesh.faces.size * 2);
 }
 void Graphic3D::freeRuntimeFaces() {
     if (d_rtCount) cudaFree(d_rtCount);

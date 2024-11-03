@@ -28,6 +28,9 @@ struct Face3D {
     float *tu, *tv;
     float *cr, *cg, *cb, *ca;
     float *sx, *sy, *sz, *sw;
+    bool *active;
+
+    ULInt size = 0;
 
     void malloc(ULLInt size);
     void free();

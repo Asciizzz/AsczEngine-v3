@@ -292,12 +292,41 @@ __global__ void customShaderKernel(
 
     ULLInt fIdx = buffFaceId[i];
 
-    // If fId even, red, else blue
-    float red = fIdx % 2 == 0 ? 255 : 100;
-    float blue = fIdx % 2 == 0 ? 100 : 255;
+    // Find remainder of fIdx / 12
+    /* The 12 color rotation:
 
-    buffCr[i] = red;
-    buffCg[i] = 100;
-    buffCb[i] = blue;
-    buffCa[i] = 255;
+    Red
+    Green
+    Blue
+    Yellow
+    Cyan
+    Magenta
+    Orange
+    Purple
+    Pink
+    Brown
+    White
+    Gray (black is literally invisible)
+
+    */
+
+    int colorIdx = fIdx % 12;
+    Vec4f color;
+    if (colorIdx == 0) color = Vec4f(255, 80, 80, 255);
+    else if (colorIdx == 1) color = Vec4f(80, 255, 80, 255);
+    else if (colorIdx == 2) color = Vec4f(80, 80, 255, 255);
+    else if (colorIdx == 3) color = Vec4f(255, 255, 80, 255);
+    else if (colorIdx == 4) color = Vec4f(80, 255, 255, 255);
+    else if (colorIdx == 5) color = Vec4f(255, 80, 255, 255);
+    else if (colorIdx == 6) color = Vec4f(255, 160, 80, 255);
+    else if (colorIdx == 7) color = Vec4f(160, 80, 255, 255);
+    else if (colorIdx == 8) color = Vec4f(255, 80, 160, 255);
+    else if (colorIdx == 9) color = Vec4f(160, 80, 80, 255);
+    else if (colorIdx == 10) color = Vec4f(255, 255, 255, 255);
+    else if (colorIdx == 11) color = Vec4f(160, 160, 160, 255);
+
+    buffCr[i] = color.x;
+    buffCg[i] = color.y;
+    buffCb[i] = color.z;
+    buffCa[i] = color.w;
 }

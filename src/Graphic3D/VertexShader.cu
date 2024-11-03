@@ -23,6 +23,16 @@ void VertexShader::cameraProjection() {
     );
 }
 
+void VertexShader::resetRuntimeFaces() {
+    Graphic3D &grphic = Graphic3D::instance();
+
+    ULLInt numFs = grphic.rtFaces.size / 3;
+    resetRuntimeFacesKernel<<<(numFs + 255) / 256, 256>>>(
+        grphic.rtFaces.active, numFs
+    );
+    cudaDeviceSynchronize();
+}
+
 void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
@@ -43,7 +53,7 @@ void VertexShader::createRuntimeFaces() {
         grphic.rtFaces.tu, grphic.rtFaces.tv,
         grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
         grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.d_rtCount
+        grphic.rtFaces.active, grphic.d_rtCount
     );
     cudaDeviceSynchronize();
     cudaMemcpy(&grphic.rtCount, grphic.d_rtCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
@@ -75,8 +85,9 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // Split the faces into chunks
+    ULLInt rtSize = grphic.rtFaces.size / 3;
 
-    size_t chunkNum = (grphic.rtCount + grphic.faceChunkSize - 1) 
+    size_t chunkNum = (rtSize + grphic.faceChunkSize - 1) 
                     /  grphic.faceChunkSize;
 
     dim3 blockSize(16, 32);
@@ -84,13 +95,14 @@ void VertexShader::createDepthMap() {
         size_t chunkOffset = grphic.faceChunkSize * i;
 
         size_t curFaceCount = (i == chunkNum - 1) ?
-            grphic.rtCount - chunkOffset : grphic.faceChunkSize;
+            rtSize - chunkOffset : grphic.faceChunkSize;
 
         size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
         size_t blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
+            grphic.rtFaces.active,
             grphic.rtFaces.sx, grphic.rtFaces.sy,
             grphic.rtFaces.sz, grphic.rtFaces.sw,
             curFaceCount, chunkOffset,
@@ -147,6 +159,13 @@ __global__ void cameraProjectionKernel(
 }
 
 // Create runtime faces
+__global__ void resetRuntimeFacesKernel(bool *rtActive, ULLInt numRtFs) {
+    ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (fIdx >= numRtFs) return;
+
+    rtActive[fIdx] = false;
+}
+
 __global__ void createRuntimeFacesKernel(
     // Orginal mesh data
     const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
@@ -162,7 +181,7 @@ __global__ void createRuntimeFacesKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    ULLInt *rtCount
+    bool *rtActive, ULLInt *rtCount
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
@@ -190,7 +209,8 @@ __global__ void createRuntimeFacesKernel(
     bool allOutNear = rtSs[0].z < -rtSs[0].w && rtSs[1].z < -rtSs[1].w && rtSs[2].z < -rtSs[2].w;
     bool allOutFar = rtSs[0].z > rtSs[0].w && rtSs[1].z > rtSs[1].w && rtSs[2].z > rtSs[2].w;
     bool allBehind = rtSs[0].w < 0 && rtSs[1].w < 0 && rtSs[2].w < 0;
-    if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutNear || allOutFar || allBehind) return;
+    if (allOutLeft || allOutRight || allOutTop || allOutBottom || allOutNear || allOutFar || allBehind)
+        return;
 
     Vec3f rtWs[3] = {
         Vec3f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]]),
@@ -218,7 +238,7 @@ __global__ void createRuntimeFacesKernel(
     bool inside2 = VertexShader::insideFrustum(rtSs[1]);
     bool inside3 = VertexShader::insideFrustum(rtSs[2]);
     if (inside1 && inside2 && inside3) {
-        ULLInt idx0 = atomicAdd(rtCount, 1) * 3;
+        ULLInt idx0 = fIdx * 6;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
@@ -243,35 +263,37 @@ __global__ void createRuntimeFacesKernel(
         rtCb[idx0] = rtCs[0].z; rtCb[idx1] = rtCs[1].z; rtCb[idx2] = rtCs[2].z;
         rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
 
+        rtActive[fIdx * 2] = true;
+
         return;
     }
 
     int temp1Count = 3;
-    Vec4f tempS1[36] = { rtSs[0], rtSs[1], rtSs[2] };
-    Vec3f tempW1[36] = { rtWs[0], rtWs[1], rtWs[2] };
-    Vec2f tempT1[36] = { rtTs[0], rtTs[1], rtTs[2] };
-    Vec3f tempN1[36] = { rtNs[0], rtNs[1], rtNs[2] };
-    Vec4f tempC1[36] = { rtCs[0], rtCs[1], rtCs[2] };
+    Vec4f tempS1[4] = { rtSs[0], rtSs[1], rtSs[2] };
+    Vec3f tempW1[4] = { rtWs[0], rtWs[1], rtWs[2] };
+    Vec2f tempT1[4] = { rtTs[0], rtTs[1], rtTs[2] };
+    Vec3f tempN1[4] = { rtNs[0], rtNs[1], rtNs[2] };
+    Vec4f tempC1[4] = { rtCs[0], rtCs[1], rtCs[2] };
 
     int temp2Count = 0;
-    Vec4f tempS2[36];
-    Vec3f tempW2[36];
-    Vec2f tempT2[36];
-    Vec3f tempN2[36];
-    Vec4f tempC2[36];
+    Vec4f tempS2[4];
+    Vec3f tempW2[4];
+    Vec2f tempT2[4];
+    Vec3f tempN2[4];
+    Vec4f tempC2[4];
 
     // Clip to near plane
-
-    // Note: the entire process below is absolutely wrong
     for (int a = 0; a < temp1Count; a++) {
         int b = (a + 1) % temp1Count;
 
-        float wA = tempS1[a].w;
-        float wB = tempS1[b].w;
+        float swA = tempS1[a].w;
+        float swB = tempS1[b].w;
+        float szA = tempS1[a].z;
+        float szB = tempS1[b].z;
 
-        if (tempS1[a].z < -wA && tempS1[b].z < -wB) continue;
+        if (szA < -swA && szB < -swB) continue;
 
-        if (tempS1[a].z >= -wA && tempS1[b].z >= -wB) {
+        if (szA >= -swA && szB >= -swB) {
             tempS2[temp2Count] = tempS1[a];
             tempW2[temp2Count] = tempW1[a];
             tempT2[temp2Count] = tempT1[a];
@@ -281,22 +303,21 @@ __global__ void createRuntimeFacesKernel(
             continue;
         }
 
-        float tFact = (-1 - tempS1[a].z/wA) / (tempS1[b].z/wB - tempS1[a].z/wA);
-        float homo1DivW = 1/wA + (1/wB - 1/wA) * tFact;
+        float tFact = (-1 - szA/swA) / (szB/swB - szA/swA);
+        Vec4f s_w = tempS1[a]/swA + (tempS1[b]/swB - tempS1[a]/swA) * tFact;
+        Vec3f w_w = tempW1[a]/swA + (tempW1[b]/swB - tempW1[a]/swA) * tFact;
+        Vec2f t_w = tempT1[a]/swA + (tempT1[b]/swB - tempT1[a]/swA) * tFact;
+        Vec3f n_w = tempN1[a]/swA + (tempN1[b]/swB - tempN1[a]/swA) * tFact;
+        Vec4f c_w = tempC1[a]/swA + (tempC1[b]/swB - tempC1[a]/swA) * tFact;
 
-        Vec4f s_w = tempS1[a]/wA + (tempS1[b]/wB - tempS1[a]/wA) * tFact;
-        Vec3f w_w = tempW1[a]/wA + (tempW1[b]/wB - tempW1[a]/wA) * tFact;
-        Vec2f t_w = tempT1[a]/wA + (tempT1[b]/wB - tempT1[a]/wA) * tFact;
-        Vec3f n_w = tempN1[a]/wA + (tempN1[b]/wB - tempN1[a]/wA) * tFact;
-        Vec4f c_w = tempC1[a]/wA + (tempC1[b]/wB - tempC1[a]/wA) * tFact;
-
+        float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
         Vec4f s = s_w / homo1DivW;
         Vec3f w = w_w / homo1DivW;
         Vec2f t = t_w / homo1DivW;
         Vec3f n = n_w / homo1DivW;
         Vec4f c = c_w / homo1DivW;
 
-        if (tempS1[a].z >= -wA) {
+        if (szA >= -swA) {
             tempS2[temp2Count] = tempS1[a];
             tempW2[temp2Count] = tempW1[a];
             tempT2[temp2Count] = tempT1[a];
@@ -314,10 +335,9 @@ __global__ void createRuntimeFacesKernel(
     }
     if (temp2Count < 3) return;
 
-    // n points = n - 2 triangles
-    ULLInt idx = atomicAdd(rtCount, temp2Count - 2) * 3;
+    // n points <=> n - 2 faces
     for (int i = 0; i < temp2Count - 2; i++) {
-        ULLInt idx0 = idx + i * 3;
+        ULLInt idx0 = fIdx * 6 + i * 3;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
@@ -341,11 +361,14 @@ __global__ void createRuntimeFacesKernel(
         rtCg[idx0] = tempC2[0].y; rtCg[idx1] = tempC2[i + 1].y; rtCg[idx2] = tempC2[i + 2].y;
         rtCb[idx0] = tempC2[0].z; rtCb[idx1] = tempC2[i + 1].z; rtCb[idx2] = tempC2[i + 2].z;
         rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
+
+        rtActive[fIdx * 2 + i] = true;
     }
 }
 
 // Depth map creation
 __global__ void createDepthMapKernel(
+    const bool *runtimeActive,
     const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw,
     ULLInt faceCounter, ULLInt faceOffset,
     bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
@@ -357,6 +380,8 @@ __global__ void createDepthMapKernel(
 
     if (tIdx >= tileNumX * tileNumY || fIdx >= faceCounter) return;
     fIdx += faceOffset;
+
+    if (!runtimeActive[fIdx]) return;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;
@@ -400,7 +425,7 @@ __global__ void createDepthMapKernel(
         minY > bufferMaxY ||
         maxY < bufferMinY) return;
 
-    // Clip the bounding box based on the buffer
+    // Clip the bounding box based on the buffer tile
     minX = max(minX, bufferMinX);
     maxX = min(maxX, bufferMaxX);
     minY = max(minY, bufferMinY);

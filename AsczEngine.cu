@@ -358,6 +358,7 @@ int main() {
 
         // Vertex Shader
         VertexShader::cameraProjection();
+        VertexShader::resetRuntimeFaces();
         VertexShader::createRuntimeFaces();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
