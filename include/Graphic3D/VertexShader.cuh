@@ -66,28 +66,28 @@ __global__ void createRuntimeFacesKernel(
 
 // Tile-based depth map creation
 __global__ void createDepthMapKernel(
-    const bool *runtimeActive,
-    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw, ULLInt faceCounter, ULLInt faceOffset,
-    bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
-    float *buffBaryX, float *buffBaryY, float *buffBaryZ,
-    int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileSizeX, int tileSizeY
+    const bool *rtActive, const float *rtSx, const float *rtSy, const float *rtSz, const float *rtSw,
+    ULLInt faceCounter, ULLInt faceOffset,
+    bool *bActive, float *bDepth, ULLInt *bFaceId,
+    float *bBrX, float *bBrY, float *bBrZ,
+    int bWidth, int bHeight, int tNumX, int tNumY, int tSizeX, int tSizeY
 );
 
 // Fill the buffer with datas
 __global__ void rasterizationKernel(
-    const float *runtimeSw,
-    const float *runtimeWx, const float *runtimeWy, const float *runtimeWz,
-    const float *runtimeTu, const float *runtimeTv,
-    const float *runtimeNx, const float *runtimeNy, const float *runtimeNz,
-    const float *runtimeCr, const float *runtimeCg, const float *runtimeCb, const float *runtimeCa,
+    const float *rtSw,
+    const float *rtWx, const float *rtWy, const float *rtWz,
+    const float *rtTu, const float *rtTv,
+    const float *rtNx, const float *rtNy, const float *rtNz,
+    const float *rtCr, const float *rtCg, const float *rtCb, const float *rtCa,
 
-    const bool *buffActive, const ULLInt *buffFaceId,
-    float *buffBrx, float *buffBry, float *buffBrz, // Bary
-    float *buffWx, float *buffWy, float *buffWz, // World
-    float *buffTu, float *buffTv, // Texture
-    float *buffNx, float *buffNy, float *buffNz, // Normal
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa, // Color
-    int buffWidth, int buffHeight
+    const bool *bActive, const ULLInt *bFaceId,
+    float *bBrx, float *bBry, float *bBrz, // Bary
+    float *bWx, float *bWy, float *bWz, // World
+    float *bTu, float *bTv, // Texture
+    float *bNx, float *bNy, float *bNz, // Normal
+    float *bCr, float *bCg, float *bCb, float *bCa, // Color
+    int bWidth, int bHeight
 );
 
 #endif

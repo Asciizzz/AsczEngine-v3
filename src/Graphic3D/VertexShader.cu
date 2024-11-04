@@ -356,50 +356,49 @@ __global__ void createRuntimeFacesKernel(
 
 // Depth map creation
 __global__ void createDepthMapKernel(
-    const bool *runtimeActive,
-    const float *runtimeSx, const float *runtimeSy, const float *runtimeSz, const float *runtimeSw,
+    const bool *rtActive, const float *rtSx, const float *rtSy, const float *rtSz, const float *rtSw,
     ULLInt faceCounter, ULLInt faceOffset,
-    bool *buffActive, float *buffDepth, ULLInt *buffFaceId,
-    float *buffBaryX, float *buffBaryY, float *buffBaryZ,
-    int buffWidth, int buffHeight, int tileNumX, int tileNumY, int tileSizeX, int tileSizeY
+    bool *bActive, float *bDepth, ULLInt *bFaceId,
+    float *bBrX, float *bBrY, float *bBrZ,
+    int bWidth, int bHeight, int tNumX, int tNumY, int tSizeX, int tSizeY
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
     ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (tIdx >= tileNumX * tileNumY || fIdx >= faceCounter) return;
+    if (tIdx >= tNumX * tNumY || fIdx >= faceCounter) return;
     fIdx += faceOffset;
 
-    if (!runtimeActive[fIdx]) return;
+    if (!rtActive[fIdx]) return;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
 
-    float sw0 = runtimeSw[idx0];
-    float sw1 = runtimeSw[idx1];
-    float sw2 = runtimeSw[idx2];
+    float sw0 = rtSw[idx0];
+    float sw1 = rtSw[idx1];
+    float sw2 = rtSw[idx2];
 
-    float bx0 = (runtimeSx[idx0] / sw0 + 1) * buffWidth / 2;
-    float bx1 = (runtimeSx[idx1] / sw1 + 1) * buffWidth / 2;
-    float bx2 = (runtimeSx[idx2] / sw2 + 1) * buffWidth / 2;
+    float bx0 = (rtSx[idx0] / sw0 + 1) * bWidth / 2;
+    float bx1 = (rtSx[idx1] / sw1 + 1) * bWidth / 2;
+    float bx2 = (rtSx[idx2] / sw2 + 1) * bWidth / 2;
 
-    float by0 = (1 - runtimeSy[idx0] / sw0) * buffHeight / 2;
-    float by1 = (1 - runtimeSy[idx1] / sw1) * buffHeight / 2;
-    float by2 = (1 - runtimeSy[idx2] / sw2) * buffHeight / 2;
+    float by0 = (1 - rtSy[idx0] / sw0) * bHeight / 2;
+    float by1 = (1 - rtSy[idx1] / sw1) * bHeight / 2;
+    float by2 = (1 - rtSy[idx2] / sw2) * bHeight / 2;
 
-    float bz0 = (runtimeSz[idx0] / sw0 + 1) / 2;
-    float bz1 = (runtimeSz[idx1] / sw1 + 1) / 2;
-    float bz2 = (runtimeSz[idx2] / sw2 + 1) / 2;
+    float bz0 = (rtSz[idx0] / sw0 + 1) / 2;
+    float bz1 = (rtSz[idx1] / sw1 + 1) / 2;
+    float bz2 = (rtSz[idx2] / sw2 + 1) / 2;
 
     // Buffer bounding box based on the tile
 
-    int tX = tIdx % tileNumX;
-    int tY = tIdx / tileNumX;
+    int tX = tIdx % tNumX;
+    int tY = tIdx / tNumX;
 
-    int bufferMinX = tX * tileSizeX;
-    int bufferMaxX = bufferMinX + tileSizeX;
-    int bufferMinY = tY * tileSizeY;
-    int bufferMaxY = bufferMinY + tileSizeY;
+    int bufferMinX = tX * tSizeX;
+    int bufferMaxX = bufferMinX + tSizeX;
+    int bufferMinY = tY * tSizeY;
+    int bufferMaxY = bufferMinY + tSizeY;
 
     // Bounding box
     int minX = min(min(bx0, bx1), bx2);
@@ -421,7 +420,7 @@ __global__ void createDepthMapKernel(
 
     for (int x = minX; x <= maxX; x++)
     for (int y = minY; y <= maxY; y++) {
-        int bIdx = x + y * buffWidth;
+        int bIdx = x + y * bWidth;
 
         Vec3f bary = Vec3f::bary(
             Vec2f(x, y), Vec2f(bx0, by0), Vec2f(bx1, by1), Vec2f(bx2, by2)
@@ -431,37 +430,37 @@ __global__ void createDepthMapKernel(
 
         float depth = bary.x * bz0 + bary.y * bz1 + bary.z * bz2; 
 
-        if (atomicMinFloat(&buffDepth[bIdx], depth)) {
-            buffDepth[bIdx] = depth;
-            buffActive[bIdx] = true;
-            buffFaceId[bIdx] = fIdx;
+        if (atomicMinFloat(&bDepth[bIdx], depth)) {
+            bDepth[bIdx] = depth;
+            bActive[bIdx] = true;
+            bFaceId[bIdx] = fIdx;
 
-            buffBaryX[bIdx] = bary.x;
-            buffBaryY[bIdx] = bary.y;
-            buffBaryZ[bIdx] = bary.z;
+            bBrX[bIdx] = bary.x;
+            bBrY[bIdx] = bary.y;
+            bBrZ[bIdx] = bary.z;
         }
     }
 }
 
 __global__ void rasterizationKernel(
-    const float *runtimeSw,
-    const float *runtimeWx, const float *runtimeWy, const float *runtimeWz,
-    const float *runtimeTu, const float *runtimeTv,
-    const float *runtimeNx, const float *runtimeNy, const float *runtimeNz,
-    const float *runtimeCr, const float *runtimeCg, const float *runtimeCb, const float *runtimeCa,
+    const float *rtSw,
+    const float *rtWx, const float *rtWy, const float *rtWz,
+    const float *rtTu, const float *rtTv,
+    const float *rtNx, const float *rtNy, const float *rtNz,
+    const float *rtCr, const float *rtCg, const float *rtCb, const float *rtCa,
 
-    const bool *buffActive, const ULLInt *buffFaceId,
-    float *buffBrx, float *buffBry, float *buffBrz, // Bary
-    float *buffWx, float *buffWy, float *buffWz, // World
-    float *buffTu, float *buffTv, // Texture
-    float *buffNx, float *buffNy, float *buffNz, // Normal
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa, // Color
-    int buffWidth, int buffHeight
+    const bool *bActive, const ULLInt *bFaceId,
+    float *bBrx, float *bBry, float *bBrz, // Bary
+    float *bWx, float *bWy, float *bWz, // World
+    float *bTu, float *bTv, // Texture
+    float *bNx, float *bNy, float *bNz, // Normal
+    float *bCr, float *bCg, float *bCb, float *bCa, // Color
+    int bWidth, int bHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+    if (i >= bWidth * bHeight || !bActive[i]) return;
 
-    ULLInt fIdx = buffFaceId[i];
+    ULLInt fIdx = bFaceId[i];
 
     // Set vertex, texture, and normal (with correct perspective correction)
 
@@ -470,54 +469,54 @@ __global__ void rasterizationKernel(
     ULLInt idx2 = fIdx * 3 + 2;
 
     // Get barycentric coordinates
-    float alp = buffBrx[i];
-    float bet = buffBry[i];
-    float gam = buffBrz[i];
+    float alp = bBrx[i];
+    float bet = bBry[i];
+    float gam = bBrz[i];
 
     // Get homogenous 1/w
-    float homo1divW = alp / runtimeSw[idx0] + bet / runtimeSw[idx1] + gam / runtimeSw[idx2];
+    float homo1divW = alp / rtSw[idx0] + bet / rtSw[idx1] + gam / rtSw[idx2];
 
     // Set world position
-    float wx_sw = runtimeWx[idx0] / runtimeSw[idx0] * alp + runtimeWx[idx1] / runtimeSw[idx1] * bet + runtimeWx[idx2] / runtimeSw[idx2] * gam;
-    float wy_sw = runtimeWy[idx0] / runtimeSw[idx0] * alp + runtimeWy[idx1] / runtimeSw[idx1] * bet + runtimeWy[idx2] / runtimeSw[idx2] * gam;
-    float wz_sw = runtimeWz[idx0] / runtimeSw[idx0] * alp + runtimeWz[idx1] / runtimeSw[idx1] * bet + runtimeWz[idx2] / runtimeSw[idx2] * gam;
+    float wx_sw = rtWx[idx0] / rtSw[idx0] * alp + rtWx[idx1] / rtSw[idx1] * bet + rtWx[idx2] / rtSw[idx2] * gam;
+    float wy_sw = rtWy[idx0] / rtSw[idx0] * alp + rtWy[idx1] / rtSw[idx1] * bet + rtWy[idx2] / rtSw[idx2] * gam;
+    float wz_sw = rtWz[idx0] / rtSw[idx0] * alp + rtWz[idx1] / rtSw[idx1] * bet + rtWz[idx2] / rtSw[idx2] * gam;
 
-    buffWx[i] = wx_sw / homo1divW;
-    buffWy[i] = wy_sw / homo1divW;
-    buffWz[i] = wz_sw / homo1divW;
+    bWx[i] = wx_sw / homo1divW;
+    bWy[i] = wy_sw / homo1divW;
+    bWz[i] = wz_sw / homo1divW;
 
     // Set texture
-    float tu_sw = runtimeTu[idx0] / runtimeSw[idx0] * alp + runtimeTu[idx1] / runtimeSw[idx1] * bet + runtimeTu[idx2] / runtimeSw[idx2] * gam;
-    float tv_sw = runtimeTv[idx0] / runtimeSw[idx0] * alp + runtimeTv[idx1] / runtimeSw[idx1] * bet + runtimeTv[idx2] / runtimeSw[idx2] * gam;
+    float tu_sw = rtTu[idx0] / rtSw[idx0] * alp + rtTu[idx1] / rtSw[idx1] * bet + rtTu[idx2] / rtSw[idx2] * gam;
+    float tv_sw = rtTv[idx0] / rtSw[idx0] * alp + rtTv[idx1] / rtSw[idx1] * bet + rtTv[idx2] / rtSw[idx2] * gam;
 
-    buffTu[i] = tu_sw / homo1divW;
-    buffTv[i] = tv_sw / homo1divW;
+    bTu[i] = tu_sw / homo1divW;
+    bTv[i] = tv_sw / homo1divW;
 
     // Set normal
-    float nx_sw = runtimeNx[idx0] / runtimeSw[idx0] * alp + runtimeNx[idx1] / runtimeSw[idx1] * bet + runtimeNx[idx2] / runtimeSw[idx2] * gam;
-    float ny_sw = runtimeNy[idx0] / runtimeSw[idx0] * alp + runtimeNy[idx1] / runtimeSw[idx1] * bet + runtimeNy[idx2] / runtimeSw[idx2] * gam;
-    float nz_sw = runtimeNz[idx0] / runtimeSw[idx0] * alp + runtimeNz[idx1] / runtimeSw[idx1] * bet + runtimeNz[idx2] / runtimeSw[idx2] * gam;
+    float nx_sw = rtNx[idx0] / rtSw[idx0] * alp + rtNx[idx1] / rtSw[idx1] * bet + rtNx[idx2] / rtSw[idx2] * gam;
+    float ny_sw = rtNy[idx0] / rtSw[idx0] * alp + rtNy[idx1] / rtSw[idx1] * bet + rtNy[idx2] / rtSw[idx2] * gam;
+    float nz_sw = rtNz[idx0] / rtSw[idx0] * alp + rtNz[idx1] / rtSw[idx1] * bet + rtNz[idx2] / rtSw[idx2] * gam;
 
-    buffNx[i] = nx_sw / homo1divW;
-    buffNy[i] = ny_sw / homo1divW;
-    buffNz[i] = nz_sw / homo1divW;
+    bNx[i] = nx_sw / homo1divW;
+    bNy[i] = ny_sw / homo1divW;
+    bNz[i] = nz_sw / homo1divW;
     float mag = sqrt( // Normalize the normal
-        buffNx[i] * buffNx[i] +
-        buffNy[i] * buffNy[i] +
-        buffNz[i] * buffNz[i]
+        bNx[i] * bNx[i] +
+        bNy[i] * bNy[i] +
+        bNz[i] * bNz[i]
     );
-    buffNx[i] /= mag;
-    buffNy[i] /= mag;
-    buffNz[i] /= mag; 
+    bNx[i] /= mag;
+    bNy[i] /= mag;
+    bNz[i] /= mag; 
 
     // Set color
-    float cr_sw = runtimeCr[idx0] / runtimeSw[idx0] * alp + runtimeCr[idx1] / runtimeSw[idx1] * bet + runtimeCr[idx2] / runtimeSw[idx2] * gam;
-    float cg_sw = runtimeCg[idx0] / runtimeSw[idx0] * alp + runtimeCg[idx1] / runtimeSw[idx1] * bet + runtimeCg[idx2] / runtimeSw[idx2] * gam;
-    float cb_sw = runtimeCb[idx0] / runtimeSw[idx0] * alp + runtimeCb[idx1] / runtimeSw[idx1] * bet + runtimeCb[idx2] / runtimeSw[idx2] * gam;
-    float ca_sw = runtimeCa[idx0] / runtimeSw[idx0] * alp + runtimeCa[idx1] / runtimeSw[idx1] * bet + runtimeCa[idx2] / runtimeSw[idx2] * gam;
+    float cr_sw = rtCr[idx0] / rtSw[idx0] * alp + rtCr[idx1] / rtSw[idx1] * bet + rtCr[idx2] / rtSw[idx2] * gam;
+    float cg_sw = rtCg[idx0] / rtSw[idx0] * alp + rtCg[idx1] / rtSw[idx1] * bet + rtCg[idx2] / rtSw[idx2] * gam;
+    float cb_sw = rtCb[idx0] / rtSw[idx0] * alp + rtCb[idx1] / rtSw[idx1] * bet + rtCb[idx2] / rtSw[idx2] * gam;
+    float ca_sw = rtCa[idx0] / rtSw[idx0] * alp + rtCa[idx1] / rtSw[idx1] * bet + rtCa[idx2] / rtSw[idx2] * gam;
 
-    buffCr[i] = cr_sw / homo1divW;
-    buffCg[i] = cg_sw / homo1divW;
-    buffCb[i] = cb_sw / homo1divW;
-    buffCa[i] = ca_sw / homo1divW;
+    bCr[i] = cr_sw / homo1divW;
+    bCg[i] = cg_sw / homo1divW;
+    bCb[i] = cb_sw / homo1divW;
+    bCa[i] = ca_sw / homo1divW;
 }
