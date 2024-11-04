@@ -56,20 +56,22 @@
 #assets/Models/Shapes/Cube2.obj 1 0 0 0 0 0 8
 #assets/Models/Shapes/Cube2.obj 1 0 0 0 0 0 10
 
-assets/Models/Shapes/Wall.obj 100 90 0 0 0 0 0
+#assets/Models/City/Building001.obj 1 0 180 0 0 2.2 0
+
+
+assets/Models/Shapes/Wall.obj 60 90 0 0 10 0 10
 
 assets/Models/City/Building001.obj 1 0 180 0 0 9.2 0
 assets/Models/City/Building001.obj 1 0 -90 0 25 9.2 25
 
 assets/Models/City/Building002.obj 1 0 90 0 0 11.2 25
-
-assets/Models/City/Building003.obj 1 0 -90 0 20 14.8 0
-
 assets/Models/City/Building002.obj 1 0 0 0 50 11.2 10
 assets/Models/City/Building002.obj 1 0 0 0 40 11.2 -15
 
-assets/Models/City/Building004.obj 1 0 0 0 -26 18.2 0
+assets/Models/City/Building003.obj 1 0 -90 0 20 14.8 0
 assets/Models/City/Building003.obj 1 0 180 0 -26 14.8 25
+
+assets/Models/City/Building004.obj 1 0 0 0 -26 18.2 0
 
 assets/Models/Nature/Tree.obj .3 0 0 0 14 4 12
 assets/Models/Nature/Tree.obj .4 0 0 0 38 5 4

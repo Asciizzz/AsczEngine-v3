@@ -1,2 +1,2 @@
-assets/Textures/Default1.png
+assets/Textures/Default2.png
 assets/Textures/Wood.png
