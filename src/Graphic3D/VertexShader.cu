@@ -23,16 +23,6 @@ void VertexShader::cameraProjection() {
     );
 }
 
-void VertexShader::resetRuntimeFaces() {
-    Graphic3D &grphic = Graphic3D::instance();
-
-    ULLInt numFs = grphic.rtFaces.size / 3;
-    resetRuntimeFacesKernel<<<(numFs + 255) / 256, 256>>>(
-        grphic.rtFaces.active, numFs
-    );
-    cudaDeviceSynchronize();
-}
-
 void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
@@ -158,14 +148,6 @@ __global__ void cameraProjectionKernel(
     screenW[vIdx] = screen.w;
 }
 
-// Create runtime faces
-__global__ void resetRuntimeFacesKernel(bool *rtActive, ULLInt numRtFs) {
-    ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (fIdx >= numRtFs) return;
-
-    rtActive[fIdx] = false;
-}
-
 __global__ void createRuntimeFacesKernel(
     // Orginal mesh data
     const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
@@ -185,6 +167,10 @@ __global__ void createRuntimeFacesKernel(
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
+
+    // Reset Active
+    rtActive[fIdx * 2] = false;
+    rtActive[fIdx * 2 + 1] = false;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;

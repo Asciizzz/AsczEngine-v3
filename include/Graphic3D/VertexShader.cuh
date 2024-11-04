@@ -33,7 +33,6 @@ public:
 
     // Render pipeline
     static void cameraProjection();
-    static void resetRuntimeFaces();
     static void createRuntimeFaces();
     static void createDepthMap();
     static void rasterization();
@@ -46,9 +45,7 @@ __global__ void cameraProjectionKernel(
     Mat4f mvp, ULLInt numVs
 );
 
-// I dont know what to call this
-__global__ void resetRuntimeFacesKernel(bool *rtActive, ULLInt numRtFs);
-
+// Create runtime faces
 __global__ void createRuntimeFacesKernel(
     // Orginal mesh data
     const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
