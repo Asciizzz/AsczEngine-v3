@@ -169,8 +169,10 @@ __global__ void createRuntimeFacesKernel(
     if (fIdx >= numFs) return;
 
     // Reset Active
-    rtActive[fIdx * 2] = false;
-    rtActive[fIdx * 2 + 1] = false;
+    rtActive[fIdx * 4] = false;
+    rtActive[fIdx * 4 + 1] = false;
+    rtActive[fIdx * 4 + 2] = false;
+    rtActive[fIdx * 4 + 3] = false;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;
@@ -224,7 +226,7 @@ __global__ void createRuntimeFacesKernel(
     bool inside2 = VertexShader::insideFrustum(rtSs[1]);
     bool inside3 = VertexShader::insideFrustum(rtSs[2]);
     if (inside1 && inside2 && inside3) {
-        ULLInt idx0 = fIdx * 6;
+        ULLInt idx0 = fIdx * 12;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
@@ -249,44 +251,43 @@ __global__ void createRuntimeFacesKernel(
         rtCb[idx0] = rtCs[0].z; rtCb[idx1] = rtCs[1].z; rtCb[idx2] = rtCs[2].z;
         rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
 
-        rtActive[fIdx * 2] = true;
+        rtActive[fIdx * 4] = true;
 
         return;
     }
 
     int temp1Count = 3;
-    Vec4f tempS1[4] = { rtSs[0], rtSs[1], rtSs[2] };
-    Vec3f tempW1[4] = { rtWs[0], rtWs[1], rtWs[2] };
-    Vec2f tempT1[4] = { rtTs[0], rtTs[1], rtTs[2] };
-    Vec3f tempN1[4] = { rtNs[0], rtNs[1], rtNs[2] };
-    Vec4f tempC1[4] = { rtCs[0], rtCs[1], rtCs[2] };
+    Vec4f tempS1[8] = { rtSs[0], rtSs[1], rtSs[2] };
+    Vec3f tempW1[8] = { rtWs[0], rtWs[1], rtWs[2] };
+    Vec2f tempT1[8] = { rtTs[0], rtTs[1], rtTs[2] };
+    Vec3f tempN1[8] = { rtNs[0], rtNs[1], rtNs[2] };
+    Vec4f tempC1[8] = { rtCs[0], rtCs[1], rtCs[2] };
 
     int temp2Count = 0;
-    Vec4f tempS2[4];
-    Vec3f tempW2[4];
-    Vec2f tempT2[4];
-    Vec3f tempN2[4];
-    Vec4f tempC2[4];
+    Vec4f tempS2[8];
+    Vec3f tempW2[8];
+    Vec2f tempT2[8];
+    Vec3f tempN2[8];
+    Vec4f tempC2[8];
 
     // Clip to near plane
     for (int a = 0; a < temp1Count; a++) {
         int b = (a + 1) % temp1Count;
 
-        float swA = tempS1[a].w;
-        float swB = tempS1[b].w;
-        float szA = tempS1[a].z;
-        float szB = tempS1[b].z;
+        float swA = tempS1[a].w, swB = tempS1[b].w;
+        float szA = tempS1[a].z, szB = tempS1[b].z;
 
         if (szA < -swA && szB < -swB) continue;
 
-        if (szA >= -swA && szB >= -swB) {
+        if (szA >= -swA) {
             tempS2[temp2Count] = tempS1[a];
             tempW2[temp2Count] = tempW1[a];
             tempT2[temp2Count] = tempT1[a];
             tempN2[temp2Count] = tempN1[a];
             tempC2[temp2Count] = tempC1[a];
             temp2Count++;
-            continue;
+
+            if (szB >= -swB) continue;
         }
 
         float tFact = (-1 - szA/swA) / (szB/swB - szA/swA);
@@ -303,15 +304,6 @@ __global__ void createRuntimeFacesKernel(
         Vec3f n = n_w / homo1DivW;
         Vec4f c = c_w / homo1DivW;
 
-        if (szA >= -swA) {
-            tempS2[temp2Count] = tempS1[a];
-            tempW2[temp2Count] = tempW1[a];
-            tempT2[temp2Count] = tempT1[a];
-            tempN2[temp2Count] = tempN1[a];
-            tempC2[temp2Count] = tempC1[a];
-            temp2Count++;
-        }
-
         tempS2[temp2Count] = s;
         tempW2[temp2Count] = w;
         tempT2[temp2Count] = t;
@@ -321,9 +313,44 @@ __global__ void createRuntimeFacesKernel(
     }
     if (temp2Count < 3) return;
 
+    // Clip to left plane
+    temp1Count = 0;
+    for (int a = 0; a < temp2Count; a++) {
+        int b = (a + 1) % temp2Count;
+
+        float swA = tempS2[a].w, swB = tempS2[b].w;
+        float sxA = tempS2[a].x, sxB = tempS2[b].x;
+
+        if (sxA < -swA && sxB < -swB) continue;
+
+        if (sxA >= -swA && sxB >= -swB) {
+            tempS1[temp1Count] = tempS2[a];
+            tempW1[temp1Count] = tempW2[a];
+            tempT1[temp1Count] = tempT2[a];
+            tempN1[temp1Count] = tempN2[a];
+            tempC1[temp1Count] = tempC2[a];
+            temp1Count++;
+            continue;
+        }
+
+        float tFact = (-1 - sxA/swA) / (sxB/swB - sxA/swA);
+        Vec4f s_w = tempS1[a]/swA + (tempS1[b]/swB - tempS1[a]/swA) * tFact;
+        Vec3f w_w = tempW1[a]/swA + (tempW1[b]/swB - tempW1[a]/swA) * tFact;
+        Vec2f t_w = tempT1[a]/swA + (tempT1[b]/swB - tempT1[a]/swA) * tFact;
+        Vec3f n_w = tempN1[a]/swA + (tempN1[b]/swB - tempN1[a]/swA) * tFact;
+        Vec4f c_w = tempC1[a]/swA + (tempC1[b]/swB - tempC1[a]/swA) * tFact;
+
+        float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
+        Vec4f s = s_w / homo1DivW;
+        Vec3f w = w_w / homo1DivW;
+        Vec2f t = t_w / homo1DivW;
+        Vec3f n = n_w / homo1DivW;
+        Vec4f c = c_w / homo1DivW;
+    }
+
     // n points <=> n - 2 faces
     for (int i = 0; i < temp2Count - 2; i++) {
-        ULLInt idx0 = fIdx * 6 + i * 3;
+        ULLInt idx0 = fIdx * 12 + i * 3;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
@@ -348,7 +375,7 @@ __global__ void createRuntimeFacesKernel(
         rtCb[idx0] = tempC2[0].z; rtCb[idx1] = tempC2[i + 1].z; rtCb[idx2] = tempC2[i + 2].z;
         rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
 
-        rtActive[fIdx * 2 + i] = true;
+        rtActive[fIdx * 4 + i] = true;
     }
 }
 
@@ -389,7 +416,6 @@ __global__ void createDepthMapKernel(
     float bz2 = (rtSz[idx2] / sw2 + 1) / 2;
 
     // Buffer bounding box based on the tile
-
     int tX = tIdx % tNumX;
     int tY = tIdx / tNumX;
 
