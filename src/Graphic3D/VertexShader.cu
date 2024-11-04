@@ -133,29 +133,29 @@ void VertexShader::rasterization() {
 
 // Camera projection
 __global__ void cameraProjectionKernel(
-    const float *worldX, const float *worldY, const float *worldZ,
-    float *screenX, float *screenY, float *screenZ, float *screenW,
+    const float *wx, const float *wy, const float *wz,
+    float *sx, float *sy, float *sz, float *sw,
     Mat4f mvp, ULLInt numVs
 ) {
     ULLInt vIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (vIdx >= numVs) return;
 
-    Vec4f screen = mvp * Vec4f(worldX[vIdx], worldY[vIdx], worldZ[vIdx], 1);
+    Vec4f screen = mvp * Vec4f(wx[vIdx], wy[vIdx], wz[vIdx], 1);
 
-    screenX[vIdx] = -screen.x; // Flip X
-    screenY[vIdx] = screen.y;
-    screenZ[vIdx] = screen.z;
-    screenW[vIdx] = screen.w;
+    sx[vIdx] = -screen.x;
+    sy[vIdx] = screen.y;
+    sz[vIdx] = screen.z;
+    sw[vIdx] = screen.w;
 }
 
 __global__ void createRuntimeFacesKernel(
     // Orginal mesh data
-    const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
-    const float *worldX, const float *worldY, const float *worldZ,
-    const float *normalX, const float *normalY, const float *normalZ,
-    const float *textureX, const float *textureY,
-    const float *colorX, const float *colorY, const float *colorZ, float *colorW,
-    const ULLInt *faceWs, const ULLInt *faceTs, const ULLInt *faceNs, ULLInt numFs,
+    const float *sx, const float *sy, const float *sz, const float *sw,
+    const float *wx, const float *wy, const float *wz,
+    const float *nx, const float *ny, const float *nz,
+    const float *tu, const float *tv,
+    const float *cr, const float *cg, const float *cb, const float *ca,
+    const ULLInt *fWs, const ULLInt *fTs, const ULLInt *fNs, ULLInt numFs,
 
     // Runtime faces
     float *rtSx, float *rtSy, float *rtSz, float *rtSw,
@@ -176,15 +176,15 @@ __global__ void createRuntimeFacesKernel(
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
 
-    ULLInt fw[3] = {faceWs[idx0], faceWs[idx1], faceWs[idx2]};
-    ULLInt ft[3] = {faceTs[idx0], faceTs[idx1], faceTs[idx2]};
-    ULLInt fn[3] = {faceNs[idx0], faceNs[idx1], faceNs[idx2]};
+    ULLInt fw[3] = {fWs[idx0], fWs[idx1], fWs[idx2]};
+    ULLInt ft[3] = {fTs[idx0], fTs[idx1], fTs[idx2]};
+    ULLInt fn[3] = {fNs[idx0], fNs[idx1], fNs[idx2]};
 
     // Early culling (for outside the frustum)
     Vec4f rtSs[3] = {
-        Vec4f(screenX[fw[0]], screenY[fw[0]], screenZ[fw[0]], screenW[fw[0]]),
-        Vec4f(screenX[fw[1]], screenY[fw[1]], screenZ[fw[1]], screenW[fw[1]]),
-        Vec4f(screenX[fw[2]], screenY[fw[2]], screenZ[fw[2]], screenW[fw[2]])
+        Vec4f(sx[fw[0]], sy[fw[0]], sz[fw[0]], sw[fw[0]]),
+        Vec4f(sx[fw[1]], sy[fw[1]], sz[fw[1]], sw[fw[1]]),
+        Vec4f(sx[fw[2]], sy[fw[2]], sz[fw[2]], sw[fw[2]])
     };
 
     // If all on one side, ignore
@@ -199,24 +199,24 @@ __global__ void createRuntimeFacesKernel(
         return;
 
     Vec3f rtWs[3] = {
-        Vec3f(worldX[fw[0]], worldY[fw[0]], worldZ[fw[0]]),
-        Vec3f(worldX[fw[1]], worldY[fw[1]], worldZ[fw[1]]),
-        Vec3f(worldX[fw[2]], worldY[fw[2]], worldZ[fw[2]])
+        Vec3f(wx[fw[0]], wy[fw[0]], wz[fw[0]]),
+        Vec3f(wx[fw[1]], wy[fw[1]], wz[fw[1]]),
+        Vec3f(wx[fw[2]], wy[fw[2]], wz[fw[2]])
     };
     Vec2f rtTs[3] = {
-        Vec2f(textureX[ft[0]], textureY[ft[0]]),
-        Vec2f(textureX[ft[1]], textureY[ft[1]]),
-        Vec2f(textureX[ft[2]], textureY[ft[2]])
+        Vec2f(tu[ft[0]], tv[ft[0]]),
+        Vec2f(tu[ft[1]], tv[ft[1]]),
+        Vec2f(tu[ft[2]], tv[ft[2]])
     };
     Vec3f rtNs[3] = {
-        Vec3f(normalX[fn[0]], normalY[fn[0]], normalZ[fn[0]]),
-        Vec3f(normalX[fn[1]], normalY[fn[1]], normalZ[fn[1]]),
-        Vec3f(normalX[fn[2]], normalY[fn[2]], normalZ[fn[2]])
+        Vec3f(nx[fn[0]], ny[fn[0]], nz[fn[0]]),
+        Vec3f(nx[fn[1]], ny[fn[1]], nz[fn[1]]),
+        Vec3f(nx[fn[2]], ny[fn[2]], nz[fn[2]])
     };
     Vec4f rtCs[3] = {
-        Vec4f(colorX[fw[0]], colorY[fw[0]], colorZ[fw[0]], colorW[fw[0]]),
-        Vec4f(colorX[fw[1]], colorY[fw[1]], colorZ[fw[1]], colorW[fw[1]]),
-        Vec4f(colorX[fw[2]], colorY[fw[2]], colorZ[fw[2]], colorW[fw[2]])
+        Vec4f(cr[fw[0]], cg[fw[0]], cb[fw[0]], ca[fw[0]]),
+        Vec4f(cr[fw[1]], cg[fw[1]], cb[fw[1]], ca[fw[1]]),
+        Vec4f(cr[fw[2]], cg[fw[2]], cb[fw[2]], ca[fw[2]])
     };
 
     // If all inside, return

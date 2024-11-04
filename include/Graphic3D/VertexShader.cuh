@@ -40,20 +40,20 @@ public:
 
 // Camera projection
 __global__ void cameraProjectionKernel(
-    const float *worldX, const float *worldY, const float *worldZ,
-    float *screenX, float *screenY, float *screenZ, float *screenW,
+    const float *wx, const float *wy, const float *wz,
+    float *sx, float *sy, float *sz, float *sw,
     Mat4f mvp, ULLInt numVs
 );
 
 // Create runtime faces
 __global__ void createRuntimeFacesKernel(
     // Orginal mesh data
-    const float *screenX, const float *screenY, const float *screenZ, const float *screenW,
-    const float *worldX, const float *worldY, const float *worldZ,
-    const float *normalX, const float *normalY, const float *normalZ,
-    const float *textureX, const float *textureY,
-    const float *colorX, const float *colorY, const float *colorZ, float *colorW,
-    const ULLInt *faceWs, const ULLInt *faceTs, const ULLInt *faceNs, ULLInt numFs,
+    const float *sx, const float *sy, const float *sz, const float *sw,
+    const float *wx, const float *wy, const float *wz,
+    const float *nx, const float *ny, const float *nz,
+    const float *tu, const float *tv,
+    const float *cr, const float *cg, const float *cb, const float *ca,
+    const ULLInt *fWs, const ULLInt *fTs, const ULLInt *fNs, ULLInt numFs,
 
     // Runtime faces
     float *rtSx, float *rtSy, float *rtSz, float *rtSw,
