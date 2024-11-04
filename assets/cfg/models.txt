@@ -23,7 +23,7 @@
 # assets/Models/Weapon/M4A1.obj .5 0 90 45 0 0 .3
 # assets/Models/Weapon/Ak47.obj .5 0 90 45 0 0 -.6
 
-# assets/Models/Structure/Stronghold.obj 1
+assets/Models/Structure/Stronghold.obj 1
 # assets/Models/Structure/Medieval.obj 1 0 0 0 0 6 0
 
 # assets/Models/Shapes/Cube.obj .4 45 1 0 .4 0 -2
@@ -48,7 +48,6 @@
 #assets/Models/Shapes/Wall.obj 4 0 -90 0 4 0 0
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 -4
 
-
 #assets/Models/Shapes/Cube2.obj 1
 #assets/Models/Shapes/Cube2.obj 1 0 0 0 0 0 2
 #assets/Models/Shapes/Cube2.obj 1 0 0 0 0 0 4
@@ -58,6 +57,7 @@
 
 #assets/Models/City/Building001.obj 1 0 180 0 0 2.2 0
 
+~
 
 assets/Models/Shapes/Wall.obj 60 90 0 0 10 0 10
 
