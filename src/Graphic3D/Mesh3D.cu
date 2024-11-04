@@ -181,10 +181,6 @@ void Mesh3D::free() {
 
 // Push
 void Mesh3D::push(Mesh &mesh) {
-    // Stream for async memory copy
-    cudaStream_t stream;
-    cudaStreamCreate(&stream);
-
     ULLInt offsetV = world.size;
     ULLInt offsetT = texture.size;
     ULLInt offsetN = normal.size;
@@ -214,6 +210,10 @@ void Mesh3D::push(Mesh &mesh) {
     newNormal.malloc(normalSize);
     newColor.malloc(colorSize);
     newFaces.malloc(faceSize);
+
+    // Stream for async memory copy
+    cudaStream_t stream;
+    cudaStreamCreate(&stream);
 
     cudaMemcpyAsync(newWorld.x, mesh.wx.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newWorld.y, mesh.wy.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);

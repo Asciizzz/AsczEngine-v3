@@ -51,6 +51,8 @@ int main() {
     while (std::getline(objsFile, line)) {
         // If line start with #, it's a comment
         if (line[0] == '#' || line.empty()) continue;
+        // If line start with ~, it's the end of the file
+        if (line[0] == '~') break;
 
         std::string objPath = "";
         float scale = 1;
@@ -187,6 +189,18 @@ int main() {
 
                     std::ifstream color("assets/cfg/lightColor.txt");
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
+                }
+
+                // Press C to place a cube
+                if (event.key.code == sf::Keyboard::C) {
+                    Mesh cube = Utils::readObjFile(
+                        "assets/Models/Shapes/Cube.obj", 1, 1, true
+                    );
+                    cube.translateIni(CAMERA.pos + CAMERA.forward * 2);
+                    GRAPHIC.mesh.push(cube);
+                    GRAPHIC.mallocRuntimeFaces();
+
+                    std::cout << "Cube placed" << std::endl;
                 }
             }
 
