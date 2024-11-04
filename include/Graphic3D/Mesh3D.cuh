@@ -90,11 +90,13 @@ public:
     void freeFaces();
     void resizeFaces(ULLInt numFs);
 
+    void malloc(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
+
     void free();
 
-    // Mesh operators
-    void operator+=(Mesh &mesh);
-    void operator+=(std::vector<Mesh> &meshs);
+    // Resize + Append
+    void push(Mesh &mesh);
+    void push(std::vector<Mesh> &meshs);
 };
 
 // Kernel for preparing faces

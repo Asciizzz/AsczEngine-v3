@@ -167,15 +167,20 @@ void Mesh3D::resizeFaces(ULLInt numFs) {
     mallocFaces(numFs);
 }
 
+// Allocate all memory
+void Mesh3D::malloc(ULLInt numWs, ULLInt numNs, ULLInt numTs, ULLInt numFs) {
+    mallocVertices(numWs, numNs, numTs);
+    mallocFaces(numFs);
+}
+
 // Free all memory
 void Mesh3D::free() {
     freeVertices();
     freeFaces();
 }
 
-// Append mesh obj to device mesh
-
-void Mesh3D::operator+=(Mesh &mesh) {
+// Push
+void Mesh3D::push(Mesh &mesh) {
     // Stream for async memory copy
     cudaStream_t stream;
     cudaStreamCreate(&stream);
@@ -186,8 +191,8 @@ void Mesh3D::operator+=(Mesh &mesh) {
 
     // Set the range of stuff
     mesh.w_range = {offsetV, offsetV + mesh.wx.size()};
-    mesh.n_range = {offsetN, offsetN + mesh.nx.size()};
     mesh.t_range = {offsetT, offsetT + mesh.tu.size()};
+    mesh.n_range = {offsetN, offsetN + mesh.nx.size()};
     mesh.c_range = {offsetV, offsetV + mesh.cr.size()};
 
     mesh.fw_range = {faces.size, faces.size + mesh.fw.size()};
@@ -195,18 +200,18 @@ void Mesh3D::operator+=(Mesh &mesh) {
     mesh.fn_range = {faces.size, faces.size + mesh.fn.size()};
 
     Vec3f_ptr newWorld;
-    Vec3f_ptr newNormal;
     Vec2f_ptr newTexture;
+    Vec3f_ptr newNormal;
     Vec4f_ptr newColor;
     Vec4ulli_ptr newFaces;
     ULLInt worldSize = mesh.wx.size();
-    ULLInt normalSize = mesh.nx.size();
     ULLInt textureSize = mesh.tu.size();
+    ULLInt normalSize = mesh.nx.size();
     ULLInt colorSize = mesh.cr.size();
     ULLInt faceSize = mesh.fw.size();
     newWorld.malloc(worldSize);
-    newNormal.malloc(normalSize);
     newTexture.malloc(textureSize);
+    newNormal.malloc(normalSize);
     newColor.malloc(colorSize);
     newFaces.malloc(faceSize);
 
@@ -214,12 +219,12 @@ void Mesh3D::operator+=(Mesh &mesh) {
     cudaMemcpyAsync(newWorld.y, mesh.wy.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newWorld.z, mesh.wz.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
+    cudaMemcpyAsync(newTexture.x, mesh.tu.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newTexture.y, mesh.tv.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+
     cudaMemcpyAsync(newNormal.x, mesh.nx.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newNormal.y, mesh.ny.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newNormal.z, mesh.nz.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-
-    cudaMemcpyAsync(newTexture.x, mesh.tu.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newTexture.y, mesh.tv.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
     cudaMemcpyAsync(newColor.x, mesh.cr.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newColor.y, mesh.cg.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
@@ -244,8 +249,8 @@ void Mesh3D::operator+=(Mesh &mesh) {
     screen.free();
     screen.malloc(world.size);
 }
-void Mesh3D::operator+=(std::vector<Mesh> &meshs) {
-    for (Mesh &mesh : meshs) *this += mesh;
+void Mesh3D::push(std::vector<Mesh> &meshs) {
+    for (Mesh &mesh : meshs) push(mesh);
 }
 
 // Kernel for incrementing face indices

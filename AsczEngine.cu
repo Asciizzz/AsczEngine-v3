@@ -69,7 +69,7 @@ int main() {
         obj.rotateIni(Vec3f(), rotate);
         obj.translateIni(translate);
 
-        GRAPHIC.mesh += obj;
+        GRAPHIC.mesh.push(obj);
         objs.push_back(obj);
 
         // Write to log
@@ -89,7 +89,7 @@ int main() {
     for (int i = 0; i < 10; i++) {
         break;
         Cube3D cube = Cube3D(Vec3f(i + 0.5, i + 0.5, i + 0.5), 0.5);
-        GRAPHIC.mesh += cube.mesh;
+        GRAPHIC.mesh.push(cube.mesh);
         cubes.push_back(cube);
     }
 
@@ -256,7 +256,7 @@ int main() {
             CAMERA.vel.y -= 1.15 * FPS.dTimeSec;
 
             // On ground
-            if (CAMERA.pos.y + CAMERA.vel.y < 1.5) {
+            if (CAMERA.pos.y < 1.5) {
                 CAMERA.vel.y = 0;
                 CAMERA.pos.y = 1.5;
             }
