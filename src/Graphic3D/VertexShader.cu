@@ -460,8 +460,6 @@ __global__ void rasterizationKernel(
 
     ULLInt fIdx = bFaceId[i];
 
-    // Set vertex, texture, and normal (with correct perspective correction)
-
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
