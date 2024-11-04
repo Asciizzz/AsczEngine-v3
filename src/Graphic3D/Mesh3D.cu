@@ -167,12 +167,6 @@ void Mesh3D::resizeFaces(ULLInt numFs) {
     mallocFaces(numFs);
 }
 
-// Allocate all memory
-void Mesh3D::malloc(ULLInt numWs, ULLInt numNs, ULLInt numTs, ULLInt numFs) {
-    mallocVertices(numWs, numNs, numTs);
-    mallocFaces(numFs);
-}
-
 // Free all memory
 void Mesh3D::free() {
     freeVertices();
@@ -248,9 +242,6 @@ void Mesh3D::push(Mesh &mesh) {
 
     screen.free();
     screen.malloc(world.size);
-}
-void Mesh3D::push(std::vector<Mesh> &meshs) {
-    for (Mesh &mesh : meshs) push(mesh);
 }
 
 // Kernel for incrementing face indices

@@ -80,6 +80,8 @@ public:
     Vec4f_ptr screen;
     Vec4ulli_ptr faces;
 
+    ULLInt curWs = 0, curTs = 0, curNs = 0, curFs = 0;
+
     Mesh3D(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
 
     void mallocVertices(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0);
@@ -90,13 +92,10 @@ public:
     void freeFaces();
     void resizeFaces(ULLInt numFs);
 
-    void malloc(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
-
     void free();
 
     // Resize + Append
     void push(Mesh &mesh);
-    void push(std::vector<Mesh> &meshs);
 };
 
 // Kernel for preparing faces

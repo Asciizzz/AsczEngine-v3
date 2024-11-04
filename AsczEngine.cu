@@ -194,13 +194,20 @@ int main() {
                 // Press C to place a cube
                 if (event.key.code == sf::Keyboard::C) {
                     Mesh cube = Utils::readObjFile(
-                        "assets/Models/Shapes/Cube.obj", 1, 1, true
+                        "assets/Models/Shapes/Cube2.obj", 1, 1, true
                     );
-                    cube.translateIni(CAMERA.pos + CAMERA.forward * 2);
+                    cube.scaleIni(Vec3f(), Vec3f(0.5));
+                    Vec3f place = CAMERA.pos + CAMERA.forward * 1;
+                    float gridX = .5 + int(place.x);
+                    float gridY = .5 + int(place.y);
+                    float gridZ = .5 + int(place.z);
+
+                    Vec3f grid = Vec3f(gridX, gridY, gridZ);
+
+                    cube.translateIni(grid);
+
                     GRAPHIC.mesh.push(cube);
                     GRAPHIC.mallocRuntimeFaces();
-
-                    std::cout << "Cube placed" << std::endl;
                 }
             }
 
