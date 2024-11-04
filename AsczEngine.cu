@@ -412,8 +412,7 @@ int main() {
             " x " + std::to_string(height) +
             " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
             "| Tile Size: " + std::to_string(tileSizeX) + " x " + std::to_string(tileSizeY) + "\n" +
-            "| Clip Face: " + std::to_string(GRAPHIC.rtCount) +
-            " / " + std::to_string(GRAPHIC.mesh.faces.size / 3),
+            "| Face Count: " + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );
         LOG.addLog(CAMERA.data(), sf::Color(160, 255, 160));

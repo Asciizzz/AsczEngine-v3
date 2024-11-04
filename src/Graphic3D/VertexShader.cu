@@ -27,7 +27,7 @@ void VertexShader::createRuntimeFaces() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
 
-    size_t gridSize = (mesh.faces.size / 3 + 255) / 256;
+    ULLInt gridSize = (mesh.faces.size / 3 + 255) / 256;
 
     cudaMemset(grphic.d_rtCount, 0, sizeof(ULLInt));
     createRuntimeFacesKernel<<<gridSize, 256>>>(
@@ -77,18 +77,18 @@ void VertexShader::createDepthMap() {
     // Split the faces into chunks
     ULLInt rtSize = grphic.rtFaces.size / 3;
 
-    size_t chunkNum = (rtSize + grphic.faceChunkSize - 1) 
+    ULLInt chunkNum = (rtSize + grphic.faceChunkSize - 1) 
                     /  grphic.faceChunkSize;
 
     dim3 blockSize(16, 32);
-    for (size_t i = 0; i < chunkNum; i++) {
-        size_t chunkOffset = grphic.faceChunkSize * i;
+    for (ULLInt i = 0; i < chunkNum; i++) {
+        ULLInt chunkOffset = grphic.faceChunkSize * i;
 
-        size_t curFaceCount = (i == chunkNum - 1) ?
+        ULLInt curFaceCount = (i == chunkNum - 1) ?
             rtSize - chunkOffset : grphic.faceChunkSize;
 
-        size_t blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
-        size_t blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
+        ULLInt blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
+        ULLInt blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
