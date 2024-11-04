@@ -169,10 +169,8 @@ __global__ void createRuntimeFacesKernel(
     if (fIdx >= numFs) return;
 
     // Reset Active
-    rtActive[fIdx * 4] = false;
-    rtActive[fIdx * 4 + 1] = false;
-    rtActive[fIdx * 4 + 2] = false;
-    rtActive[fIdx * 4 + 3] = false;
+    rtActive[fIdx * 2] = false;
+    rtActive[fIdx * 2 + 1] = false;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;
@@ -226,7 +224,7 @@ __global__ void createRuntimeFacesKernel(
     bool inside2 = VertexShader::insideFrustum(rtSs[1]);
     bool inside3 = VertexShader::insideFrustum(rtSs[2]);
     if (inside1 && inside2 && inside3) {
-        ULLInt idx0 = fIdx * 12;
+        ULLInt idx0 = fIdx * 6;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
@@ -251,7 +249,7 @@ __global__ void createRuntimeFacesKernel(
         rtCb[idx0] = rtCs[0].z; rtCb[idx1] = rtCs[1].z; rtCb[idx2] = rtCs[2].z;
         rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
 
-        rtActive[fIdx * 4] = true;
+        rtActive[fIdx * 2] = true;
 
         return;
     }
@@ -325,7 +323,7 @@ __global__ void createRuntimeFacesKernel(
 
     // n points <=> n - 2 faces
     for (int i = 0; i < temp2Count - 2; i++) {
-        ULLInt idx0 = fIdx * 12 + i * 3;
+        ULLInt idx0 = fIdx * 6 + i * 3;
         ULLInt idx1 = idx0 + 1;
         ULLInt idx2 = idx0 + 2;
 
@@ -350,7 +348,7 @@ __global__ void createRuntimeFacesKernel(
         rtCb[idx0] = tempC2[0].z; rtCb[idx1] = tempC2[i + 1].z; rtCb[idx2] = tempC2[i + 2].z;
         rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
 
-        rtActive[fIdx * 4 + i] = true;
+        rtActive[fIdx * 2 + i] = true;
     }
 }
 
