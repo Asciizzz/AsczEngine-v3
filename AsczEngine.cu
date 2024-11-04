@@ -302,7 +302,7 @@ int main() {
             }
 
             for (Cube3D &cube : cubes) cube.physic();
-            CAMERA.pos += CAMERA.vel * .3;
+            CAMERA.pos += CAMERA.vel * .1;
         }
 
         // Press T to read an transform.txt file and apply it
