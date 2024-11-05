@@ -3,6 +3,7 @@
 # .heavy/NightCity.obj 1 0 0 0 0 6 0
 # .heavy/Ikaros.obj 1
 # .heavy/Island.obj .2
+# .heavy/City.obj
 
 # Back wall
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
@@ -44,6 +45,10 @@
 #assets/Models/Structure/Fnaf.obj .01 0 0 0 0 3.9 0
 
 assets/Models/Shapes/Wall.obj 60 90 0 0 0 0 0
+assets/Models/Shapes/Wall.obj 60 0 180 0 0 -54 60
+assets/Models/Shapes/Wall.obj 60 0 0 0 0 -54 -60
+assets/Models/Shapes/Wall.obj 60 0 90 0 60 -54 0
+assets/Models/Shapes/Wall.obj 60 0 -90 0 -60 -54 0
 
 assets/Models/City/Building001.obj 1 0 0 0 50 2.2 40
 assets/Models/City/Building001.obj 1 0 180 0 0 9.2 0
