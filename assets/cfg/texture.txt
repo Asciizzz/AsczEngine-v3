@@ -1,1 +1,1 @@
-assets/Textures/Gradient.png
+assets/Textures/Gradient2.jpg

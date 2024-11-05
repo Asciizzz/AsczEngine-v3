@@ -257,18 +257,18 @@ __global__ void createRuntimeFacesKernel(
     }
 
     int temp1Count = 3;
-    Vec4f tempS1[8] = { rtSs[0], rtSs[1], rtSs[2] };
-    Vec3f tempW1[8] = { rtWs[0], rtWs[1], rtWs[2] };
-    Vec2f tempT1[8] = { rtTs[0], rtTs[1], rtTs[2] };
-    Vec3f tempN1[8] = { rtNs[0], rtNs[1], rtNs[2] };
-    Vec4f tempC1[8] = { rtCs[0], rtCs[1], rtCs[2] };
+    Vec4f tempS1[6] = { rtSs[0], rtSs[1], rtSs[2] };
+    Vec3f tempW1[6] = { rtWs[0], rtWs[1], rtWs[2] };
+    Vec2f tempT1[6] = { rtTs[0], rtTs[1], rtTs[2] };
+    Vec3f tempN1[6] = { rtNs[0], rtNs[1], rtNs[2] };
+    Vec4f tempC1[6] = { rtCs[0], rtCs[1], rtCs[2] };
 
     int temp2Count = 0;
-    Vec4f tempS2[8];
-    Vec3f tempW2[8];
-    Vec2f tempT2[8];
-    Vec3f tempN2[8];
-    Vec4f tempC2[8];
+    Vec4f tempS2[6];
+    Vec3f tempW2[6];
+    Vec2f tempT2[6];
+    Vec3f tempN2[6];
+    Vec4f tempC2[6];
 
     // Clip to near plane
     for (int a = 0; a < temp1Count; a++) {
