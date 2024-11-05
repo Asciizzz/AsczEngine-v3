@@ -298,17 +298,11 @@ __global__ void createRuntimeFacesKernel(
         Vec4f c_w = tempC1[a]/swA + (tempC1[b]/swB - tempC1[a]/swA) * tFact;
 
         float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
-        Vec4f s = s_w / homo1DivW;
-        Vec3f w = w_w / homo1DivW;
-        Vec2f t = t_w / homo1DivW;
-        Vec3f n = n_w / homo1DivW;
-        Vec4f c = c_w / homo1DivW;
-
-        tempS2[temp2Count] = s;
-        tempW2[temp2Count] = w;
-        tempT2[temp2Count] = t;
-        tempN2[temp2Count] = n;
-        tempC2[temp2Count] = c;
+        tempS2[temp2Count] = s_w / homo1DivW;
+        tempW2[temp2Count] = w_w / homo1DivW;
+        tempT2[temp2Count] = t_w / homo1DivW;
+        tempN2[temp2Count] = n_w / homo1DivW;
+        tempC2[temp2Count] = c_w / homo1DivW;
         temp2Count++;
     }
     if (temp2Count < 3) return;
@@ -342,17 +336,11 @@ __global__ void createRuntimeFacesKernel(
         Vec4f c_w = tempC2[a]/swA + (tempC2[b]/swB - tempC2[a]/swA) * tFact;
 
         float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
-        Vec4f s = s_w / homo1DivW;
-        Vec3f w = w_w / homo1DivW;
-        Vec2f t = t_w / homo1DivW;
-        Vec3f n = n_w / homo1DivW;
-        Vec4f c = c_w / homo1DivW;
-
-        tempS1[temp1Count] = s;
-        tempW1[temp1Count] = w;
-        tempT1[temp1Count] = t;
-        tempN1[temp1Count] = n;
-        tempC1[temp1Count] = c;
+        tempS1[temp1Count] = s_w / homo1DivW;
+        tempW1[temp1Count] = w_w / homo1DivW;
+        tempT1[temp1Count] = t_w / homo1DivW;
+        tempN1[temp1Count] = n_w / homo1DivW;
+        tempC1[temp1Count] = c_w / homo1DivW;
         temp1Count++;
     }
     if (temp1Count < 3) return;
@@ -386,17 +374,87 @@ __global__ void createRuntimeFacesKernel(
         Vec4f c_w = tempC1[a]/swA + (tempC1[b]/swB - tempC1[a]/swA) * tFact;
 
         float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
-        Vec4f s = s_w / homo1DivW;
-        Vec3f w = w_w / homo1DivW;
-        Vec2f t = t_w / homo1DivW;
-        Vec3f n = n_w / homo1DivW;
-        Vec4f c = c_w / homo1DivW;
+        tempS2[temp2Count] = s_w / homo1DivW;
+        tempW2[temp2Count] = w_w / homo1DivW;
+        tempT2[temp2Count] = t_w / homo1DivW;
+        tempN2[temp2Count] = n_w / homo1DivW;
+        tempC2[temp2Count] = c_w / homo1DivW;
+        temp2Count++;
+    }
+    if (temp2Count < 3) return;
 
-        tempS2[temp2Count] = s;
-        tempW2[temp2Count] = w;
-        tempT2[temp2Count] = t;
-        tempN2[temp2Count] = n;
-        tempC2[temp2Count] = c;
+    // Clip to top plane
+    temp1Count = 0;
+    for (int a = 0; a < temp2Count; a++) {
+        int b = (a + 1) % temp2Count;
+
+        float swA = tempS2[a].w, swB = tempS2[b].w;
+        float syA = tempS2[a].y, syB = tempS2[b].y;
+
+        if (syA < -swA && syB < -swB) continue;
+
+        if (syA >= -swA) {
+            tempS1[temp1Count] = tempS2[a];
+            tempW1[temp1Count] = tempW2[a];
+            tempT1[temp1Count] = tempT2[a];
+            tempN1[temp1Count] = tempN2[a];
+            tempC1[temp1Count] = tempC2[a];
+            temp1Count++;
+
+            if (syB >= -swB) continue;
+        }
+
+        float tFact = (-1 - syA/swA) / (syB/swB - syA/swA);
+        Vec4f s_w = tempS2[a]/swA + (tempS2[b]/swB - tempS2[a]/swA) * tFact;
+        Vec3f w_w = tempW2[a]/swA + (tempW2[b]/swB - tempW2[a]/swA) * tFact;
+        Vec2f t_w = tempT2[a]/swA + (tempT2[b]/swB - tempT2[a]/swA) * tFact;
+        Vec3f n_w = tempN2[a]/swA + (tempN2[b]/swB - tempN2[a]/swA) * tFact;
+        Vec4f c_w = tempC2[a]/swA + (tempC2[b]/swB - tempC2[a]/swA) * tFact;
+
+        float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
+        tempS1[temp1Count] = s_w / homo1DivW;
+        tempW1[temp1Count] = w_w / homo1DivW;
+        tempT1[temp1Count] = t_w / homo1DivW;
+        tempN1[temp1Count] = n_w / homo1DivW;
+        tempC1[temp1Count] = c_w / homo1DivW;
+        temp1Count++;
+    }
+    if (temp1Count < 3) return;
+
+    // Clip to bottom plane
+    temp2Count = 0;
+    for (int a = 0; a < temp1Count; a++) {
+        int b = (a + 1) % temp1Count;
+
+        float swA = tempS1[a].w, swB = tempS1[b].w;
+        float syA = tempS1[a].y, syB = tempS1[b].y;
+
+        if (syA > swA && syB > swB) continue;
+
+        if (syA <= swA) {
+            tempS2[temp2Count] = tempS1[a];
+            tempW2[temp2Count] = tempW1[a];
+            tempT2[temp2Count] = tempT1[a];
+            tempN2[temp2Count] = tempN1[a];
+            tempC2[temp2Count] = tempC1[a];
+            temp2Count++;
+
+            if (syB <= swB) continue;
+        }
+
+        float tFact = (1 - syA/swA) / (syB/swB - syA/swA);
+        Vec4f s_w = tempS1[a]/swA + (tempS1[b]/swB - tempS1[a]/swA) * tFact;
+        Vec3f w_w = tempW1[a]/swA + (tempW1[b]/swB - tempW1[a]/swA) * tFact;
+        Vec2f t_w = tempT1[a]/swA + (tempT1[b]/swB - tempT1[a]/swA) * tFact;
+        Vec3f n_w = tempN1[a]/swA + (tempN1[b]/swB - tempN1[a]/swA) * tFact;
+        Vec4f c_w = tempC1[a]/swA + (tempC1[b]/swB - tempC1[a]/swA) * tFact;
+
+        float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
+        tempS2[temp2Count] = s_w / homo1DivW;
+        tempW2[temp2Count] = w_w / homo1DivW;
+        tempT2[temp2Count] = t_w / homo1DivW;
+        tempN2[temp2Count] = n_w / homo1DivW;
+        tempC2[temp2Count] = c_w / homo1DivW;
         temp2Count++;
     }
     if (temp2Count < 3) return;

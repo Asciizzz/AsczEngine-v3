@@ -46,7 +46,6 @@ int main() {
     std::string line;
     std::vector<Mesh> objs;
 
-    std::string objsTxt = "";
     int objsCount = 0;
     while (std::getline(objsFile, line)) {
         // If line start with #, it's a comment
@@ -75,24 +74,7 @@ int main() {
         objs.push_back(obj);
 
         // Write to log
-        objsTxt += "Obj " + std::to_string(objsCount) + " - " + objPath + "\n";
         objsCount++;
-    }
-    std::cout << objsTxt;
-
-    // Create a test sphere
-    Sphere3D sphere(Vec3f(0, 8, 0), 1);
-    sphere.vel = Vec3f(0.3, 0, 0.1);
-    sphere.angvel = Vec3f(M_PI * 2.8, 0, M_PI * 2.4);
-    // GRAPHIC.mesh += sphere.mesh;
-
-    // Create test cubes
-    std::vector<Cube3D> cubes;
-    for (int i = 0; i < 10; i++) {
-        break;
-        Cube3D cube = Cube3D(Vec3f(i + 0.5, i + 0.5, i + 0.5), 0.5);
-        GRAPHIC.mesh.push(cube.mesh);
-        cubes.push_back(cube);
     }
 
     GRAPHIC.mallocRuntimeFaces();
