@@ -63,6 +63,7 @@ assets/Models/Nature/Tree.obj .3 0 0 0 14 4 12
 assets/Models/Nature/Tree.obj .4 0 17 0 38 5 4
 assets/Models/Nature/Tree.obj .3 0 90 0 -14 4 -1
 assets/Models/Nature/Tree.obj .3 0 45 0 28 4 14
+assets/Models/Nature/Tree.obj .3 0 167 0 -15 4 14
 assets/Models/Nature/Tree.obj .2 0 135 0 0 2.7 16
 assets/Models/Nature/Tree.obj .4 0 67 0 53 5 -13
 assets/Models/Nature/Tree.obj .7 0 0 0 20 9.2 -15
