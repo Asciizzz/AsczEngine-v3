@@ -322,7 +322,6 @@ int main() {
                 CAMERA.vel.z /= vel_xz;
             }
 
-            for (Cube3D &cube : cubes) cube.physic();
             CAMERA.pos += CAMERA.vel * .1;
         }
 
