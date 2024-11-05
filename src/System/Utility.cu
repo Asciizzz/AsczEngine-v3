@@ -105,9 +105,9 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                 float r = (wx[i] - minX) / (maxX - minX);
                 float g = (wy[i] - minY) / (maxY - minY);
                 float b = (wz[i] - minZ) / (maxZ - minZ);
-                cr.push_back(255 - r * 255);
-                cg.push_back(g * 255);
-                cb.push_back(b * 255);
+                cr.push_back(255 - r * 155);
+                cg.push_back(g * 155 + 100);
+                cb.push_back(b * 155 + 100);
                 ca.push_back(255);
 
                 // Shift to center of xz plane
