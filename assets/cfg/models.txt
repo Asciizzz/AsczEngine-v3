@@ -1,7 +1,7 @@
 # For very large models
 # .heavy/mountains.obj 1 0 0 0 0 0 0
 # .heavy/NightCity.obj 1 0 0 0 0 6 0
-.heavy/Ikaros.obj 1
+# .heavy/Ikaros.obj 1
 # .heavy/Island.obj .2
 # .heavy/City.obj
 
@@ -44,7 +44,6 @@
 
 #assets/Models/Structure/Fnaf.obj .01 0 0 0 0 3.9 0
 
-~
 
 assets/Models/Shapes/Wall.obj 55 90 0 0 0 0 0
 

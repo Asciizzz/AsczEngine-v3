@@ -258,6 +258,8 @@ __global__ void frustumCullingKernel(
     Vec3f tempN2[6];
     Vec4f tempC2[6];
 
+    // There are alot of repetition here, will fix it later
+
     // Clip to near plane
     for (int a = 0; a < temp1Count; a++) {
         int b = (a + 1) % temp1Count;
