@@ -64,22 +64,6 @@ __global__ void frustumCullingKernel(
     bool *rtActive
 );
 
-__global__ void filterRuntimeKernel(
-    float *rtSx1, float *rtSy1, float *rtSz1, float *rtSw1,
-    float *rtWx1, float *rtWy1, float *rtWz1,
-    float *rtTu1, float *rtTv1,
-    float *rtNx1, float *rtNy1, float *rtNz1,
-    float *rtCr1, float *rtCg1, float *rtCb1, float *rtCa1,
-    bool *rtActive1, ULLInt numFs1,
-
-    float *rtSx2, float *rtSy2, float *rtSz2, float *rtSw2,
-    float *rtWx2, float *rtWy2, float *rtWz2,
-    float *rtTu2, float *rtTv2,
-    float *rtNx2, float *rtNy2, float *rtNz2,
-    float *rtCr2, float *rtCg2, float *rtCb2, float *rtCa2,
-    bool *rtActive2, ULLInt *d_rtCount
-);
-
 // Tile-based depth map creation
 __global__ void createDepthMapKernel(
     const bool *rtActive, const float *rtSx, const float *rtSy, const float *rtSz, const float *rtSw,
