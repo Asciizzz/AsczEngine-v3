@@ -19,14 +19,6 @@ This applies for EVERYTHING that needs to be perspective corrected:
 
 */
 
-/* CREATOR NOTE:
-
-PLEASE CLIP FIRST, PROJECT LATER
-
-THERE IS LITERALLY NO REASON TO INTERPOLATE
-SCREEN COORDINATES INSIDE THE CLIPPING KERNEL
-*/
-
 class VertexShader {
 public:
     __device__ static bool insideFrustum(const Vec4f &v);
