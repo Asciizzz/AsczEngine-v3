@@ -33,7 +33,7 @@ public:
 
     // Render pipeline
     static void cameraProjection();
-    static void createRuntimeFaces();
+    static void frustumCulling();
     static void createDepthMap();
     static void rasterization();
 };
@@ -46,7 +46,7 @@ __global__ void cameraProjectionKernel(
 );
 
 // Create runtime faces
-__global__ void createRuntimeFacesKernel(
+__global__ void frustumCullingKernel(
     // Orginal mesh data
     const float *sx, const float *sy, const float *sz, const float *sw,
     const float *wx, const float *wy, const float *wz,
@@ -61,7 +61,23 @@ __global__ void createRuntimeFacesKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    bool *rtActive, ULLInt *rtCount
+    bool *rtActive
+);
+
+__global__ void filterRuntimeKernel(
+    float *rtSx1, float *rtSy1, float *rtSz1, float *rtSw1,
+    float *rtWx1, float *rtWy1, float *rtWz1,
+    float *rtTu1, float *rtTv1,
+    float *rtNx1, float *rtNy1, float *rtNz1,
+    float *rtCr1, float *rtCg1, float *rtCb1, float *rtCa1,
+    bool *rtActive1, ULLInt numFs1,
+
+    float *rtSx, float *rtSy, float *rtSz, float *rtSw,
+    float *rtWx, float *rtWy, float *rtWz,
+    float *rtTu, float *rtTv,
+    float *rtNx, float *rtNy, float *rtNz,
+    float *rtCr, float *rtCg, float *rtCb, float *rtCa,
+    bool *rtActive2, ULLInt *d_rtCount
 );
 
 // Tile-based depth map creation

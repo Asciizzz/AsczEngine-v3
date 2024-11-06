@@ -360,7 +360,7 @@ int main() {
 
         // Vertex Shader
         VertexShader::cameraProjection();
-        VertexShader::createRuntimeFaces();
+        VertexShader::frustumCulling();
         VertexShader::createDepthMap();
         VertexShader::rasterization();
 

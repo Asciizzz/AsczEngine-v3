@@ -23,14 +23,13 @@ void VertexShader::cameraProjection() {
     );
 }
 
-void VertexShader::createRuntimeFaces() {
+void VertexShader::frustumCulling() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
 
     ULLInt gridSize = (mesh.faces.size / 3 + 255) / 256;
 
-    cudaMemset(grphic.d_rtCount, 0, sizeof(ULLInt));
-    createRuntimeFacesKernel<<<gridSize, 256>>>(
+    frustumCullingKernel<<<gridSize, 256>>>(
         mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
         mesh.world.x, mesh.world.y, mesh.world.z,
         mesh.normal.x, mesh.normal.y, mesh.normal.z,
@@ -38,33 +37,14 @@ void VertexShader::createRuntimeFaces() {
         mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
         mesh.faces.v, mesh.faces.t, mesh.faces.n, mesh.faces.size / 3,
 
-        grphic.rtFaces.sx, grphic.rtFaces.sy, grphic.rtFaces.sz, grphic.rtFaces.sw,
-        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
-        grphic.rtFaces.tu, grphic.rtFaces.tv,
-        grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
-        grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
-        grphic.rtFaces.active, grphic.d_rtCount
+        grphic.rtFaces1.sx, grphic.rtFaces1.sy, grphic.rtFaces1.sz, grphic.rtFaces1.sw,
+        grphic.rtFaces1.wx, grphic.rtFaces1.wy, grphic.rtFaces1.wz,
+        grphic.rtFaces1.tu, grphic.rtFaces1.tv,
+        grphic.rtFaces1.nx, grphic.rtFaces1.ny, grphic.rtFaces1.nz,
+        grphic.rtFaces1.cr, grphic.rtFaces1.cg, grphic.rtFaces1.cb, grphic.rtFaces1.ca,
+        grphic.rtFaces1.active
     );
     cudaDeviceSynchronize();
-    cudaMemcpy(&grphic.rtCount, grphic.d_rtCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-
-    return;
-
-    // Debugging
-    float *wx = new float[grphic.rtCount * 3];
-    float *wy = new float[grphic.rtCount * 3];
-    float *wz = new float[grphic.rtCount * 3];
-
-    cudaMemcpy(wx, grphic.rtFaces.wx, sizeof(float) * grphic.rtCount * 3, cudaMemcpyDeviceToHost);
-    cudaMemcpy(wy, grphic.rtFaces.wy, sizeof(float) * grphic.rtCount * 3, cudaMemcpyDeviceToHost);
-    cudaMemcpy(wz, grphic.rtFaces.wz, sizeof(float) * grphic.rtCount * 3, cudaMemcpyDeviceToHost);
-
-    for (size_t i = 0; i < grphic.rtCount * 3; i++) {
-        std::cout << "(" << wx[i] << " " << wy[i] << " " << wz[i] << ") -";
-    }
-    std::cout << std::endl;
-
-    delete[] wx, wy, wz;
 }
 
 void VertexShader::createDepthMap() {
@@ -75,7 +55,7 @@ void VertexShader::createDepthMap() {
     buffer.nightSky(); // Cool effect
 
     // Split the faces into chunks
-    ULLInt rtSize = grphic.rtFaces.size / 3;
+    ULLInt rtSize = grphic.rtFaces1.size / 3;
 
     ULLInt chunkNum = (rtSize + grphic.faceChunkSize - 1) 
                     /  grphic.faceChunkSize;
@@ -92,9 +72,9 @@ void VertexShader::createDepthMap() {
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
-            grphic.rtFaces.active,
-            grphic.rtFaces.sx, grphic.rtFaces.sy,
-            grphic.rtFaces.sz, grphic.rtFaces.sw,
+            grphic.rtFaces1.active,
+            grphic.rtFaces1.sx, grphic.rtFaces1.sy,
+            grphic.rtFaces1.sz, grphic.rtFaces1.sw,
             curFaceCount, chunkOffset,
 
             buffer.active, buffer.depth, buffer.faceID,
@@ -112,11 +92,11 @@ void VertexShader::rasterization() {
     Buffer3D &buffer = grphic.buffer;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        grphic.rtFaces.sw,
-        grphic.rtFaces.wx, grphic.rtFaces.wy, grphic.rtFaces.wz,
-        grphic.rtFaces.tu, grphic.rtFaces.tv,
-        grphic.rtFaces.nx, grphic.rtFaces.ny, grphic.rtFaces.nz,
-        grphic.rtFaces.cr, grphic.rtFaces.cg, grphic.rtFaces.cb, grphic.rtFaces.ca,
+        grphic.rtFaces1.sw,
+        grphic.rtFaces1.wx, grphic.rtFaces1.wy, grphic.rtFaces1.wz,
+        grphic.rtFaces1.tu, grphic.rtFaces1.tv,
+        grphic.rtFaces1.nx, grphic.rtFaces1.ny, grphic.rtFaces1.nz,
+        grphic.rtFaces1.cr, grphic.rtFaces1.cg, grphic.rtFaces1.cb, grphic.rtFaces1.ca,
 
         buffer.active, buffer.faceID,
         buffer.bary.x, buffer.bary.y, buffer.bary.z,
@@ -148,7 +128,7 @@ __global__ void cameraProjectionKernel(
     sw[vIdx] = screen.w;
 }
 
-__global__ void createRuntimeFacesKernel(
+__global__ void frustumCullingKernel(
     // Orginal mesh data
     const float *sx, const float *sy, const float *sz, const float *sw,
     const float *wx, const float *wy, const float *wz,
@@ -163,7 +143,7 @@ __global__ void createRuntimeFacesKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    bool *rtActive, ULLInt *rtCount
+    bool *rtActive
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
@@ -489,6 +469,22 @@ __global__ void createRuntimeFacesKernel(
         rtActive[fIdx * 4 + i] = true;
     }
 }
+
+__global__ void filterRuntimeKernel(
+    float *rtSx1, float *rtSy1, float *rtSz1, float *rtSw1,
+    float *rtWx1, float *rtWy1, float *rtWz1,
+    float *rtTu1, float *rtTv1,
+    float *rtNx1, float *rtNy1, float *rtNz1,
+    float *rtCr1, float *rtCg1, float *rtCb1, float *rtCa1,
+    bool *rtActive1, ULLInt numFs1,
+
+    float *rtSx, float *rtSy, float *rtSz, float *rtSw,
+    float *rtWx, float *rtWy, float *rtWz,
+    float *rtTu, float *rtTv,
+    float *rtNx, float *rtNy, float *rtNz,
+    float *rtCr, float *rtCg, float *rtCb, float *rtCa,
+    bool *rtActive2, ULLInt *d_rtCount
+);
 
 // Depth map creation
 __global__ void createDepthMapKernel(

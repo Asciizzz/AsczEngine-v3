@@ -36,7 +36,7 @@
 
 - This difference is necessary because new faces can be generated during the clipping and splitting process. The original index-based system in the mesh cannot handle these changes, so we need to store the full face data in runtime.
 
-- The `createRuntimeFaces` function performs two main tasks:
+- The `frustumCulling` function performs two main tasks:
   - Converts index-based faces into fully defined face objects with actual vertices, normals, textures, and colors.
   - Clips and splits faces that intersect with the camera's frustum to ensure proper rendering.
 

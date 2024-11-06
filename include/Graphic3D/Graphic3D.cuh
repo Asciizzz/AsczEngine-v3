@@ -68,7 +68,8 @@ public:
     ULLInt rtCount;
     ULLInt *d_rtCount;
     ULLInt faceChunkSize = 5e5; // For chunking
-    Face3D rtFaces;
+    Face3D rtFaces1;
+    Face3D rtFaces2;
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();
