@@ -25,8 +25,7 @@ void VertexShader::cameraProjection() {
 void VertexShader::frustumCulling() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
-    Face3D &face1 = grphic.rtFaces1;
-    Face3D &face2 = grphic.rtFaces1;
+    Face3D &faces = grphic.rtFaces;
 
     ULLInt gridSize = (mesh.faces.size / 3 + 255) / 256;
     frustumCullingKernel<<<gridSize, 256>>>(
@@ -37,26 +36,34 @@ void VertexShader::frustumCulling() {
         mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
         mesh.faces.v, mesh.faces.t, mesh.faces.n, mesh.faces.size / 3,
 
-        face1.sx, face1.sy, face1.sz, face1.sw,
-        face1.wx, face1.wy, face1.wz,
-        face1.tu, face1.tv,
-        face1.nx, face1.ny, face1.nz,
-        face1.cr, face1.cg, face1.cb, face1.ca,
-        face1.active
+        faces.sx, faces.sy, faces.sz, faces.sw,
+        faces.wx, faces.wy, faces.wz,
+        faces.tu, faces.tv,
+        faces.nx, faces.ny, faces.nz,
+        faces.cr, faces.cg, faces.cb, faces.ca,
+        faces.active
     );
     cudaDeviceSynchronize();
+
+    cudaMemset(grphic.d_rtCount, 0, sizeof(ULLInt));
+    gridSize = (faces.size / 3 + 255) / 256;
+    runtimeIndexingKernel<<<gridSize, 256>>>(
+        faces.active, grphic.rtIndex, grphic.d_rtCount, faces.size / 3
+    );
+    cudaDeviceSynchronize();
+    cudaMemcpy(&grphic.rtCount, grphic.d_rtCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
-    Face3D &face1 = grphic.rtFaces1;
+    Face3D &faces = grphic.rtFaces;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
     // Split the faces into chunks
-    ULLInt rtSize = face1.size / 3;
+    ULLInt rtSize = grphic.rtCount;
 
     ULLInt chunkNum = (rtSize + grphic.faceChunkSize - 1) 
                     /  grphic.faceChunkSize;
@@ -73,9 +80,8 @@ void VertexShader::createDepthMap() {
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
-            face1.active,
-            face1.sx, face1.sy,
-            face1.sz, face1.sw,
+            grphic.rtIndex,
+            faces.active, faces.sx, faces.sy, faces.sz, faces.sw,
             curFaceCount, chunkOffset,
 
             buffer.active, buffer.depth, buffer.faceID,
@@ -91,14 +97,14 @@ void VertexShader::createDepthMap() {
 void VertexShader::rasterization() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
-    Face3D &face1 = grphic.rtFaces1;
+    Face3D &faces = grphic.rtFaces;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        face1.sw,
-        face1.wx, face1.wy, face1.wz,
-        face1.tu, face1.tv,
-        face1.nx, face1.ny, face1.nz,
-        face1.cr, face1.cg, face1.cb, face1.ca,
+        faces.sw,
+        faces.wx, faces.wy, faces.wz,
+        faces.tu, faces.tv,
+        faces.nx, faces.ny, faces.nz,
+        faces.cr, faces.cg, faces.cb, faces.ca,
 
         buffer.active, buffer.faceID,
         buffer.bary.x, buffer.bary.y, buffer.bary.z,
@@ -472,8 +478,21 @@ __global__ void frustumCullingKernel(
     }
 }
 
+__global__ void runtimeIndexingKernel(
+    const bool *rtActive, ULLInt *rtIndex, ULLInt *d_rtCount, ULLInt numFs
+) {
+    ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (fIdx >= numFs) return;
+
+    if (rtActive[fIdx]) {
+        ULLInt idx = atomicAdd(d_rtCount, 1);
+        rtIndex[idx] = fIdx;
+    }
+}
+
 // Depth map creation
 __global__ void createDepthMapKernel(
+    const ULLInt *rtIndex,
     const bool *rtActive, const float *rtSx, const float *rtSy, const float *rtSz, const float *rtSw,
     ULLInt faceCounter, ULLInt faceOffset,
     bool *bActive, float *bDepth, ULLInt *bFaceId,
@@ -486,11 +505,13 @@ __global__ void createDepthMapKernel(
     if (tIdx >= tNumX * tNumY || fIdx >= faceCounter) return;
     fIdx += faceOffset;
 
-    if (!rtActive[fIdx]) return;
+    ULLInt rtIdx = rtIndex[fIdx];
 
-    ULLInt idx0 = fIdx * 3;
-    ULLInt idx1 = fIdx * 3 + 1;
-    ULLInt idx2 = fIdx * 3 + 2;
+    if (!rtActive[rtIdx]) return;
+
+    ULLInt idx0 = rtIdx * 3;
+    ULLInt idx1 = rtIdx * 3 + 1;
+    ULLInt idx2 = rtIdx * 3 + 2;
 
     float sw0 = rtSw[idx0];
     float sw1 = rtSw[idx1];
@@ -550,7 +571,7 @@ __global__ void createDepthMapKernel(
         if (atomicMinFloat(&bDepth[bIdx], depth)) {
             bDepth[bIdx] = depth;
             bActive[bIdx] = true;
-            bFaceId[bIdx] = fIdx;
+            bFaceId[bIdx] = rtIdx;
 
             bBrX[bIdx] = bary.x;
             bBrY[bIdx] = bary.y;

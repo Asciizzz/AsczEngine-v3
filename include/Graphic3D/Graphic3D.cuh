@@ -65,11 +65,12 @@ public:
     Mesh3D mesh;
 
     // For runtime faces
+    ULLInt faceChunkSize = 5e5; // For chunking
+    Face3D rtFaces;
+    // For indexing runtime faces
     ULLInt rtCount;
     ULLInt *d_rtCount;
-    ULLInt faceChunkSize = 5e5; // For chunking
-    Face3D rtFaces1;
-    Face3D rtFaces2;
+    ULLInt *rtIndex;
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();

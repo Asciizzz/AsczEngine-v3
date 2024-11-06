@@ -64,8 +64,13 @@ __global__ void frustumCullingKernel(
     bool *rtActive
 );
 
+__global__ void runtimeIndexingKernel(
+    const bool *rtActive, ULLInt *rtIndex, ULLInt *d_rtCount, ULLInt numFs
+);
+
 // Tile-based depth map creation
 __global__ void createDepthMapKernel(
+    const ULLInt *rtIndex,
     const bool *rtActive, const float *rtSx, const float *rtSy, const float *rtSz, const float *rtSw,
     ULLInt faceCounter, ULLInt faceOffset,
     bool *bActive, float *bDepth, ULLInt *bFaceId,
