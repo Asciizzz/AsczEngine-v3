@@ -50,8 +50,8 @@ __global__ void frustumCullingKernel(
     // Orginal mesh data
     const float *sx, const float *sy, const float *sz, const float *sw,
     const float *wx, const float *wy, const float *wz,
-    const float *nx, const float *ny, const float *nz,
     const float *tu, const float *tv,
+    const float *nx, const float *ny, const float *nz,
     const float *cr, const float *cg, const float *cb, const float *ca,
     const ULLInt *fWs, const ULLInt *fTs, const ULLInt *fNs, ULLInt numFs,
 

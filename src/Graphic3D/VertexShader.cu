@@ -26,42 +26,44 @@ void VertexShader::cameraProjection() {
 void VertexShader::frustumCulling() {
     Graphic3D &grphic = Graphic3D::instance();
     Mesh3D &mesh = grphic.mesh;
+    Face3D &face1 = grphic.rtFaces1;
 
     ULLInt gridSize = (mesh.faces.size / 3 + 255) / 256;
 
     frustumCullingKernel<<<gridSize, 256>>>(
         mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
         mesh.world.x, mesh.world.y, mesh.world.z,
-        mesh.normal.x, mesh.normal.y, mesh.normal.z,
         mesh.texture.x, mesh.texture.y,
+        mesh.normal.x, mesh.normal.y, mesh.normal.z,
         mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
         mesh.faces.v, mesh.faces.t, mesh.faces.n, mesh.faces.size / 3,
 
-        grphic.rtFaces1.sx, grphic.rtFaces1.sy, grphic.rtFaces1.sz, grphic.rtFaces1.sw,
-        grphic.rtFaces1.wx, grphic.rtFaces1.wy, grphic.rtFaces1.wz,
-        grphic.rtFaces1.tu, grphic.rtFaces1.tv,
-        grphic.rtFaces1.nx, grphic.rtFaces1.ny, grphic.rtFaces1.nz,
-        grphic.rtFaces1.cr, grphic.rtFaces1.cg, grphic.rtFaces1.cb, grphic.rtFaces1.ca,
-        grphic.rtFaces1.active
+        face1.sx, face1.sy, face1.sz, face1.sw,
+        face1.wx, face1.wy, face1.wz,
+        face1.tu, face1.tv,
+        face1.nx, face1.ny, face1.nz,
+        face1.cr, face1.cg, face1.cb, face1.ca,
+        face1.active
     );
     cudaDeviceSynchronize();
 
     // cudaMemset(grphic.d_rtCount, 0, sizeof(ULLInt));
     // filterRuntimeKernel<<<gridSize, 256>>>(
-    //     grphic.rtFaces1.active, grphic.rtFaces1.active,
-    //     grphic.d_rtCount, grphic.rtFaces1.size / 3
+    //     face1.active, face1.active,
+    //     grphic.d_rtCount, face1.size / 3
     // );
 }
 
 void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
+    Face3D &face1 = grphic.rtFaces1;
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
     // Split the faces into chunks
-    ULLInt rtSize = grphic.rtFaces1.size / 3;
+    ULLInt rtSize = face1.size / 3;
 
     ULLInt chunkNum = (rtSize + grphic.faceChunkSize - 1) 
                     /  grphic.faceChunkSize;
@@ -78,9 +80,9 @@ void VertexShader::createDepthMap() {
         dim3 blockNum(blockNumTile, blockNumFace);
 
         createDepthMapKernel<<<blockNum, blockSize>>>(
-            grphic.rtFaces1.active,
-            grphic.rtFaces1.sx, grphic.rtFaces1.sy,
-            grphic.rtFaces1.sz, grphic.rtFaces1.sw,
+            face1.active,
+            face1.sx, face1.sy,
+            face1.sz, face1.sw,
             curFaceCount, chunkOffset,
 
             buffer.active, buffer.depth, buffer.faceID,
@@ -96,13 +98,14 @@ void VertexShader::createDepthMap() {
 void VertexShader::rasterization() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
+    Face3D &face1 = grphic.rtFaces1;
 
     rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        grphic.rtFaces1.sw,
-        grphic.rtFaces1.wx, grphic.rtFaces1.wy, grphic.rtFaces1.wz,
-        grphic.rtFaces1.tu, grphic.rtFaces1.tv,
-        grphic.rtFaces1.nx, grphic.rtFaces1.ny, grphic.rtFaces1.nz,
-        grphic.rtFaces1.cr, grphic.rtFaces1.cg, grphic.rtFaces1.cb, grphic.rtFaces1.ca,
+        face1.sw,
+        face1.wx, face1.wy, face1.wz,
+        face1.tu, face1.tv,
+        face1.nx, face1.ny, face1.nz,
+        face1.cr, face1.cg, face1.cb, face1.ca,
 
         buffer.active, buffer.faceID,
         buffer.bary.x, buffer.bary.y, buffer.bary.z,
@@ -138,8 +141,8 @@ __global__ void frustumCullingKernel(
     // Orginal mesh data
     const float *sx, const float *sy, const float *sz, const float *sw,
     const float *wx, const float *wy, const float *wz,
-    const float *nx, const float *ny, const float *nz,
     const float *tu, const float *tv,
+    const float *nx, const float *ny, const float *nz,
     const float *cr, const float *cg, const float *cb, const float *ca,
     const ULLInt *fWs, const ULLInt *fTs, const ULLInt *fNs, ULLInt numFs,
 
