@@ -19,6 +19,15 @@ This applies for EVERYTHING that needs to be perspective corrected:
 
 */
 
+struct VertexTemp {
+    int num = 0;
+    Vec4f s[6];
+    Vec3f w[6];
+    Vec2f t[6];
+    Vec3f n[6];
+    Vec4f c[6];
+};
+
 class VertexShader {
 public:
     __device__ static bool insideFrustum(const Vec4f &v);
