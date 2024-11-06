@@ -45,6 +45,12 @@ void VertexShader::frustumCulling() {
         grphic.rtFaces1.active
     );
     cudaDeviceSynchronize();
+
+    // cudaMemset(grphic.d_rtCount, 0, sizeof(ULLInt));
+    // filterRuntimeKernel<<<gridSize, 256>>>(
+    //     grphic.rtFaces1.active, grphic.rtFaces1.active,
+    //     grphic.d_rtCount, grphic.rtFaces1.size / 3
+    // );
 }
 
 void VertexShader::createDepthMap() {
@@ -478,13 +484,48 @@ __global__ void filterRuntimeKernel(
     float *rtCr1, float *rtCg1, float *rtCb1, float *rtCa1,
     bool *rtActive1, ULLInt numFs1,
 
-    float *rtSx, float *rtSy, float *rtSz, float *rtSw,
-    float *rtWx, float *rtWy, float *rtWz,
-    float *rtTu, float *rtTv,
-    float *rtNx, float *rtNy, float *rtNz,
-    float *rtCr, float *rtCg, float *rtCb, float *rtCa,
+    float *rtSx2, float *rtSy2, float *rtSz2, float *rtSw2,
+    float *rtWx2, float *rtWy2, float *rtWz2,
+    float *rtTu2, float *rtTv2,
+    float *rtNx2, float *rtNy2, float *rtNz2,
+    float *rtCr2, float *rtCg2, float *rtCb2, float *rtCa2,
     bool *rtActive2, ULLInt *d_rtCount
-);
+) {
+    ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (fIdx >= numFs1 || !rtActive1[fIdx]) return;
+
+    ULLInt fIdx0 = fIdx * 3;
+    ULLInt fIdx1 = fIdx0 + 1;
+    ULLInt fIdx2 = fIdx0 + 2;
+
+    ULLInt idx = atomicAdd(d_rtCount, 1);
+    ULLInt idx0 = idx * 3;
+    ULLInt idx1 = idx0 + 1;
+    ULLInt idx2 = idx0 + 2;
+
+    rtSx2[idx0] = rtSx1[fIdx0]; rtSx2[idx1] = rtSx1[fIdx1]; rtSx2[idx2] = rtSx1[fIdx2];
+    rtSy2[idx0] = rtSy1[fIdx0]; rtSy2[idx1] = rtSy1[fIdx1]; rtSy2[idx2] = rtSy1[fIdx2];
+    rtSz2[idx0] = rtSz1[fIdx0]; rtSz2[idx1] = rtSz1[fIdx1]; rtSz2[idx2] = rtSz1[fIdx2];
+    rtSw2[idx0] = rtSw1[fIdx0]; rtSw2[idx1] = rtSw1[fIdx1]; rtSw2[idx2] = rtSw1[fIdx2];
+
+    rtWx2[idx0] = rtWx1[fIdx0]; rtWx2[idx1] = rtWx1[fIdx1]; rtWx2[idx2] = rtWx1[fIdx2];
+    rtWy2[idx0] = rtWy1[fIdx0]; rtWy2[idx1] = rtWy1[fIdx1]; rtWy2[idx2] = rtWy1[fIdx2];
+    rtWz2[idx0] = rtWz1[fIdx0]; rtWz2[idx1] = rtWz1[fIdx1]; rtWz2[idx2] = rtWz1[fIdx2];
+
+    rtTu2[idx0] = rtTu1[fIdx0]; rtTu2[idx1] = rtTu1[fIdx1]; rtTu2[idx2] = rtTu1[fIdx2];
+    rtTv2[idx0] = rtTv1[fIdx0]; rtTv2[idx1] = rtTv1[fIdx1]; rtTv2[idx2] = rtTv1[fIdx2];
+
+    rtNx2[idx0] = rtNx1[fIdx0]; rtNx2[idx1] = rtNx1[fIdx1]; rtNx2[idx2] = rtNx1[fIdx2];
+    rtNy2[idx0] = rtNy1[fIdx0]; rtNy2[idx1] = rtNy1[fIdx1]; rtNy2[idx2] = rtNy1[fIdx2];
+    rtNz2[idx0] = rtNz1[fIdx0]; rtNz2[idx1] = rtNz1[fIdx1]; rtNz2[idx2] = rtNz1[fIdx2];
+
+    rtCr2[idx0] = rtCr1[fIdx0]; rtCr2[idx1] = rtCr1[fIdx1]; rtCr2[idx2] = rtCr1[fIdx2];
+    rtCg2[idx0] = rtCg1[fIdx0]; rtCg2[idx1] = rtCg1[fIdx1]; rtCg2[idx2] = rtCg1[fIdx2];
+    rtCb2[idx0] = rtCb1[fIdx0]; rtCb2[idx1] = rtCb1[fIdx1]; rtCb2[idx2] = rtCb1[fIdx2];
+    rtCa2[idx0] = rtCa1[fIdx0]; rtCa2[idx1] = rtCa1[fIdx1]; rtCa2[idx2] = rtCa1[fIdx2];
+
+    rtActive2[idx] = true;
+}
 
 // Depth map creation
 __global__ void createDepthMapKernel(

@@ -72,11 +72,11 @@ __global__ void filterRuntimeKernel(
     float *rtCr1, float *rtCg1, float *rtCb1, float *rtCa1,
     bool *rtActive1, ULLInt numFs1,
 
-    float *rtSx, float *rtSy, float *rtSz, float *rtSw,
-    float *rtWx, float *rtWy, float *rtWz,
-    float *rtTu, float *rtTv,
-    float *rtNx, float *rtNy, float *rtNz,
-    float *rtCr, float *rtCg, float *rtCb, float *rtCa,
+    float *rtSx2, float *rtSy2, float *rtSz2, float *rtSw2,
+    float *rtWx2, float *rtWy2, float *rtWz2,
+    float *rtTu2, float *rtTv2,
+    float *rtNx2, float *rtNy2, float *rtNz2,
+    float *rtCr2, float *rtCg2, float *rtCb2, float *rtCa2,
     bool *rtActive2, ULLInt *d_rtCount
 );
 
