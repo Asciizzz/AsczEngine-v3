@@ -14,6 +14,36 @@ Mesh::Mesh(
 
 Mesh::Mesh() {}
 
+void Mesh::push(Mesh &mesh) {
+    for (ULLInt i = 0; i < mesh.wx.size(); i++) {
+        wx.push_back(mesh.wx[i]);
+        wy.push_back(mesh.wy[i]);
+        wz.push_back(mesh.wz[i]);
+    }
+    for (ULLInt i = 0; i < mesh.nx.size(); i++) {
+        nx.push_back(mesh.nx[i]);
+        ny.push_back(mesh.ny[i]);
+        nz.push_back(mesh.nz[i]);
+    }
+    for (ULLInt i = 0; i < mesh.tu.size(); i++) {
+        tu.push_back(mesh.tu[i]);
+        tv.push_back(mesh.tv[i]);
+    }
+    for (ULLInt i = 0; i < mesh.cr.size(); i++) {
+        cr.push_back(mesh.cr[i]);
+        cg.push_back(mesh.cg[i]);
+        cb.push_back(mesh.cb[i]);
+        ca.push_back(mesh.ca[i]);
+    }
+
+    // Increment face indices
+    for (ULLInt i = 0; i < mesh.fw.size(); i++) {
+        fw.push_back(mesh.fw[i] + wx.size());
+        ft.push_back(mesh.ft[i] + tu.size());
+        fn.push_back(mesh.fn[i] + nx.size());
+    }
+}
+
 Vec3f Mesh::w3f(ULLInt i) { return Vec3f(wx[i], wy[i], wz[i]); }
 Vec3f Mesh::n3f(ULLInt i) { return Vec3f(nx[i], ny[i], nz[i]); }
 Vec2f Mesh::t2f(ULLInt i) { return Vec2f(tu[i], tv[i]); }

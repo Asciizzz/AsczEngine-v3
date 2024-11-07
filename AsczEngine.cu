@@ -77,9 +77,10 @@ int main() {
         objsCount++;
     }
 
-    std::vector<Mesh> stars;
+    // 200 stars per stars mesh
+    std::vector<Mesh> stars(4);
     int starCount = 0;
-    while(starCount < 1000) {
+    while(starCount < 800) {
         // Radius of star from the center mush be in range 800 - 1200
         float x = rand() % 2400 - 1200;
         float y = rand() % 2400 - 1200;
@@ -101,10 +102,16 @@ int main() {
         star.rotateIni(Vec3f(), Vec3f(rx, ry, rz));
         star.translateIni(pos);
 
-        GRAPHIC.mesh.push(star);
+        switch (starCount / 200) {
+            case 0: stars[0].push(star); break;
+            case 1: stars[1].push(star); break;
+            case 2: stars[2].push(star); break;
+            case 3: stars[3].push(star); break;
+        }
 
         starCount++;
     }
+    GRAPHIC.mesh.push(stars);
 
     GRAPHIC.mallocRuntimeFaces();
 
@@ -384,6 +391,28 @@ int main() {
 
         // Set light position to camera position
         GRAPHIC.light.dir = CAMERA.pos;
+
+        // Rotate the stars (360 degree every 60 seconds)
+        stars[0].rotateRuntime(Vec3f(), Vec3f(
+            M_PI * FPS.dTimeSec / 420,
+            M_PI * FPS.dTimeSec / 60,
+            M_PI * FPS.dTimeSec / 360
+        ));
+        stars[1].rotateRuntime(Vec3f(), Vec3f(
+            M_PI * FPS.dTimeSec / 220,
+            M_PI * FPS.dTimeSec / 64,
+            M_PI * FPS.dTimeSec / 160
+        ));
+        stars[2].rotateRuntime(Vec3f(), Vec3f(
+            M_PI * FPS.dTimeSec / 320,
+            M_PI * FPS.dTimeSec / 67,
+            M_PI * FPS.dTimeSec / 160
+        ));
+        stars[3].rotateRuntime(Vec3f(), Vec3f(
+            M_PI * FPS.dTimeSec / 420,
+            M_PI * FPS.dTimeSec / 59,
+            M_PI * FPS.dTimeSec / 360
+        ));
 
         // ========== Render Pipeline ==========
 

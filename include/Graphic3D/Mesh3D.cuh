@@ -53,6 +53,8 @@ struct Mesh {
     );
     Mesh();
 
+    void push(Mesh &mesh);
+
     // Return vertex data
     Vec3f w3f(ULLInt i);
     Vec3f n3f(ULLInt i);
