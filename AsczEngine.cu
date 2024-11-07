@@ -77,6 +77,35 @@ int main() {
         objsCount++;
     }
 
+    std::vector<Mesh> stars;
+    int starCount = 0;
+    while(starCount < 1000) {
+        // Radius of star from the center mush be in range 800 - 1200
+        float x = rand() % 2400 - 1200;
+        float y = rand() % 2400 - 1200;
+        float z = rand() % 2400 - 1200;
+
+        float r = sqrt(x * x + y * y + z * z);
+        if (r < 800 || r > 1200) continue;
+
+        float rx = rand() % 360 * M_PI / 180;
+        float ry = rand() % 360 * M_PI / 180;
+        float rz = rand() % 360 * M_PI / 180;
+
+        Vec3f pos = Vec3f(x, y, z);
+
+        std::string starPath = "assets/Models/Shapes/Star.obj";
+        Mesh star = Utils::readObjFile(starPath, 1, 1, true);
+
+        star.scaleIni(Vec3f(), Vec3f(1));
+        star.rotateIni(Vec3f(), Vec3f(rx, ry, rz));
+        star.translateIni(pos);
+
+        GRAPHIC.mesh.push(star);
+
+        starCount++;
+    }
+
     GRAPHIC.mallocRuntimeFaces();
 
     std::string texturePath = "";

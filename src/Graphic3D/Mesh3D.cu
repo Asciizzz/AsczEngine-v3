@@ -243,6 +243,9 @@ void Mesh3D::push(Mesh &mesh) {
     screen.free();
     screen.malloc(world.size);
 }
+void Mesh3D::push(std::vector<Mesh> &meshes) {
+    for (Mesh &mesh : meshes) push(mesh);
+}
 
 // Kernel for incrementing face indices
 __global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs) { // BETA

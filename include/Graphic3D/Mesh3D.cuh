@@ -96,6 +96,7 @@ public:
 
     // Resize + Append
     void push(Mesh &mesh);
+    void push(std::vector<Mesh> &meshs);
 };
 
 // Kernel for preparing faces
