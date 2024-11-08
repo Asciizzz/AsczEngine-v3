@@ -82,35 +82,37 @@ int main() {
     int starNum = 2000;
     std::vector<Mesh> stars(starBatch);
 
-    int starCount = 0;
-    while(starCount < starNum) {
+    for (int i = 0; i < starNum; i++) {
+        // Create template star
+        std::string starPath = "assets/Models/Shapes/Star.obj";
+        Mesh star = Utils::readObjFile(starPath, 1, 1, true);
+
         // Radius in range +-[8000 - 12000]
         float r = rand() % 4000 + 8000;
         if (rand() % 2) r *= -1;
 
-        Vec3f posSph = Vec3f(r, 0, 0);
-        // Rotate the posSph to random position
-        float rxSph = rand() % 360 * M_PI / 180;
-        float rySph = rand() % 360 * M_PI / 180;
-        float rzSph = rand() % 360 * M_PI / 180;
-        posSph.rotate(Vec3f(), Vec3f(rxSph, rySph, rzSph));
+        // Random scale (float 7 -> 14)
+        float scl = rand() % 70 / 10 + 7;
 
-        // Random star rotation
+        // Random rotation
         float rx = rand() % 360 * M_PI / 180;
         float ry = rand() % 360 * M_PI / 180;
         float rz = rand() % 360 * M_PI / 180;
         Vec3f rot = Vec3f(rx, ry, rz);
 
-        std::string starPath = "assets/Models/Shapes/Star.obj";
-        Mesh star = Utils::readObjFile(starPath, 1, 1, true);
+        // Random position
+        Vec3f pos = Vec3f(r, 0, 0);
+        float prx = rand() % 360 * M_PI / 180;
+        float pry = rand() % 360 * M_PI / 180;
+        float prz = rand() % 360 * M_PI / 180;
+        pos.rotate(Vec3f(), Vec3f(prx, pry, prz));
 
-        star.scaleIni(Vec3f(), Vec3f(10));
+        // Apply transformations
+        star.scaleIni(Vec3f(), Vec3f(scl));
         star.rotateIni(Vec3f(), rot);
-        star.translateIni(posSph);
+        star.translateIni(pos);
 
-        stars[starCount % starBatch].push(star);
-
-        starCount++;
+        stars[i % starBatch].push(star);
     }
     GRAPHIC.mesh.push(stars);
 
