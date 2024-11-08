@@ -77,37 +77,38 @@ int main() {
         objsCount++;
     }
 
-    // 200 stars per stars mesh
-    std::vector<Mesh> stars(4);
+    // n/batch stars per stars mesh
+    int starBatch = 4;
+    int starNum = 2000;
+    std::vector<Mesh> stars(starBatch);
+
     int starCount = 0;
-    while(starCount < 800) {
-        // Radius of star from the center mush be in range 800 - 1200
-        float x = rand() % 2400 - 1200;
-        float y = rand() % 2400 - 1200;
-        float z = rand() % 2400 - 1200;
+    while(starCount < starNum) {
+        // Radius in range +-[8000 - 12000]
+        float r = rand() % 4000 + 8000;
+        if (rand() % 2) r *= -1;
 
-        float r = sqrt(x * x + y * y + z * z);
-        if (r < 800 || r > 1200) continue;
+        Vec3f posSph = Vec3f(r, 0, 0);
+        // Rotate the posSph to random position
+        float rxSph = rand() % 360 * M_PI / 180;
+        float rySph = rand() % 360 * M_PI / 180;
+        float rzSph = rand() % 360 * M_PI / 180;
+        posSph.rotate(Vec3f(), Vec3f(rxSph, rySph, rzSph));
 
+        // Random star rotation
         float rx = rand() % 360 * M_PI / 180;
         float ry = rand() % 360 * M_PI / 180;
         float rz = rand() % 360 * M_PI / 180;
-
-        Vec3f pos = Vec3f(x, y, z);
+        Vec3f rot = Vec3f(rx, ry, rz);
 
         std::string starPath = "assets/Models/Shapes/Star.obj";
         Mesh star = Utils::readObjFile(starPath, 1, 1, true);
 
-        star.scaleIni(Vec3f(), Vec3f(1));
-        star.rotateIni(Vec3f(), Vec3f(rx, ry, rz));
-        star.translateIni(pos);
+        star.scaleIni(Vec3f(), Vec3f(10));
+        star.rotateIni(Vec3f(), rot);
+        star.translateIni(posSph);
 
-        switch (starCount / 200) {
-            case 0: stars[0].push(star); break;
-            case 1: stars[1].push(star); break;
-            case 2: stars[2].push(star); break;
-            case 3: stars[3].push(star); break;
-        }
+        stars[starCount % starBatch].push(star);
 
         starCount++;
     }
@@ -267,6 +268,7 @@ int main() {
             // Move from center
             int dMx = mousepos.x - GRAPHIC.res_half.x;
             int dMy = mousepos.y - GRAPHIC.res_half.y;
+
 
             // Camera look around
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
