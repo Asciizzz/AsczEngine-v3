@@ -160,6 +160,8 @@ void Utils::applyTransformation(std::vector<Mesh> objs) {
         ULLInt idx; char type;
         ss >> idx >> type;
 
+        if (idx >= objs.size() || idx < 0) continue;
+
         if (type == 't') {
             Vec3f t; ss >> t.x >> t.y >> t.z;
 

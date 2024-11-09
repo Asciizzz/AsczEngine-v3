@@ -79,7 +79,7 @@ int main() {
 
     // n/batch stars per stars mesh
     int starBatch = 4;
-    int starNum = 2000;
+    int starNum = 4000;
     std::vector<Mesh> stars(starBatch);
 
     for (int i = 0; i < starNum; i++) {
@@ -95,13 +95,13 @@ int main() {
         float scl = rand() % 70 / 10 + 7;
 
         // Random rotation
-        float rx = rand() % 360 * M_PI / 180;
-        float ry = rand() % 360 * M_PI / 180;
-        float rz = rand() % 360 * M_PI / 180;
-        Vec3f rot = Vec3f(rx, ry, rz);
+        float rotx = rand() % 360 * M_PI / 180;
+        float roty = rand() % 360 * M_PI / 180;
+        float rotz = rand() % 360 * M_PI / 180;
+        Vec3f rot = Vec3f(rotx, roty, rotz);
 
         // Random position
-        Vec3f pos = Vec3f(r, 0, 0);
+        Vec3f pos = Vec3f(0, r, 0);
         float prx = rand() % 360 * M_PI / 180;
         float pry = rand() % 360 * M_PI / 180;
         float prz = rand() % 360 * M_PI / 180;
@@ -140,12 +140,7 @@ int main() {
     bool shadeMode = true;
     bool customMode = false;
 
-    bool gifMode = false;
     bool moveMode = true;
-
-    // Gif animation texture
-    Vec2ulli gifFrame = {0, 26};
-    Vec2f gifTime = {0, 0.03};
 
     // Other miscellaneus stuff
     bool k_t_hold = false;
@@ -194,10 +189,6 @@ int main() {
                 // Press 4 to toggle custom mode
                 if (event.key.code == sf::Keyboard::Num4)
                     customMode = !customMode;
-
-                // Press 5 to toggle gif mode
-                if (event.key.code == sf::Keyboard::Num5)
-                    gifMode = !gifMode;
 
                 // Press Z to toggle move mode
                 if (event.key.code == sf::Keyboard::Z)
@@ -375,46 +366,28 @@ int main() {
 
         // ========== Playgrounds ==============
 
-        // 3 digit frame number (add additional 0s if needed)
-        std::string frameStr;
-        if (gifFrame.x < 10) frameStr = "00" + std::to_string(gifFrame.x);
-        else if (gifFrame.x < 100) frameStr = "0" + std::to_string(gifFrame.x);
-        else frameStr = std::to_string(gifFrame.x);
-        std::string gifPath = "assets/Gif/frame_" + frameStr + ".png";
-
-        if (gifTime.x < gifTime.y) {
-            gifTime.x += FPS.dTimeSec;
-        } else {
-            gifTime.x = 0;
-
-            gifFrame.x++;
-            if (gifFrame.x >= gifFrame.y) gifFrame.x = 0;
-
-            if (gifMode) GRAPHIC.createTexture(gifPath);
-        }
-
         // Set light position to camera position
         GRAPHIC.light.dir = CAMERA.pos;
 
         // Rotate the stars (360 degree every 60 seconds)
         stars[0].rotateRuntime(Vec3f(), Vec3f(
             M_PI * FPS.dTimeSec / 420,
-            M_PI * FPS.dTimeSec / 60,
+            M_PI * FPS.dTimeSec / 160,
             M_PI * FPS.dTimeSec / 360
         ));
         stars[1].rotateRuntime(Vec3f(), Vec3f(
             M_PI * FPS.dTimeSec / 220,
-            M_PI * FPS.dTimeSec / 64,
+            M_PI * FPS.dTimeSec / 164,
             M_PI * FPS.dTimeSec / 160
         ));
         stars[2].rotateRuntime(Vec3f(), Vec3f(
             M_PI * FPS.dTimeSec / 320,
-            M_PI * FPS.dTimeSec / 67,
+            M_PI * FPS.dTimeSec / 167,
             M_PI * FPS.dTimeSec / 160
         ));
         stars[3].rotateRuntime(Vec3f(), Vec3f(
             M_PI * FPS.dTimeSec / 420,
-            M_PI * FPS.dTimeSec / 59,
+            M_PI * FPS.dTimeSec / 159,
             M_PI * FPS.dTimeSec / 360
         ));
 
