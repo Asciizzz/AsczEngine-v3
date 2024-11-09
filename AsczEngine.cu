@@ -371,24 +371,24 @@ int main() {
 
         // Rotate the stars (360 degree every 60 seconds)
         stars[0].rotateRuntime(Vec3f(), Vec3f(
-            M_PI * FPS.dTimeSec / 420,
-            M_PI * FPS.dTimeSec / 160,
-            M_PI * FPS.dTimeSec / 360
+            M_PI * FPS.dTimeSec / 920,
+            M_PI * FPS.dTimeSec / 260,
+            M_PI * FPS.dTimeSec / 860
         ));
         stars[1].rotateRuntime(Vec3f(), Vec3f(
-            M_PI * FPS.dTimeSec / 220,
-            M_PI * FPS.dTimeSec / 164,
-            M_PI * FPS.dTimeSec / 160
+            M_PI * FPS.dTimeSec / 880,
+            M_PI * FPS.dTimeSec / 264,
+            M_PI * FPS.dTimeSec / 780
         ));
         stars[2].rotateRuntime(Vec3f(), Vec3f(
-            M_PI * FPS.dTimeSec / 320,
-            M_PI * FPS.dTimeSec / 167,
-            M_PI * FPS.dTimeSec / 160
+            M_PI * FPS.dTimeSec / 840,
+            M_PI * FPS.dTimeSec / 267,
+            M_PI * FPS.dTimeSec / 620
         ));
         stars[3].rotateRuntime(Vec3f(), Vec3f(
-            M_PI * FPS.dTimeSec / 420,
-            M_PI * FPS.dTimeSec / 159,
-            M_PI * FPS.dTimeSec / 360
+            M_PI * FPS.dTimeSec / 870,
+            M_PI * FPS.dTimeSec / 259,
+            M_PI * FPS.dTimeSec / 1190
         ));
 
         // ========== Render Pipeline ==========
