@@ -14,7 +14,9 @@
 # Ceiling
 #assets/Models/Shapes/Wall.obj 4 -90 0 0 0 4 0
 # Floor
-#assets/Models/Shapes/Wall.obj 100 90 0 0 0 0 0
+assets/Models/Shapes/Wall.obj 100 90 0 0 0 0 0
+
+~
 
 # assets/Models/Shapes/Octo.obj 4 0 0 0 0 0 0
 # assets/Models/Shapes/Sphere.obj 1 0 0 0 0 0 0
