@@ -55,26 +55,37 @@ void Mesh::translateIni(Vec3f t) {
         wx[i] += t.x; wy[i] += t.y; wz[i] += t.z;
     }
 }
-void Mesh::rotateIni(Vec3f origin, Vec3f rot, bool rotNormal) {
+
+void Mesh::rotateIni(Vec3f origin, float r, short axis) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < wx.size(); i++) {
         Vec3f p = Vec3f(wx[i], wy[i], wz[i]);
-        p.rotate(origin, rot);
+
+        switch (axis) {
+            case 0: p.rotateX(origin, r); break;
+            case 1: p.rotateY(origin, r); break;
+            case 2: p.rotateZ(origin, r); break;
+        }
 
         wx[i] = p.x; wy[i] = p.y; wz[i] = p.z;
     }
 
-    if (!rotNormal) return;
     #pragma omp parallel for
     for (ULLInt i = 0; i < nx.size(); i++) {
         Vec3f n = Vec3f(nx[i], ny[i], nz[i]);
-        n.rotate(Vec3f(), rot);
+        
+        switch (axis) {
+            case 0: n.rotateX(Vec3f(), r); break;
+            case 1: n.rotateY(Vec3f(), r); break;
+            case 2: n.rotateZ(Vec3f(), r); break;
+        }
 
         n /= n.mag(); // Normalize
 
         nx[i] = n.x; ny[i] = n.y; nz[i] = n.z;
     }
 }
+
 void Mesh::scaleIni(Vec3f origin, Vec3f scl, bool sclNormal) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < wx.size(); i++) {
@@ -104,13 +115,13 @@ void Mesh::translateRuntime(Vec3f t) {
     ULLInt numWs = end - start;
     ULLInt gridSize = (numWs + 255) / 256;
 
-    translateKernel<<<gridSize, 256>>>(
+    translateMeshKernel<<<gridSize, 256>>>(
         world.x + start, world.y + start, world.z + start,
         t.x, t.y, t.z, numWs
     );
     cudaDeviceSynchronize();
 }
-void Mesh::rotateRuntime(Vec3f origin, Vec3f rot) {
+void Mesh::rotateRuntime(Vec3f origin, float r, short axis) {
     Vec3f_ptr &world = Graphic3D::instance().mesh.world;
     Vec3f_ptr &normal = Graphic3D::instance().mesh.normal;
 
@@ -120,16 +131,13 @@ void Mesh::rotateRuntime(Vec3f origin, Vec3f rot) {
     ULLInt numWs = endW - startW;
     ULLInt numNs = endN - startN;
 
-    ULLInt gridWsSize = (numWs + 255) / 256;
-    ULLInt gridNsSize = (numNs + 255) / 256;
+    ULLInt num = max(numWs, numNs);
+    ULLInt gridSize = (num + 255) / 256;    
 
-    rotateWsKernel<<<gridWsSize, 256>>>(
-        world.x + startW, world.y + startW, world.z + startW,
-        origin.x, origin.y, origin.z, rot.x, rot.y, rot.z, numWs
-    );
-    rotateNsKernel<<<gridNsSize, 256>>>(
-        normal.x + startN, normal.y + startN, normal.z + startN,
-        rot.x, rot.y, rot.z, numNs
+    rotateMeshKernel<<<gridSize, 256>>>(
+        world.x + startW, world.y + startW, world.z + startW, numWs,
+        normal.x + startN, normal.y + startN, normal.z + startN, numNs,
+        origin.x, origin.y, origin.z, r, axis
     );
     cudaDeviceSynchronize();
 }
@@ -143,16 +151,13 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
     ULLInt numWs = endW - startW;
     ULLInt numNs = endN - startN;
 
-    ULLInt gridWsSize = (numWs + 255) / 256;
-    ULLInt gridNsSize = (numNs + 255) / 256;
+    ULLInt num = max(numWs, numNs);
+    ULLInt gridSize = (num + 255) / 256;
 
-    scaleWsKernel<<<gridWsSize, 256>>>(
-        world.x + startW, world.y + startW, world.z + startW,
-        origin.x, origin.y, origin.z, scl.x, scl.y, scl.z, numWs
-    );
-    scaleNsKernel<<<gridNsSize, 256>>>(
-        normal.x + startN, normal.y + startN, normal.z + startN,
-        scl.x, scl.y, scl.z, numNs
+    scaleMeshKernel<<<gridSize, 256>>>(
+        world.x + startW, world.y + startW, world.z + startW, numWs,
+        normal.x + startN, normal.y + startN, normal.z + startN, numNs,
+        origin.x, origin.y, origin.z, scl.x, scl.y, scl.z
     );
     cudaDeviceSynchronize();
 }
@@ -285,7 +290,7 @@ __global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs) {
 
 // Kernel for transforming vertices
 
-__global__ void translateKernel(
+__global__ void translateMeshKernel(
     float *wx, float *wy, float *wz,
     float tx, float ty, float tz,
     ULLInt numWs
@@ -298,53 +303,71 @@ __global__ void translateKernel(
     }
 }
 
-__global__ void rotateWsKernel(
-    float *wx, float *wy, float *wz,
+__global__ void rotateMeshKernel(
+    float *wx, float *wy, float *wz, ULLInt numWs,
+    float *nx, float *ny, float *nz, ULLInt numNs,
     float ox, float oy, float oz,
-    float rx, float ry, float rz, ULLInt numWs
+    float r, short axis
 ) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numWs) return;
 
-    Vec3f w = {wx[idx], wy[idx], wz[idx]};
-    w.rotate({ox, oy, oz}, {rx, ry, rz});
-    wx[idx] = w.x; wy[idx] = w.y; wz[idx] = w.z;
+    if (idx < numWs) {
+        Vec3f p = Vec3f(wx[idx], wy[idx], wz[idx]);
+
+        switch (axis) {
+            case 0: p.rotateX(Vec3f(ox, oy, oz), r); break;
+            case 1: p.rotateY(Vec3f(ox, oy, oz), r); break;
+            case 2: p.rotateZ(Vec3f(ox, oy, oz), r); break;
+        }
+
+        wx[idx] = p.x;
+        wy[idx] = p.y;
+        wz[idx] = p.z;
+    }
+
+    if (idx < numNs) {
+        Vec3f n = Vec3f(nx[idx], ny[idx], nz[idx]);
+
+        switch (axis) {
+            case 0: n.rotateX(Vec3f(), r); break;
+            case 1: n.rotateY(Vec3f(), r); break;
+            case 2: n.rotateZ(Vec3f(), r); break;
+        }
+
+        n /= n.mag(); // Normalize
+
+        nx[idx] = n.x;
+        ny[idx] = n.y;
+        nz[idx] = n.z;
+    }
 }
-__global__ void rotateNsKernel(
-    float *nx, float *ny, float *nz,
-    float rx, float ry, float rz, ULLInt numNs
-) {
-    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numNs) return;
 
-    Vec3f n = {nx[idx], ny[idx], nz[idx]};
-    n.rotate({0, 0, 0}, {rx, ry, rz});
-    n /= n.mag(); // Normalize
-    nx[idx] = n.x; ny[idx] = n.y; nz[idx] = n.z;
-}
-
-__global__ void scaleWsKernel(
-    float *wx, float *wy, float *wz,
+__global__ void scaleMeshKernel(
+    float *wx, float *wy, float *wz, ULLInt numWs,
+    float *nx, float *ny, float *nz, ULLInt numNs,
     float ox, float oy, float oz,
-    float sx, float sy, float sz, ULLInt numWs
+    float sx, float sy, float sz
 ) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numWs) return;
 
-    Vec3f w = {wx[idx], wy[idx], wz[idx]};
-    w.scale({ox, oy, oz}, {sx, sy, sz});
-    wx[idx] = w.x; wy[idx] = w.y; wz[idx] = w.z;
-}
+    if (idx < numWs) {
+        wx[idx] = (wx[idx] - ox) * sx + ox;
+        wy[idx] = (wy[idx] - oy) * sy + oy;
+        wz[idx] = (wz[idx] - oz) * sz + oz;
+    }
 
-__global__ void scaleNsKernel(
-    float *nx, float *ny, float *nz,
-    float sx, float sy, float sz, ULLInt numNs
-) {
-    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx >= numNs) return;
-
-    Vec3f n = {nx[idx], ny[idx], nz[idx]};
-    n.scale({0, 0, 0}, {sx, sy, sz});
-    n /= n.mag(); // Normalize
-    nx[idx] = n.x; ny[idx] = n.y; nz[idx] = n.z;
+    if (idx < numNs) {
+        nx[idx] *= sx;
+        ny[idx] *= sy;
+        nz[idx] *= sz;
+        // Normalize
+        float mag = sqrt(
+            nx[idx] * nx[idx] +
+            ny[idx] * ny[idx] +
+            nz[idx] * nz[idx]
+        );
+        nx[idx] /= mag;
+        ny[idx] /= mag;
+        nz[idx] /= mag;
+    }
 }

@@ -63,12 +63,12 @@ struct Mesh {
 
     // Section 1 transformations
     void translateIni(Vec3f t);
-    void rotateIni(Vec3f origin, Vec3f rot, bool rotNormal=true);
+    void rotateIni(Vec3f origin, float r, short axis); // 0: x, 1: y, 2: z
     void scaleIni(Vec3f origin, Vec3f scl, bool sclNormal=true);
 
     // Section 2 transformations
     void translateRuntime(Vec3f t);
-    void rotateRuntime(Vec3f origin, Vec3f rot);
+    void rotateRuntime(Vec3f origin, float r, short axis);
     void scaleRuntime(Vec3f origin, Vec3f scl);
 };
 
@@ -107,28 +107,22 @@ __global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs);
 // Kernel for transformations
 // Note: rotation and scaling also affects normals
 
-__global__ void translateKernel(
+__global__ void translateMeshKernel(
     float *wx, float *wy, float *wz, float tx, float ty, float tz, ULLInt numWs
 );
 
-__global__ void rotateWsKernel(
-    float *wx, float *wy, float *wz,
+__global__ void rotateMeshKernel(
+    float *wx, float *wy, float *wz, ULLInt numWs,
+    float *nx, float *ny, float *nz, ULLInt numNs,
     float ox, float oy, float oz,
-    float rx, float ry, float rz, ULLInt numWs
-);
-__global__ void rotateNsKernel(
-    float *nx, float *ny, float *nz,
-    float rx, float ry, float rz, ULLInt numNs
+    float r, short axis
 );
 
-__global__ void scaleWsKernel(
-    float *wx, float *wy, float *wz,
+__global__ void scaleMeshKernel(
+    float *wx, float *wy, float *wz, ULLInt numWs,
+    float *nx, float *ny, float *nz, ULLInt numNs,
     float ox, float oy, float oz,
-    float sx, float sy, float sz, ULLInt numWs
-);
-__global__ void scaleNsKernel(
-    float *nx, float *ny, float *nz,
-    float sx, float sy, float sz, ULLInt numNs
+    float sx, float sy, float sz
 );
 
 #endif

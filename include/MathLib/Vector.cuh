@@ -64,12 +64,16 @@ struct Vec3f {
 
     // Transformations
     __host__ __device__ static Vec3f translate(Vec3f &vec, const Vec3f &t);
-    __host__ __device__ static Vec3f rotate(Vec3f &vec, const Vec3f &origin, const Vec3f &rot);
+    __host__ __device__ static Vec3f rotateX(Vec3f &vec, const Vec3f &origin, const float rx);
+    __host__ __device__ static Vec3f rotateY(Vec3f &vec, const Vec3f &origin, const float ry);
+    __host__ __device__ static Vec3f rotateZ(Vec3f &vec, const Vec3f &origin, const float rz);
     __host__ __device__ static Vec3f scale(Vec3f &vec, const Vec3f &origin, const Vec3f &scl);
     __host__ __device__ static Vec3f scale(Vec3f &vec, const Vec3f &origin, const float scl);
     // Transformations but on self
     __host__ __device__ void translate(const Vec3f &t);
-    __host__ __device__ void rotate(const Vec3f &origin, const Vec3f &rot);
+    __host__ __device__ void rotateX(const Vec3f &origin, const float rx);
+    __host__ __device__ void rotateY(const Vec3f &origin, const float ry);
+    __host__ __device__ void rotateZ(const Vec3f &origin, const float rz);
     __host__ __device__ void scale(const Vec3f &origin, const Vec3f &scl);
     __host__ __device__ void scale(const Vec3f &origin, const float scl);
 };

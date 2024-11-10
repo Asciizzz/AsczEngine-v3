@@ -66,29 +66,6 @@ void Camera3D::update() {
     updateView();
     updateProjection();
     updateMVP();
-
-    // Camera plane
-    updatePlane();
-}
-
-void Camera3D::updatePlane() {
-    nearPlane = Plane3D(forward, pos + forward * near);
-    farPlane = Plane3D(forward * -1, pos + forward * far);
-
-    // Bad news guys, everything doesn't seem to work as expected
-    // Keyword: "as expected"
-
-    Vec3f rightNormal = Vec3f::rotate(forward, Vec3f(), Vec3f(0, fov / 2 + M_PI_2, 0));
-    rightNormal.y = 0;
-    rightNormal.norm();
-    rightNormal *= -1; // Facing inwards the frustum
-    rightPlane = Plane3D(rightNormal, pos);
-
-    Vec3f leftNormal = Vec3f::rotate(forward, Vec3f(), Vec3f(0, -fov / 2 - M_PI_2, 0));
-    leftNormal.y = 0;
-    leftNormal.norm();
-    leftNormal *= -1; // Facing inwards the frustum
-    leftPlane = Plane3D(leftNormal, pos);
 }
 
 // Debug

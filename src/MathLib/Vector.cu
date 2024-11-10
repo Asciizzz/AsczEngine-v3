@@ -93,28 +93,48 @@ void Vec3f::limit(float min, float max) {
 Vec3f Vec3f::translate(Vec3f& vec, const Vec3f& t) {
     return vec + t;
 }
-Vec3f Vec3f::rotate(Vec3f& vec, const Vec3f& origin, const Vec3f& rot) {
-    // Translate to origin
+
+Vec3f Vec3f::rotateX(Vec3f &vec, const Vec3f &origin, const float rx) {
     Vec3f diff = vec - origin;
     Vec4f diff4 = diff.toVec4f();
 
-    float cosX = cos(rot.x), sinX = sin(rot.x);
-    float cosY = cos(rot.y), sinY = sin(rot.y);
-    float cosZ = cos(rot.z), sinZ = sin(rot.z);
-
-    // Rotation matrices
+    float cosX = cos(rx), sinX = sin(rx);
     float rX[4][4] = {
         {1, 0, 0, 0},
         {0, cosX, -sinX, 0},
         {0, sinX, cosX, 0},
         {0, 0, 0, 1}
     };
+
+    Vec4f rVec4 = Mat4f(rX) * diff4;
+    Vec3f rVec3 = rVec4.toVec3f();
+    rVec3 += origin;
+
+    return rVec3;
+}
+Vec3f Vec3f::rotateY(Vec3f &vec, const Vec3f &origin, const float ry) {
+    Vec3f diff = vec - origin;
+    Vec4f diff4 = diff.toVec4f();
+
+    float cosY = cos(ry), sinY = sin(ry);
     float rY[4][4] = {
         {cosY, 0, sinY, 0},
         {0, 1, 0, 0},
         {-sinY, 0, cosY, 0},
         {0, 0, 0, 1}
     };
+
+    Vec4f rVec4 = Mat4f(rY) * diff4;
+    Vec3f rVec3 = rVec4.toVec3f();
+    rVec3 += origin;
+
+    return rVec3;
+}
+Vec3f Vec3f::rotateZ(Vec3f &vec, const Vec3f &origin, const float rz) {
+    Vec3f diff = vec - origin;
+    Vec4f diff4 = diff.toVec4f();
+
+    float cosZ = cos(rz), sinZ = sin(rz);
     float rZ[4][4] = {
         {cosZ, -sinZ, 0, 0},
         {sinZ, cosZ, 0, 0},
@@ -122,17 +142,13 @@ Vec3f Vec3f::rotate(Vec3f& vec, const Vec3f& origin, const Vec3f& rot) {
         {0, 0, 0, 1}
     };
 
-    Mat4f rMatX = Mat4f(rX);
-    Mat4f rMatY = Mat4f(rY);
-    Mat4f rMatZ = Mat4f(rZ);
-
-    Vec4f rVec4 = rMatZ * (rMatY * (rMatX * diff4));
-
+    Vec4f rVec4 = Mat4f(rZ) * diff4;
     Vec3f rVec3 = rVec4.toVec3f();
     rVec3 += origin;
 
     return rVec3;
 }
+
 Vec3f Vec3f::scale(Vec3f& vec, const Vec3f& origin, const Vec3f& scl) {
     Vec3f diff = vec - origin;
     return Vec3f(
@@ -149,9 +165,17 @@ Vec3f Vec3f::scale(Vec3f& vec, const Vec3f& origin, const float scl) {
 void Vec3f::translate(const Vec3f& t) {
     *this += t;
 }
-void Vec3f::rotate(const Vec3f& origin, const Vec3f& rot) {
-    *this = rotate(*this, origin, rot);
+
+void Vec3f::rotateX(const Vec3f& origin, const float rx) {
+    *this = rotateX(*this, origin, rx);
 }
+void Vec3f::rotateY(const Vec3f& origin, const float ry) {
+    *this = rotateY(*this, origin, ry);
+}
+void Vec3f::rotateZ(const Vec3f& origin, const float rz) {
+    *this = rotateZ(*this, origin, rz);
+}
+
 void Vec3f::scale(const Vec3f& origin, const Vec3f& scl) {
     *this = scale(*this, origin, scl);
 }

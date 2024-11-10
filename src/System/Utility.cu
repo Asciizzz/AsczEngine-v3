@@ -157,22 +157,34 @@ void Utils::applyTransformation(std::vector<Mesh> objs) {
         if (line.size() == 0 || line[0] == '#') continue;
 
         std::stringstream ss(line);
-        ULLInt idx; char type;
+        ULLInt idx; std::string type;
         ss >> idx >> type;
 
-        if (idx >= objs.size() || idx < 0) continue;
+        if (idx >= objs.size()) continue;
 
-        if (type == 't') {
+        if (type == "t") {
             Vec3f t; ss >> t.x >> t.y >> t.z;
 
             objs[idx].translateRuntime(t);
-        } else if (type == 'r') {
+        } else if (type == "rx") {
             Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-            Vec3f rot; ss >> rot.x >> rot.y >> rot.z;
-            rot *= M_PI / 180; // To degree
+            float r; ss >> r;
+            r = r * M_PI / 180;
 
-            objs[idx].rotateRuntime(origin, rot);
-        } else if (type == 's') {
+            objs[idx].rotateRuntime(origin, r, 0);
+        } else if (type == "ry") {
+            Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
+            float r; ss >> r;
+            r = r * M_PI / 180;
+
+            objs[idx].rotateRuntime(origin, r, 1);
+        } else if (type == "rz") {
+            Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
+            float r; ss >> r;
+            r = r * M_PI / 180;
+
+            objs[idx].rotateRuntime(origin, r, 2);
+        } else if (type == "s") {
             Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
             Vec3f scl; ss >> scl.x >> scl.y >> scl.z;
 

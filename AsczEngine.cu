@@ -6,9 +6,6 @@
 #include <FragmentShader.cuh>
 #include <SFMLTexture.cuh>
 
-#include <Sphere3D.cuh>
-#include <Cube3D.cuh>
-
 // Main
 int main() {
     // Initialize Default stuff
@@ -67,7 +64,9 @@ int main() {
 
         Mesh obj = Utils::readObjFile(objPath, 1, 1, true);
         obj.scaleIni(Vec3f(), Vec3f(scale));
-        obj.rotateIni(Vec3f(), rotate);
+        obj.rotateIni(Vec3f(), rotate.x, 0);
+        obj.rotateIni(Vec3f(), rotate.y, 1);
+        obj.rotateIni(Vec3f(), rotate.z, 2);
         obj.translateIni(translate);
 
         GRAPHIC.mesh.push(obj);
@@ -79,7 +78,7 @@ int main() {
 
     // n/batch stars per stars mesh
     int starBatch = 4;
-    int starNum = 4000;
+    int starNum = 1600;
     std::vector<Mesh> stars(starBatch);
 
     for (int i = 0; i < starNum; i++) {
@@ -87,29 +86,31 @@ int main() {
         std::string starPath = "assets/Models/Shapes/Star.obj";
         Mesh star = Utils::readObjFile(starPath, 1, 1, true);
 
-        // Radius in range +-[8000 - 12000]
-        float r = rand() % 4000 + 8000;
+        // Radius in range +-[a - b]
+        float r = (rand() % 20000) / 10 + 6000;
         if (rand() % 2) r *= -1;
 
-        // Random scale (float 7 -> 14)
-        float scl = rand() % 70 / 10 + 7;
+        // Random scale
+        float scl = (rand() % 60) / 10 + 6;
 
         // Random rotation
         float rotx = rand() % 360 * M_PI / 180;
         float roty = rand() % 360 * M_PI / 180;
         float rotz = rand() % 360 * M_PI / 180;
-        Vec3f rot = Vec3f(rotx, roty, rotz);
 
         // Random position
         Vec3f pos = Vec3f(0, r, 0);
-        float prx = rand() % 360 * M_PI / 180;
-        float pry = rand() % 360 * M_PI / 180;
-        float prz = rand() % 360 * M_PI / 180;
-        pos.rotate(Vec3f(), Vec3f(prx, pry, prz));
+        pos.rotateX(Vec3f(), rand() % 360 * M_PI / 180);
+        pos.rotateY(Vec3f(), rand() % 360 * M_PI / 180);
+        pos.rotateZ(Vec3f(), rand() % 360 * M_PI / 180);
 
         // Apply transformations
         star.scaleIni(Vec3f(), Vec3f(scl));
-        star.rotateIni(Vec3f(), rot);
+
+        star.rotateIni(Vec3f(), rotx, 0);
+        star.rotateIni(Vec3f(), roty, 1);
+        star.rotateIni(Vec3f(), rotz, 2);
+
         star.translateIni(pos);
 
         stars[i % starBatch].push(star);
@@ -347,49 +348,21 @@ int main() {
         }
         if (!k_t) k_t_hold = false;
 
-        // Press Q to rotate light source in x axis
-        if (k_q) {
-            float rot = M_PI / 3 * FPS.dTimeSec;
-            if (k_ctrl) rot *= -1;
-            if (k_shift) rot *= 3;
-
-            GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(rot, 0, 0));
-        }
-        // Press E to rotate light source in y axis
-        if (k_e) {
-            float rot = M_PI / 3 * FPS.dTimeSec;
-            if (k_ctrl) rot *= -1;
-            if (k_shift) rot *= 3;
-
-            GRAPHIC.light.dir.rotate(Vec3f(0), Vec3f(0, rot, 0));
-        }
-
         // ========== Playgrounds ==============
 
         // Set light position to camera position
         GRAPHIC.light.dir = CAMERA.pos;
 
-        // Rotate the stars (360 degree every 60 seconds)
-        stars[0].rotateRuntime(Vec3f(), Vec3f(
-            M_PI * FPS.dTimeSec / 920,
-            M_PI * FPS.dTimeSec / 260,
-            M_PI * FPS.dTimeSec / 860
-        ));
-        stars[1].rotateRuntime(Vec3f(), Vec3f(
-            M_PI * FPS.dTimeSec / 880,
-            M_PI * FPS.dTimeSec / 264,
-            M_PI * FPS.dTimeSec / 780
-        ));
-        stars[2].rotateRuntime(Vec3f(), Vec3f(
-            M_PI * FPS.dTimeSec / 840,
-            M_PI * FPS.dTimeSec / 267,
-            M_PI * FPS.dTimeSec / 620
-        ));
-        stars[3].rotateRuntime(Vec3f(), Vec3f(
-            M_PI * FPS.dTimeSec / 870,
-            M_PI * FPS.dTimeSec / 259,
-            M_PI * FPS.dTimeSec / 1190
-        ));
+        // Rotate stars
+        stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
+        stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
+        stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
+        stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
+
+        stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
+        stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
+        stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
+        stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
 
         // ========== Render Pipeline ==========
 
