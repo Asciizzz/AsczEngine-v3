@@ -6,6 +6,10 @@
 #include <FragmentShader.cuh>
 #include <SFMLTexture.cuh>
 
+// Playgrounds
+#include <SolarSystem.cuh>
+#include <DotObj.cuh>
+
 // Main
 int main() {
     // Initialize Default stuff
@@ -39,83 +43,12 @@ int main() {
     // ===================== INITIALIZATION =====================
     // Each model in models.txt will contain:
     // src scl rotX rotY rotZ transX transY transZ
-    std::ifstream objsFile("assets/cfg/models.txt");
-    std::string line;
-    std::vector<Mesh> objs;
+    DotObj dotObjs("assets/cfg/models.txt");
+    GRAPHIC.mesh.push(dotObjs.objs);
 
-    int objsCount = 0;
-    while (std::getline(objsFile, line)) {
-        // If line start with #, it's a comment
-        if (line[0] == '#' || line.empty()) continue;
-        // If line start with ~, it's the end of the file
-        if (line[0] == '~') break;
-
-        std::string objPath = "";
-        float scale = 1;
-        Vec3f translate;
-        Vec3f rotate;
-
-        std::stringstream ss(line);
-
-        ss >> objPath >> scale;
-        ss >> rotate.x >> rotate.y >> rotate.z;
-        ss >> translate.x >> translate.y >> translate.z;
-        rotate *= M_PI / 180;
-
-        Mesh obj = Utils::readObjFile(objPath, 1, 1, true);
-        obj.scaleIni(Vec3f(), Vec3f(scale));
-        obj.rotateIni(Vec3f(), rotate.x, 0);
-        obj.rotateIni(Vec3f(), rotate.y, 1);
-        obj.rotateIni(Vec3f(), rotate.z, 2);
-        obj.translateIni(translate);
-
-        GRAPHIC.mesh.push(obj);
-        objs.push_back(obj);
-
-        // Write to log
-        objsCount++;
-    }
-
-    // n/batch stars per stars mesh
-    int starBatch = 4;
-    int starNum = 1600;
-    std::vector<Mesh> stars(starBatch);
-
-    for (int i = 0; i < starNum; i++) {
-        // Create template star
-        std::string starPath = "assets/Models/Shapes/Star.obj";
-        Mesh star = Utils::readObjFile(starPath, 1, 1, true);
-
-        // Radius in range +-[a - b]
-        float r = (rand() % 20000) / 10 + 6000;
-        if (rand() % 2) r *= -1;
-
-        // Random scale
-        float scl = (rand() % 60) / 10 + 6;
-
-        // Random rotation
-        float rotx = rand() % 360 * M_PI / 180;
-        float roty = rand() % 360 * M_PI / 180;
-        float rotz = rand() % 360 * M_PI / 180;
-
-        // Random position
-        Vec3f pos = Vec3f(0, r, 0);
-        pos.rotateX(Vec3f(), rand() % 360 * M_PI / 180);
-        pos.rotateY(Vec3f(), rand() % 360 * M_PI / 180);
-        pos.rotateZ(Vec3f(), rand() % 360 * M_PI / 180);
-
-        // Apply transformations
-        star.scaleIni(Vec3f(), Vec3f(scl));
-
-        star.rotateIni(Vec3f(), rotx, 0);
-        star.rotateIni(Vec3f(), roty, 1);
-        star.rotateIni(Vec3f(), rotz, 2);
-
-        star.translateIni(pos);
-
-        stars[i % starBatch].push(star);
-    }
-    GRAPHIC.mesh.push(stars);
+    SolarSystem solarSystem;
+    solarSystem.setStars(4, 400, 6000, 8000, 6);
+    GRAPHIC.mesh.push(solarSystem.stars);
 
     GRAPHIC.mallocRuntimeFaces();
 
@@ -344,7 +277,7 @@ int main() {
         if (k_t && (!k_t_hold || !k_ctrl)) {
             k_t_hold = true;
 
-            Utils::applyTransformation(objs);
+            Utils::applyTransformation(dotObjs.objs);
         }
         if (!k_t) k_t_hold = false;
 
@@ -354,6 +287,7 @@ int main() {
         GRAPHIC.light.dir = CAMERA.pos;
 
         // Rotate stars
+        std::vector<Mesh> &stars = solarSystem.stars;
         stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
         stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
         stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);

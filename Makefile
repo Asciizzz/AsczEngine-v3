@@ -10,6 +10,7 @@ AsczEngine:
 		-I include/MathLib \
 		-I include/Graphic3D \
 		-I include/Shader3D \
+		-I include/Playground \
 		\
 		-I libraries/SFML/include \
 		-L libraries/SFML/lib \
