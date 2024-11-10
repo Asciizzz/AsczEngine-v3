@@ -484,12 +484,10 @@ __global__ void runtimeIndexingKernel(
     const bool *rtActive, ULLInt *rtIndex, ULLInt *d_rtCount, ULLInt numFs
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (fIdx >= numFs) return;
+    if (fIdx >= numFs || !rtActive[fIdx]) return;
 
-    if (rtActive[fIdx]) {
-        ULLInt idx = atomicAdd(d_rtCount, 1);
-        rtIndex[idx] = fIdx;
-    }
+    ULLInt idx = atomicAdd(d_rtCount, 1);
+    rtIndex[idx] = fIdx;
 }
 
 // Depth map creation
