@@ -62,7 +62,7 @@ __global__ void frustumCullingKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    bool *rtActive
+    float *rtArea, bool *rtActive
 );
 
 __global__ void runtimeIndexingKernel(

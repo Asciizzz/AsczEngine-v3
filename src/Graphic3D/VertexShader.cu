@@ -41,7 +41,7 @@ void VertexShader::frustumCulling() {
         faces.tu, faces.tv,
         faces.nx, faces.ny, faces.nz,
         faces.cr, faces.cg, faces.cb, faces.ca,
-        faces.active
+        faces.area, faces.active
     );
     cudaDeviceSynchronize();
 
@@ -61,7 +61,6 @@ void VertexShader::createDepthMap() {
 
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
-
 
     dim3 blockSize(16, 32);
     ULLInt tileNum = grphic.tileNumX * grphic.tileNumY;
@@ -140,7 +139,7 @@ __global__ void frustumCullingKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    bool *rtActive
+    float *rtArea, bool *rtActive
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
@@ -227,6 +226,13 @@ __global__ void frustumCullingKernel(
         rtCg[idx0] = rtCs[0].y; rtCg[idx1] = rtCs[1].y; rtCg[idx2] = rtCs[2].y;
         rtCb[idx0] = rtCs[0].z; rtCb[idx1] = rtCs[1].z; rtCb[idx2] = rtCs[2].z;
         rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
+
+        // Find the area of the triangle's bounding box
+        float minX = min(rtSs[0].x, min(rtSs[1].x, rtSs[2].x));
+        float minY = min(rtSs[0].y, min(rtSs[1].y, rtSs[2].y));
+        float maxX = max(rtSs[0].x, max(rtSs[1].x, rtSs[2].x));
+        float maxY = max(rtSs[0].y, max(rtSs[1].y, rtSs[2].y));
+        rtArea[fIdx * 4] = abs((maxX - minX) * (maxY - minY));
 
         rtActive[fIdx * 4] = true;
 
@@ -464,6 +470,13 @@ __global__ void frustumCullingKernel(
         rtCg[idx0] = tempC2[0].y; rtCg[idx1] = tempC2[i + 1].y; rtCg[idx2] = tempC2[i + 2].y;
         rtCb[idx0] = tempC2[0].z; rtCb[idx1] = tempC2[i + 1].z; rtCb[idx2] = tempC2[i + 2].z;
         rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
+
+        // Find the area of the triangle's bounding box
+        float minX = min(min(tempS2[0].x, tempS2[i + 1].x), tempS2[i + 2].x);
+        float maxX = max(max(tempS2[0].x, tempS2[i + 1].x), tempS2[i + 2].x);
+        float minY = min(min(tempS2[0].y, tempS2[i + 1].y), tempS2[i + 2].y);
+        float maxY = max(max(tempS2[0].y, tempS2[i + 1].y), tempS2[i + 2].y);
+        rtArea[fIdx * 4 + i] = abs((maxX - minX) * (maxY - minY));
 
         rtActive[fIdx * 4 + i] = true;
     }
