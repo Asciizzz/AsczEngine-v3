@@ -68,6 +68,8 @@ void VertexShader::createDepthMap() {
     ULLInt chunkNum = (rtSize + grphic.faceChunkSize - 1) 
                     /  grphic.faceChunkSize;
 
+    ULLInt tileNum = grphic.tileNumX * grphic.tileNumY;
+
     dim3 blockSize(16, 32);
     for (ULLInt i = 0; i < chunkNum; i++) {
         ULLInt chunkOffset = grphic.faceChunkSize * i;
@@ -75,7 +77,7 @@ void VertexShader::createDepthMap() {
         ULLInt curFaceCount = (i == chunkNum - 1) ?
             rtSize - chunkOffset : grphic.faceChunkSize;
 
-        ULLInt blockNumTile = (grphic.tileNum + blockSize.x - 1) / blockSize.x;
+        ULLInt blockNumTile = (tileNum + blockSize.x - 1) / blockSize.x;
         ULLInt blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
         dim3 blockNum(blockNumTile, blockNumFace);
 

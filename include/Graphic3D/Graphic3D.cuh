@@ -55,7 +55,7 @@ public:
     // For tile-based rasterization
     int tileSizeX = 20;
     int tileSizeY = 20;
-    int tileNumX, tileNumY, tileNum;
+    int tileNumX, tileNumY;
     void setTileSize(int tw, int th);
 
     // Free everything

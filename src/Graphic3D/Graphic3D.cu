@@ -58,7 +58,6 @@ void Graphic3D::setTileSize(int tw, int th) {
 
     tileNumX = buffer.width / tileSizeX;
     tileNumY = buffer.height / tileSizeY;
-    tileNum = tileNumX * tileNumY;
 }
 
 // Free everything
