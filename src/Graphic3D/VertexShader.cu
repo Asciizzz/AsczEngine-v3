@@ -62,38 +62,25 @@ void VertexShader::createDepthMap() {
     buffer.clearBuffer();
     buffer.nightSky(); // Cool effect
 
-    // Split the faces into chunks
-    ULLInt rtSize = grphic.rtCount;
-
-    ULLInt chunkNum = (rtSize + grphic.faceChunkSize - 1) 
-                    /  grphic.faceChunkSize;
-
-    ULLInt tileNum = grphic.tileNumX * grphic.tileNumY;
 
     dim3 blockSize(16, 32);
-    for (ULLInt i = 0; i < chunkNum; i++) {
-        ULLInt chunkOffset = grphic.faceChunkSize * i;
+    ULLInt tileNum = grphic.tileNumX * grphic.tileNumY;
+    ULLInt blockNumTile = (tileNum + blockSize.x - 1) / blockSize.x;
+    ULLInt blockNumFace = (grphic.rtCount + blockSize.y - 1) / blockSize.y;
+    dim3 blockNum(blockNumTile, blockNumFace);
 
-        ULLInt curFaceCount = (i == chunkNum - 1) ?
-            rtSize - chunkOffset : grphic.faceChunkSize;
+    createDepthMapKernel<<<blockNum, blockSize>>>(
+        grphic.rtIndex,
+        faces.active, faces.sx, faces.sy, faces.sz, faces.sw,
+        grphic.rtCount, 0,
 
-        ULLInt blockNumTile = (tileNum + blockSize.x - 1) / blockSize.x;
-        ULLInt blockNumFace = (curFaceCount + blockSize.y - 1) / blockSize.y;
-        dim3 blockNum(blockNumTile, blockNumFace);
-
-        createDepthMapKernel<<<blockNum, blockSize>>>(
-            grphic.rtIndex,
-            faces.active, faces.sx, faces.sy, faces.sz, faces.sw,
-            curFaceCount, chunkOffset,
-
-            buffer.active, buffer.depth, buffer.faceID,
-            buffer.bary.x, buffer.bary.y, buffer.bary.z,
-            buffer.width, buffer.height,
-            grphic.tileNumX, grphic.tileNumY,
-            grphic.tileSizeX, grphic.tileSizeY
-        );
-        cudaDeviceSynchronize();
-    }
+        buffer.active, buffer.depth, buffer.faceID,
+        buffer.bary.x, buffer.bary.y, buffer.bary.z,
+        buffer.width, buffer.height,
+        grphic.tileNumX, grphic.tileNumY,
+        grphic.tileSizeX, grphic.tileSizeY
+    );
+    cudaDeviceSynchronize();
 }
 
 void VertexShader::rasterization() {
