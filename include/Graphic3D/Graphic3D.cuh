@@ -65,7 +65,6 @@ public:
     Mesh3D mesh;
 
     // For runtime faces
-    ULLInt faceChunkSize = 1e6; // For chunking
     Face3D rtFaces;
     // For indexing runtime faces
     ULLInt rtCount;
