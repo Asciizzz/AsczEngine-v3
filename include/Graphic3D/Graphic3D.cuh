@@ -50,7 +50,7 @@ public:
     // Resolution
     Vec2f res = {800, 600};
     Vec2f res_half = {400, 300};
-    int pixelSize = 8;
+    int pixelSize = 4;
     void setResolution(float w, float h, float ps=4);
 
     // For tile-based rasterization
