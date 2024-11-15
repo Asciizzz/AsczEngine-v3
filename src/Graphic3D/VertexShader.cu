@@ -151,8 +151,8 @@ __global__ void frustumCullingKernel(
     rtActive[fIdx * 4 + 3] = false;
 
     ULLInt idx0 = fIdx * 3;
-    ULLInt idx1 = fIdx * 3 + 1;
-    ULLInt idx2 = fIdx * 3 + 2;
+    ULLInt idx1 = idx0 + 1;
+    ULLInt idx2 = idx0 + 2;
 
     ULLInt fw[3] = {fWs[idx0], fWs[idx1], fWs[idx2]};
     ULLInt ft[3] = {fTs[idx0], fTs[idx1], fTs[idx2]};
