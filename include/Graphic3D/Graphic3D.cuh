@@ -53,12 +53,6 @@ public:
     int pixelSize = 4;
     void setResolution(float w, float h, float ps=4);
 
-    // For tile-based rasterization
-    int tileSizeX = 20;
-    int tileSizeY = 20;
-    int tileNumX, tileNumY;
-    void setTileSize(int tw, int th);
-
     // Free everything
     void free();
 
@@ -67,16 +61,19 @@ public:
 
     // For runtime faces
     Face3D rtFaces;
+
     // For indexing runtime faces
-    ULLInt rtCount;
-    ULLInt *d_rtCount;
-    ULLInt *rtIndex;
+    ULLInt rtCount1, *d_rtCount1, *rtIndex1; // Small faces = 1 tile
+    ULLInt rtCount2, *d_rtCount2, *rtIndex2; // Medium faces = 16 tiles
+    ULLInt rtCount3, *d_rtCount3, *rtIndex3; // Large faces = 64 tiles
+    ULLInt rtCount4, *d_rtCount4, *rtIndex4; // Huge faces = 256 tiles
+    cudaStream_t rtStreams[4];
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();
     void resizeRuntimeFaces();
 
-    // Camera3D and Buffer3D
+    // Camera3D and Buffers3D
     Camera3D camera;
     Buffer3D buffer;
 

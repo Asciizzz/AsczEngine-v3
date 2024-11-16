@@ -18,7 +18,6 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
     texture.malloc(size);
     normal.malloc(size);
     color.malloc(size);
-
 }
 
 void Buffer3D::free() {
@@ -45,7 +44,6 @@ void Buffer3D::clearBuffer() {
     cudaDeviceSynchronize();
 }
 
-// Kernel for clearing the buffer
 __global__ void clearBufferKernel(
     bool *active, float *depth, ULLInt *faceID,
     float *brx, float *bry, float *brz, // Bary
@@ -61,8 +59,8 @@ __global__ void clearBufferKernel(
     active[i] = false; // Inactive
     depth[i] = 1; // Furthest depth
     faceID[i] = NULL; // No face
-
     brx[i] = 0; bry[i] = 0; brz[i] = 0; // Limbo
+
     wx[i] = 0; wy[i] = 0; wz[i] = 0; // Limbo
     tu[i] = 0; tv[i] = 0; // Limbo
     nx[i] = 0; ny[i] = 0; nz[i] = 0; // Limbo
@@ -70,17 +68,15 @@ __global__ void clearBufferKernel(
 }
 
 // Night sky
-void Buffer3D::nightSky() {
-    nightSkyKernel<<<blockNum, blockSize>>>(
-        color.x, color.y, color.z, color.w,
-        width, height
+void Buffer3D::defaultColor() {
+    defaultColorKernel<<<blockNum, blockSize>>>(
+        color.x, color.y, color.z, color.w, width, height
     );
     cudaDeviceSynchronize();
 }
 
-__global__ void nightSkyKernel(
-    float *cr, float *cg, float *cb, float *ca,
-    int width, int height
+__global__ void defaultColorKernel(
+    float *cr, float *cg, float *cb, float *ca, int width, int height
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= width * height) return;
@@ -88,11 +84,11 @@ __global__ void nightSkyKernel(
     int x = i % width;
     int y = i / width;
 
-    float ratioX = float(x) / float(width);
     float ratioY = float(y) / float(height);
 
-    cr[i] = 4 * (1 - ratioY);
-    cg[i] = 10 * (1 - ratioX);
-    cb[i] = 20 * (1 - ratioY);
+    // Sky up rgb(4 99 180) -> down rgb(4 135 227)
+    cr[i] = 2;
+    cg[i] = 10 + 16 * ratioY;
+    cb[i] = 15 + 55 * ratioY;
     ca[i] = 255;
 }

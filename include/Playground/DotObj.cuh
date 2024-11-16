@@ -30,7 +30,7 @@ public:
             ss >> translate.x >> translate.y >> translate.z;
             rotate *= M_PI / 180;
 
-            Mesh obj = Utils::readObjFile(objPath, 1, 1, true);
+            Mesh obj = Utils::readObjFile(objPath, 1, 1, false);
             obj.scaleIni(Vec3f(), Vec3f(scale));
             obj.rotateIni(Vec3f(), rotate.x, 0);
             obj.rotateIni(Vec3f(), rotate.y, 1);

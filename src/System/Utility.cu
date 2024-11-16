@@ -109,24 +109,24 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                 cg.push_back(g * 155 + 100);
                 cb.push_back(b * 155 + 100);
                 ca.push_back(255);
-
-                // Shift to center of xz plane
-                if (placement > 0) {
-                    wx[i] -= (minX + maxX) / 2;
-                    wz[i] -= (minZ + maxZ) / 2;
-                }
-
-                if (placement == 1) { // Shift to center
-                    wy[i] -= (minY + maxY) / 2;
-                } else if (placement == 2) { // Shift to floor
-                    wy[i] -= minY;
-                }
             } else {
                 // Just set it to white
                 cr.push_back(255);
                 cg.push_back(255);
                 cb.push_back(255);
                 ca.push_back(255);
+            }
+
+            // Shift to center of xz plane
+            if (placement > 0) {
+                wx[i] -= (minX + maxX) / 2;
+                wz[i] -= (minZ + maxZ) / 2;
+            }
+
+            if (placement == 1) { // Shift to center
+                wy[i] -= (minY + maxY) / 2;
+            } else if (placement == 2) { // Shift to floor
+                wy[i] -= minY;
             }
         }
     }

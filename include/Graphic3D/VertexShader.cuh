@@ -66,7 +66,11 @@ __global__ void frustumCullingKernel(
 );
 
 __global__ void runtimeIndexingKernel(
-    const bool *rtActive, ULLInt *rtIndex, ULLInt *d_rtCount, ULLInt numFs
+    const bool *rtActive, const float *rtArea, ULLInt numFs,
+    ULLInt *rtIndex1, ULLInt *d_rtCount1,
+    ULLInt *rtIndex2, ULLInt *d_rtCount2,
+    ULLInt *rtIndex3, ULLInt *d_rtCount3,
+    ULLInt *rtIndex4, ULLInt *d_rtCount4
 );
 
 // Tile-based depth map creation

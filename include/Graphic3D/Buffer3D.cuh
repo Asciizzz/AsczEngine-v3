@@ -20,17 +20,14 @@ public:
     int blockSize = 256;
     int blockNum;
 
-    // Device pointers
     bool *active;
     float *depth;
     ULLInt *faceID;
     Vec3f_ptr bary;
-
     Vec3f_ptr world;
     Vec2f_ptr texture;
     Vec3f_ptr normal;
     Vec4f_ptr color;
-
 
     Buffer3D();
     void resize(int width, int height, int pixelSize=1);
@@ -39,7 +36,7 @@ public:
     void clearBuffer();
 
     // Fun buffer functions
-    void nightSky();
+    void defaultColor();
 };
 
 __global__ void clearBufferKernel(
@@ -53,9 +50,8 @@ __global__ void clearBufferKernel(
 );
 
 // FUN BUFFER FUNCTIONS
-__global__ void nightSkyKernel(
-    float *cr, float *cg, float *cb, float *ca, // Color
-    int width, int height
+__global__ void defaultColorKernel(
+    float *cr, float *cg, float *cb, float *ca, int width, int height
 );
 
 #endif

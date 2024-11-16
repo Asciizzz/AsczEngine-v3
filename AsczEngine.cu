@@ -23,7 +23,6 @@ int main() {
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
     GRAPHIC.setResolution(width, height, pixelSize);
-    GRAPHIC.setTileSize(tileSizeX, tileSizeY);
 
     Camera3D &CAMERA = GRAPHIC.camera;
     std::ifstream("assets/cfg/cameraPos.txt")
@@ -353,11 +352,15 @@ int main() {
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
         LOG.addLog(
             "Screen:\n| Res: " + std::to_string(width) +
-            " x " + std::to_string(height) +
-            " | Pixel Size: " + std::to_string(pixelSize) + "\n" +
-            "| Tile Size: " + std::to_string(tileSizeX) + " x " + std::to_string(tileSizeY) + "\n" +
-            "| Clip Faces: "
-            + std::to_string(GRAPHIC.rtCount) + " / "
+            " x " + std::to_string(height) + "\n" +
+            "| Pixel Size: " + std::to_string(pixelSize) + "\n" +
+            "| RTFace1: " + std::to_string(GRAPHIC.rtCount1) + " / "
+            + std::to_string(GRAPHIC.mesh.faces.size / 3) + "\n" +
+            "| RTFace2: " + std::to_string(GRAPHIC.rtCount2) + " / "
+            + std::to_string(GRAPHIC.mesh.faces.size / 3) + "\n" +
+            "| RTFace3: " + std::to_string(GRAPHIC.rtCount3) + " / "
+            + std::to_string(GRAPHIC.mesh.faces.size / 3) + "\n" +
+            "| RTFace4: " + std::to_string(GRAPHIC.rtCount4) + " / "
             + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );

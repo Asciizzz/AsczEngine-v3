@@ -45,41 +45,85 @@ void VertexShader::frustumCulling() {
     );
     cudaDeviceSynchronize();
 
-    cudaMemset(grphic.d_rtCount, 0, sizeof(ULLInt));
+    cudaMemset(grphic.d_rtCount1, 0, sizeof(ULLInt));
+    cudaMemset(grphic.d_rtCount2, 0, sizeof(ULLInt));
+    cudaMemset(grphic.d_rtCount3, 0, sizeof(ULLInt));
+    cudaMemset(grphic.d_rtCount4, 0, sizeof(ULLInt));
+
     gridSize = (faces.size / 3 + 255) / 256;
     runtimeIndexingKernel<<<gridSize, 256>>>(
-        faces.active, grphic.rtIndex, grphic.d_rtCount, faces.size / 3
+        faces.active, faces.area, faces.size / 3,
+        grphic.rtIndex1, grphic.d_rtCount1,
+        grphic.rtIndex2, grphic.d_rtCount2,
+        grphic.rtIndex3, grphic.d_rtCount3,
+        grphic.rtIndex4, grphic.d_rtCount4
     );
     cudaDeviceSynchronize();
-    cudaMemcpy(&grphic.rtCount, grphic.d_rtCount, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+
+    cudaMemcpy(&grphic.rtCount1, grphic.d_rtCount1, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grphic.rtCount2, grphic.d_rtCount2, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grphic.rtCount3, grphic.d_rtCount3, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grphic.rtCount4, grphic.d_rtCount4, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::createDepthMap() {
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buffer = grphic.buffer;
     Face3D &faces = grphic.rtFaces;
+    cudaStream_t *streams = grphic.rtStreams;
 
     buffer.clearBuffer();
-    buffer.nightSky(); // Cool effect
+    buffer.defaultColor();
+
+    // Set tile data
+    int bw = buffer.width;
+    int bh = buffer.height;
+
+    ULLInt tileSizeX[4] = { 800, 400, 100, 25 };
+    ULLInt tileSizeY[4] = { 450, 225, 75, 25 };
+    ULLInt tileNumX[4] = { 1, 2, 8, 32 };
+    ULLInt tileNumY[4] = { 1, 2, 6, 18 };
+    ULLInt tileNum[4] = {
+        tileNumX[0] * tileNumY[0],
+        tileNumX[1] * tileNumY[1],
+        tileNumX[2] * tileNumY[2],
+        tileNumX[3] * tileNumY[3]
+    };
+    ULLInt rtCount[4] = {
+        grphic.rtCount1,
+        grphic.rtCount2,
+        grphic.rtCount3,
+        grphic.rtCount4
+    };
+
+    ULLInt *rtIndex[4] = {
+        grphic.rtIndex1,
+        grphic.rtIndex2,
+        grphic.rtIndex3,
+        grphic.rtIndex4
+    };
 
     dim3 blockSize(16, 32);
-    ULLInt tileNum = grphic.tileNumX * grphic.tileNumY;
-    ULLInt blockNumTile = (tileNum + blockSize.x - 1) / blockSize.x;
-    ULLInt blockNumFace = (grphic.rtCount + blockSize.y - 1) / blockSize.y;
-    dim3 blockNum(blockNumTile, blockNumFace);
+    for (int i = 0; i < 4; i++) {
+        if (!rtCount[i]) continue;
 
-    createDepthMapKernel<<<blockNum, blockSize>>>(
-        grphic.rtIndex,
-        faces.active, faces.sx, faces.sy, faces.sz, faces.sw,
-        grphic.rtCount, 0,
+        ULLInt blockNumTile = (tileNum[i] + blockSize.x - 1) / blockSize.x;
+        ULLInt blockNumFace = (rtCount[i] + blockSize.y - 1) / blockSize.y;
+        dim3 blockNum(blockNumTile, blockNumFace);
 
-        buffer.active, buffer.depth, buffer.faceID,
-        buffer.bary.x, buffer.bary.y, buffer.bary.z,
-        buffer.width, buffer.height,
-        grphic.tileNumX, grphic.tileNumY,
-        grphic.tileSizeX, grphic.tileSizeY
-    );
-    cudaDeviceSynchronize();
+        createDepthMapKernel<<<blockNum, blockSize, 0, streams[i]>>>(
+            rtIndex[i],
+            faces.active, faces.sx, faces.sy, faces.sz, faces.sw,
+            rtCount[i], 0,
+
+            buffer.active, buffer.depth, buffer.faceID,
+            buffer.bary.x, buffer.bary.y, buffer.bary.z,
+            buffer.width, buffer.height,
+            tileNumX[i], tileNumY[i], tileSizeX[i], tileSizeY[i]
+        );
+    }
+    for (int i = 0; i < 4; ++i)
+        cudaStreamSynchronize(streams[i]);
 }
 
 void VertexShader::rasterization() {
@@ -228,10 +272,13 @@ __global__ void frustumCullingKernel(
         rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
 
         // Find the area of the triangle's bounding box
-        float minX = min(rtSs[0].x, min(rtSs[1].x, rtSs[2].x));
-        float minY = min(rtSs[0].y, min(rtSs[1].y, rtSs[2].y));
-        float maxX = max(rtSs[0].x, max(rtSs[1].x, rtSs[2].x));
-        float maxY = max(rtSs[0].y, max(rtSs[1].y, rtSs[2].y));
+        float ndcX[3] = {rtSs[0].x / rtSs[0].w, rtSs[1].x / rtSs[1].w, rtSs[2].x / rtSs[2].w};
+        float ndcY[3] = {rtSs[0].y / rtSs[0].w, rtSs[1].y / rtSs[1].w, rtSs[2].y / rtSs[2].w};
+
+        float minX = min(min(ndcX[0], ndcX[1]), ndcX[2]);
+        float maxX = max(max(ndcX[0], ndcX[1]), ndcX[2]);
+        float minY = min(min(ndcY[0], ndcY[1]), ndcY[2]);
+        float maxY = max(max(ndcY[0], ndcY[1]), ndcY[2]);
         rtArea[fIdx * 4] = abs((maxX - minX) * (maxY - minY));
 
         rtActive[fIdx * 4] = true;
@@ -472,10 +519,13 @@ __global__ void frustumCullingKernel(
         rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
 
         // Find the area of the triangle's bounding box
-        float minX = min(min(tempS2[0].x, tempS2[i + 1].x), tempS2[i + 2].x);
-        float maxX = max(max(tempS2[0].x, tempS2[i + 1].x), tempS2[i + 2].x);
-        float minY = min(min(tempS2[0].y, tempS2[i + 1].y), tempS2[i + 2].y);
-        float maxY = max(max(tempS2[0].y, tempS2[i + 1].y), tempS2[i + 2].y);
+        float ndcX[3] = {tempS2[0].x / tempS2[0].w, tempS2[i + 1].x / tempS2[i + 1].w, tempS2[i + 2].x / tempS2[i + 2].w};
+        float ndcY[3] = {tempS2[0].y / tempS2[0].w, tempS2[i + 1].y / tempS2[i + 1].w, tempS2[i + 2].y / tempS2[i + 2].w};
+
+        float minX = min(min(ndcX[0], ndcX[1]), ndcX[2]);
+        float maxX = max(max(ndcX[0], ndcX[1]), ndcX[2]);
+        float minY = min(min(ndcY[0], ndcY[1]), ndcY[2]);
+        float maxY = max(max(ndcY[0], ndcY[1]), ndcY[2]);
         rtArea[fIdx * 4 + i] = abs((maxX - minX) * (maxY - minY));
 
         rtActive[fIdx * 4 + i] = true;
@@ -483,13 +533,29 @@ __global__ void frustumCullingKernel(
 }
 
 __global__ void runtimeIndexingKernel(
-    const bool *rtActive, ULLInt *rtIndex, ULLInt *d_rtCount, ULLInt numFs
+    const bool *rtActive, const float *rtArea, ULLInt numFs,
+    ULLInt *rtIndex1, ULLInt *d_rtCount1,
+    ULLInt *rtIndex2, ULLInt *d_rtCount2,
+    ULLInt *rtIndex3, ULLInt *d_rtCount3,
+    ULLInt *rtIndex4, ULLInt *d_rtCount4
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs || !rtActive[fIdx]) return;
 
-    ULLInt idx = atomicAdd(d_rtCount, 1);
-    rtIndex[idx] = fIdx;
+    if (rtArea[fIdx] < 0.02) {
+        ULLInt idx = atomicAdd(d_rtCount1, 1);
+        rtIndex1[idx] = fIdx;
+    } else {
+        ULLInt idx = atomicAdd(d_rtCount4, 1);
+        rtIndex4[idx] = fIdx;
+    }
+    //  else if (rtArea[fIdx] < 0.15) {
+    //     ULLInt idx = atomicAdd(d_rtCount3, 1);
+    //     rtIndex3[idx] = fIdx;
+    // } else {
+    //     ULLInt idx = atomicAdd(d_rtCount4, 1);
+    //     rtIndex4[idx] = fIdx;
+    // }
 }
 
 // Depth map creation

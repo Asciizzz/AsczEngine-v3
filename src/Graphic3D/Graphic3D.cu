@@ -45,23 +45,6 @@ void Graphic3D::setResolution(float w, float h, float ps) {
     buffer.resize(w, h, pixelSize);
 }
 
-void Graphic3D::setTileSize(int tw, int th) {
-    tileSizeX = tw;
-    tileSizeY = th;
-
-    // Buffer W/H must be divisible by tile W/H, otherwise throw an error
-    // It's a bit forceful, but it's better to have a consistent tile size
-    // Otherwise the entire tile-based rasterization will be broken
-    // Trust me, I've been there
-    if (buffer.width % tileSizeX != 0 || buffer.height % tileSizeY != 0) {
-        std::cerr << "Buffer W/H must be divisible by tile W/H" << std::endl;
-        exit(1);
-    }
-
-    tileNumX = buffer.width / tileSizeX;
-    tileNumY = buffer.height / tileSizeY;
-}
-
 // Free everything
 void Graphic3D::free() {
     mesh.free();
@@ -76,14 +59,34 @@ void Graphic3D::free() {
 void Graphic3D::mallocRuntimeFaces() {
     rtFaces.malloc(mesh.faces.size * 4);
 
-    cudaMalloc(&d_rtCount, sizeof(ULLInt));
-    cudaMalloc(&rtIndex, sizeof(ULLInt) * rtFaces.size / 3);
+    cudaMalloc(&d_rtCount1, sizeof(ULLInt));
+    cudaMalloc(&d_rtCount2, sizeof(ULLInt));
+    cudaMalloc(&d_rtCount3, sizeof(ULLInt));
+    cudaMalloc(&d_rtCount4, sizeof(ULLInt));
+    cudaMalloc(&rtIndex2, sizeof(ULLInt) * rtFaces.size / 3);
+    cudaMalloc(&rtIndex3, sizeof(ULLInt) * rtFaces.size / 3);
+    cudaMalloc(&rtIndex4, sizeof(ULLInt) * rtFaces.size / 3);
+    cudaMalloc(&rtIndex1, sizeof(ULLInt) * rtFaces.size / 3);
+
+    for (int i = 0; i < 4; i++) {
+        cudaStreamCreate(&rtStreams[i]);
+    }
 }
 void Graphic3D::freeRuntimeFaces() {
     rtFaces.free();
 
-    if (d_rtCount) cudaFree(d_rtCount);
-    if (rtIndex) cudaFree(rtIndex);
+    if (d_rtCount1) cudaFree(d_rtCount1);
+    if (d_rtCount2) cudaFree(d_rtCount2);
+    if (d_rtCount3) cudaFree(d_rtCount3);
+    if (d_rtCount4) cudaFree(d_rtCount4);
+    if (rtIndex1) cudaFree(rtIndex1);
+    if (rtIndex2) cudaFree(rtIndex2);
+    if (rtIndex3) cudaFree(rtIndex3);
+    if (rtIndex4) cudaFree(rtIndex4);
+
+    for (int i = 0; i < 4; i++) {
+        cudaStreamDestroy(rtStreams[i]);
+    }
 }
 void Graphic3D::resizeRuntimeFaces() {
     freeRuntimeFaces();
