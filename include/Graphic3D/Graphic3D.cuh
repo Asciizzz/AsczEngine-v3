@@ -70,7 +70,7 @@ public:
     void freeRuntimeFaces();
     void resizeRuntimeFaces();
 
-    cudaStream_t rtStreams[2];
+    cudaStream_t rtStreams[4];
     void createRuntimeStreams();
     void destroyRuntimeStreams();
 

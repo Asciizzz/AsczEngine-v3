@@ -79,12 +79,12 @@ void Graphic3D::resizeRuntimeFaces() {
 }
 
 void Graphic3D::createRuntimeStreams() {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 4; i++) {
         cudaStreamCreate(&rtStreams[i]);
     }
 }
 void Graphic3D::destroyRuntimeStreams() {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 4; i++) {
         cudaStreamDestroy(rtStreams[i]);
     }
 }
