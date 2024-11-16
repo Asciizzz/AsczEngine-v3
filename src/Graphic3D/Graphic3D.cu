@@ -50,6 +50,7 @@ void Graphic3D::free() {
     mesh.free();
     buffer.free();
     freeRuntimeFaces();
+    destroyRuntimeStreams();
 
     freeTexture();
     freeShadowMap();
@@ -67,10 +68,6 @@ void Graphic3D::mallocRuntimeFaces() {
     cudaMalloc(&rtIndex3, sizeof(ULLInt) * rtFaces.size / 3);
     cudaMalloc(&rtIndex4, sizeof(ULLInt) * rtFaces.size / 3);
     cudaMalloc(&rtIndex1, sizeof(ULLInt) * rtFaces.size / 3);
-
-    for (int i = 0; i < 4; i++) {
-        cudaStreamCreate(&rtStreams[i]);
-    }
 }
 void Graphic3D::freeRuntimeFaces() {
     rtFaces.free();
@@ -83,14 +80,21 @@ void Graphic3D::freeRuntimeFaces() {
     if (rtIndex2) cudaFree(rtIndex2);
     if (rtIndex3) cudaFree(rtIndex3);
     if (rtIndex4) cudaFree(rtIndex4);
-
-    for (int i = 0; i < 4; i++) {
-        cudaStreamDestroy(rtStreams[i]);
-    }
 }
 void Graphic3D::resizeRuntimeFaces() {
     freeRuntimeFaces();
     mallocRuntimeFaces();
+}
+
+void Graphic3D::createRuntimeStreams() {
+    for (int i = 0; i < 4; i++) {
+        cudaStreamCreate(&rtStreams[i]);
+    }
+}
+void Graphic3D::destroyRuntimeStreams() {
+    for (int i = 0; i < 4; i++) {
+        cudaStreamDestroy(rtStreams[i]);
+    }
 }
 
 // =========================================================================

@@ -67,11 +67,14 @@ public:
     ULLInt rtCount2, *d_rtCount2, *rtIndex2; // Medium faces = 16 tiles
     ULLInt rtCount3, *d_rtCount3, *rtIndex3; // Large faces = 64 tiles
     ULLInt rtCount4, *d_rtCount4, *rtIndex4; // Huge faces = 256 tiles
-    cudaStream_t rtStreams[4];
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();
     void resizeRuntimeFaces();
+
+    cudaStream_t rtStreams[4];
+    void createRuntimeStreams();
+    void destroyRuntimeStreams();
 
     // Camera3D and Buffers3D
     Camera3D camera;

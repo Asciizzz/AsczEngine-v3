@@ -23,6 +23,7 @@ int main() {
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
     GRAPHIC.setResolution(width, height, pixelSize);
+    GRAPHIC.createRuntimeStreams();
 
     Camera3D &CAMERA = GRAPHIC.camera;
     std::ifstream("assets/cfg/cameraPos.txt")
