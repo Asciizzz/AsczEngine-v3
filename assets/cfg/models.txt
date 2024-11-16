@@ -7,7 +7,7 @@
 # .heavy/Room.obj
 
 # Back wall
-#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
+# assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
 # Left wall
 #assets/Models/Shapes/Wall.obj 4 0 -90 0 4 0 0
 # Right wall

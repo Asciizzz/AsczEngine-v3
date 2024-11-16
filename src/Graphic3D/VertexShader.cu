@@ -91,25 +91,23 @@ void VertexShader::createDepthMap() {
     };
 
     dim3 blockSize(16, 32);
-    for (int a = 0; a < 2; a++) {
-        for (int i = 0; i < 2; i++) {
-            if (!rtCount[i]) continue;
+    for (int i = 0; i < 2; i++) {
+        if (!rtCount[i]) continue;
 
-            ULLInt blockNumTile = (tileNum[i] + blockSize.x - 1) / blockSize.x;
-            ULLInt blockNumFace = (rtCount[i] + blockSize.y - 1) / blockSize.y;
-            dim3 blockNum(blockNumTile, blockNumFace);
+        ULLInt blockNumTile = (tileNum[i] + blockSize.x - 1) / blockSize.x;
+        ULLInt blockNumFace = (rtCount[i] + blockSize.y - 1) / blockSize.y;
+        dim3 blockNum(blockNumTile, blockNumFace);
 
-            createDepthMapKernel<<<blockNum, blockSize, 0, streams[i + a]>>>(
-                rtIndex[i],
-                faces.active, faces.sx, faces.sy, faces.sz, faces.sw,
-                rtCount[i], 0,
+        createDepthMapKernel<<<blockNum, blockSize, 0, streams[i]>>>(
+            rtIndex[i],
+            faces.active, faces.sx, faces.sy, faces.sz, faces.sw,
+            rtCount[i], 0,
 
-                buffer.active, buffer.depth, buffer.faceID,
-                buffer.bary.x, buffer.bary.y, buffer.bary.z,
-                buffer.width, buffer.height,
-                tileNumX[i], tileNumY[i], tileSizeX[i], tileSizeY[i]
-            );
-        }
+            buffer.active, buffer.depth, buffer.faceID,
+            buffer.bary.x, buffer.bary.y, buffer.bary.z,
+            buffer.width, buffer.height,
+            tileNumX[i], tileNumY[i], tileSizeX[i], tileSizeY[i]
+        );
     }
 
     for (int i = 0; i < 4; ++i) {
@@ -531,7 +529,7 @@ __global__ void runtimeIndexingKernel(
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs || !rtActive[fIdx]) return;
 
-    if (rtArea[fIdx] < 0.001) {
+    if (rtArea[fIdx] < 0.02) {
         ULLInt idx = atomicAdd(d_rtCount1, 1);
         rtIndex1[idx] = fIdx;
     } else {
