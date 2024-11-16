@@ -62,24 +62,16 @@ void Graphic3D::mallocRuntimeFaces() {
 
     cudaMalloc(&d_rtCount1, sizeof(ULLInt));
     cudaMalloc(&d_rtCount2, sizeof(ULLInt));
-    cudaMalloc(&d_rtCount3, sizeof(ULLInt));
-    cudaMalloc(&d_rtCount4, sizeof(ULLInt));
-    cudaMalloc(&rtIndex2, sizeof(ULLInt) * rtFaces.size / 3);
-    cudaMalloc(&rtIndex3, sizeof(ULLInt) * rtFaces.size / 3);
-    cudaMalloc(&rtIndex4, sizeof(ULLInt) * rtFaces.size / 3);
     cudaMalloc(&rtIndex1, sizeof(ULLInt) * rtFaces.size / 3);
+    cudaMalloc(&rtIndex2, sizeof(ULLInt) * rtFaces.size / 3);
 }
 void Graphic3D::freeRuntimeFaces() {
     rtFaces.free();
 
     if (d_rtCount1) cudaFree(d_rtCount1);
     if (d_rtCount2) cudaFree(d_rtCount2);
-    if (d_rtCount3) cudaFree(d_rtCount3);
-    if (d_rtCount4) cudaFree(d_rtCount4);
     if (rtIndex1) cudaFree(rtIndex1);
     if (rtIndex2) cudaFree(rtIndex2);
-    if (rtIndex3) cudaFree(rtIndex3);
-    if (rtIndex4) cudaFree(rtIndex4);
 }
 void Graphic3D::resizeRuntimeFaces() {
     freeRuntimeFaces();
@@ -87,12 +79,12 @@ void Graphic3D::resizeRuntimeFaces() {
 }
 
 void Graphic3D::createRuntimeStreams() {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 2; i++) {
         cudaStreamCreate(&rtStreams[i]);
     }
 }
 void Graphic3D::destroyRuntimeStreams() {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 2; i++) {
         cudaStreamDestroy(rtStreams[i]);
     }
 }

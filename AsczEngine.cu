@@ -358,10 +358,6 @@ int main() {
             "| RTFace1: " + std::to_string(GRAPHIC.rtCount1) + " / "
             + std::to_string(GRAPHIC.mesh.faces.size / 3) + "\n" +
             "| RTFace2: " + std::to_string(GRAPHIC.rtCount2) + " / "
-            + std::to_string(GRAPHIC.mesh.faces.size / 3) + "\n" +
-            "| RTFace3: " + std::to_string(GRAPHIC.rtCount3) + " / "
-            + std::to_string(GRAPHIC.mesh.faces.size / 3) + "\n" +
-            "| RTFace4: " + std::to_string(GRAPHIC.rtCount4) + " / "
             + std::to_string(GRAPHIC.mesh.faces.size / 3),
             sf::Color(255, 160, 160)
         );

@@ -63,16 +63,14 @@ public:
     Face3D rtFaces;
 
     // For indexing runtime faces
-    ULLInt rtCount1, *d_rtCount1, *rtIndex1; // Small faces = 1 tile
-    ULLInt rtCount2, *d_rtCount2, *rtIndex2; // Medium faces = 16 tiles
-    ULLInt rtCount3, *d_rtCount3, *rtIndex3; // Large faces = 64 tiles
-    ULLInt rtCount4, *d_rtCount4, *rtIndex4; // Huge faces = 256 tiles
+    ULLInt rtCount1, *d_rtCount1, *rtIndex1;
+    ULLInt rtCount2, *d_rtCount2, *rtIndex2;
 
     void mallocRuntimeFaces();
     void freeRuntimeFaces();
     void resizeRuntimeFaces();
 
-    cudaStream_t rtStreams[4];
+    cudaStream_t rtStreams[2];
     void createRuntimeStreams();
     void destroyRuntimeStreams();
 

@@ -47,23 +47,17 @@ void VertexShader::frustumCulling() {
 
     cudaMemset(grphic.d_rtCount1, 0, sizeof(ULLInt));
     cudaMemset(grphic.d_rtCount2, 0, sizeof(ULLInt));
-    cudaMemset(grphic.d_rtCount3, 0, sizeof(ULLInt));
-    cudaMemset(grphic.d_rtCount4, 0, sizeof(ULLInt));
 
     gridSize = (faces.size / 3 + 255) / 256;
     runtimeIndexingKernel<<<gridSize, 256>>>(
         faces.active, faces.area, faces.size / 3,
         grphic.rtIndex1, grphic.d_rtCount1,
-        grphic.rtIndex2, grphic.d_rtCount2,
-        grphic.rtIndex3, grphic.d_rtCount3,
-        grphic.rtIndex4, grphic.d_rtCount4
+        grphic.rtIndex2, grphic.d_rtCount2
     );
     cudaDeviceSynchronize();
 
     cudaMemcpy(&grphic.rtCount1, grphic.d_rtCount1, sizeof(ULLInt), cudaMemcpyDeviceToHost);
     cudaMemcpy(&grphic.rtCount2, grphic.d_rtCount2, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&grphic.rtCount3, grphic.d_rtCount3, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&grphic.rtCount4, grphic.d_rtCount4, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::createDepthMap() {
@@ -75,36 +69,29 @@ void VertexShader::createDepthMap() {
     buffer.clearBuffer();
     buffer.defaultColor();
 
+    // int bw = buffer.width;
+    // int bh = buffer.height;
+
     // Set tile data
-    int bw = buffer.width;
-    int bh = buffer.height;
-
-    ULLInt tileSizeX[4] = { 800, 400, 100, 25 };
-    ULLInt tileSizeY[4] = { 450, 225, 75, 25 };
-    ULLInt tileNumX[4] = { 1, 2, 8, 32 };
-    ULLInt tileNumY[4] = { 1, 2, 6, 18 };
-    ULLInt tileNum[4] = {
+    ULLInt tileSizeX[2] = { 800, 25 };
+    ULLInt tileSizeY[2] = { 450, 25 };
+    ULLInt tileNumX[2] = { 1, 32 };
+    ULLInt tileNumY[2] = { 1, 18 };
+    ULLInt tileNum[2] = {
         tileNumX[0] * tileNumY[0],
-        tileNumX[1] * tileNumY[1],
-        tileNumX[2] * tileNumY[2],
-        tileNumX[3] * tileNumY[3]
+        tileNumX[1] * tileNumY[1]
     };
-    ULLInt rtCount[4] = {
+    ULLInt rtCount[2] = {
         grphic.rtCount1,
-        grphic.rtCount2,
-        grphic.rtCount3,
-        grphic.rtCount4
+        grphic.rtCount2
     };
-
-    ULLInt *rtIndex[4] = {
+    ULLInt *rtIndex[2] = {
         grphic.rtIndex1,
-        grphic.rtIndex2,
-        grphic.rtIndex3,
-        grphic.rtIndex4
+        grphic.rtIndex2
     };
 
     dim3 blockSize(16, 32);
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 2; i++) {
         if (!rtCount[i]) continue;
 
         ULLInt blockNumTile = (tileNum[i] + blockSize.x - 1) / blockSize.x;
@@ -122,8 +109,9 @@ void VertexShader::createDepthMap() {
             tileNumX[i], tileNumY[i], tileSizeX[i], tileSizeY[i]
         );
     }
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 2; ++i) {
         cudaStreamSynchronize(streams[i]);
+    }
 }
 
 void VertexShader::rasterization() {
@@ -535,9 +523,7 @@ __global__ void frustumCullingKernel(
 __global__ void runtimeIndexingKernel(
     const bool *rtActive, const float *rtArea, ULLInt numFs,
     ULLInt *rtIndex1, ULLInt *d_rtCount1,
-    ULLInt *rtIndex2, ULLInt *d_rtCount2,
-    ULLInt *rtIndex3, ULLInt *d_rtCount3,
-    ULLInt *rtIndex4, ULLInt *d_rtCount4
+    ULLInt *rtIndex2, ULLInt *d_rtCount2
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs || !rtActive[fIdx]) return;
@@ -546,16 +532,9 @@ __global__ void runtimeIndexingKernel(
         ULLInt idx = atomicAdd(d_rtCount1, 1);
         rtIndex1[idx] = fIdx;
     } else {
-        ULLInt idx = atomicAdd(d_rtCount4, 1);
-        rtIndex4[idx] = fIdx;
+        ULLInt idx = atomicAdd(d_rtCount2, 1);
+        rtIndex2[idx] = fIdx;
     }
-    //  else if (rtArea[fIdx] < 0.15) {
-    //     ULLInt idx = atomicAdd(d_rtCount3, 1);
-    //     rtIndex3[idx] = fIdx;
-    // } else {
-    //     ULLInt idx = atomicAdd(d_rtCount4, 1);
-    //     rtIndex4[idx] = fIdx;
-    // }
 }
 
 // Depth map creation
