@@ -2,9 +2,12 @@
 # .heavy/mountains.obj 1 0 0 0 0 0 0
 # .heavy/NightCity.obj 1 0 0 0 0 6 0
 # .heavy/Ikaros.obj 1
-# .heavy/Island.obj .2
+# .heavy/Island.obj .2 
+.heavy/Ivy.obj .2 0 0 180 
 # .heavy/City.obj
 # .heavy/Room.obj
+
+~
 
 # Back wall
 # assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4

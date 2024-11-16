@@ -220,10 +220,6 @@ void Mesh3D::push(Mesh &mesh) {
     mesh.n_range = {offsetN, offsetN + mesh.nx.size()};
     mesh.c_range = {offsetV, offsetV + mesh.cr.size()};
 
-    mesh.fw_range = {faces.size, faces.size + mesh.fw.size()};
-    mesh.ft_range = {faces.size, faces.size + mesh.ft.size()};
-    mesh.fn_range = {faces.size, faces.size + mesh.fn.size()};
-
     Vec3f_ptr newWorld;
     Vec2f_ptr newTexture;
     Vec3f_ptr newNormal;
@@ -264,6 +260,7 @@ void Mesh3D::push(Mesh &mesh) {
     cudaMemcpyAsync(newFaces.t, mesh.ft.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newFaces.n, mesh.fn.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
 
+    // Increment face indices
     ULLInt gridSize = (faceSize + 255) / 256;
     incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.v, offsetV, faceSize);
     incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.t, offsetT, faceSize);

@@ -38,11 +38,10 @@ struct Mesh {
     std::vector<float> nx, ny, nz;
     std::vector<float> tu, tv;
     std::vector<float> cr, cg, cb, ca;
-    std::vector<ULLInt> fw, ft, fn;
+    std::vector<ULLInt> fw, ft, fn, fo;
 
     // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
-    Vec2ulli fw_range, ft_range, fn_range;
 
     Mesh(
         std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
@@ -81,8 +80,6 @@ public:
     Vec4f_ptr color;
     Vec4f_ptr screen;
     Vec4ulli_ptr faces;
-
-    ULLInt curWs = 0, curTs = 0, curNs = 0, curFs = 0;
 
     Mesh3D(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
 
