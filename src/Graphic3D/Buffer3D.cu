@@ -11,6 +11,7 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
     cudaMalloc(&active, size * sizeof(bool));
     cudaMalloc(&depth, size * sizeof(float));
     cudaMalloc(&faceID, size * sizeof(ULLInt));
+    cudaMalloc(&matID, size * sizeof(LLInt));
     bary.malloc(size);
     world.malloc(size);
     texture.malloc(size);
@@ -22,6 +23,7 @@ void Buffer3D::free() {
     if (active) cudaFree(active);
     if (depth) cudaFree(depth);
     if (faceID) cudaFree(faceID);
+    if (matID) cudaFree(matID);
     bary.free();
     world.free();
     texture.free();

@@ -1,1 +1,1 @@
-assets/Textures/Custom.png
+assets/Textures/Gradient1.png

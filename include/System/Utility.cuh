@@ -7,6 +7,11 @@
 
 #include <unordered_map>
 
+struct MTL {
+    ULLInt mIdx;
+    float kdr, kdg, kdb;
+};
+
 class Utils {
 public:
     static Mesh readObjFile(std::string path, short fIdxBased=1, short placement=0, bool rainbow=false);

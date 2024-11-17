@@ -17,10 +17,6 @@ void Face3D::malloc(ULLInt size) {
     cudaMalloc(&nx, sizeof(float) * size);
     cudaMalloc(&ny, sizeof(float) * size);
     cudaMalloc(&nz, sizeof(float) * size);
-    cudaMalloc(&cr, sizeof(float) * size);
-    cudaMalloc(&cg, sizeof(float) * size);
-    cudaMalloc(&cb, sizeof(float) * size);
-    cudaMalloc(&ca, sizeof(float) * size);
     cudaMalloc(&active, sizeof(bool) * size / 3);
     cudaMalloc(&mat, sizeof(LLInt) * size / 3);
     cudaMalloc(&area, sizeof(float) * size / 3);
@@ -32,7 +28,6 @@ void Face3D::free() {
     if (wx) cudaFree(wx); if (wy) cudaFree(wy); if (wz) cudaFree(wz);
     if (tu) cudaFree(tu); if (tv) cudaFree(tv);
     if (nx) cudaFree(nx); if (ny) cudaFree(ny); if (nz) cudaFree(nz);
-    if (cr) cudaFree(cr); if (cg) cudaFree(cg); if (cb) cudaFree(cb); if (ca) cudaFree(ca);
 
     if (active) cudaFree(active);
     if (mat) cudaFree(mat);

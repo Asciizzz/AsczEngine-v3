@@ -53,7 +53,6 @@ __global__ void frustumCullingKernel(
     const float *wx, const float *wy, const float *wz,
     const float *tu, const float *tv,
     const float *nx, const float *ny, const float *nz,
-    const float *cr, const float *cg, const float *cb, const float *ca,
     const ULLInt *fWs, const LLInt *fTs, const LLInt *fNs, const LLInt *fMs,
     ULLInt numFs,
 
@@ -62,7 +61,6 @@ __global__ void frustumCullingKernel(
     float *rtWx, float *rtWy, float *rtWz,
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
-    float *rtCr, float *rtCg, float *rtCb, float *rtCa,
     bool *rtActive, LLInt *rtMat, float *rtArea
 );
 
@@ -84,18 +82,17 @@ __global__ void createDepthMapKernel(
 
 // Fill the buffer with datas
 __global__ void rasterizationKernel(
-    const float *rtSw,
+    const float *rtSw, const LLInt *rtMat,
     const float *rtWx, const float *rtWy, const float *rtWz,
     const float *rtTu, const float *rtTv,
     const float *rtNx, const float *rtNy, const float *rtNz,
-    const float *rtCr, const float *rtCg, const float *rtCb, const float *rtCa,
 
     const bool *bActive, const ULLInt *bFaceId,
+    LLInt *bMat,  // Material
     float *bBrx, float *bBry, float *bBrz, // Bary
     float *bWx, float *bWy, float *bWz, // World
     float *bTu, float *bTv, // Texture
     float *bNx, float *bNy, float *bNz, // Normal
-    float *bCr, float *bCg, float *bCb, float *bCa, // Color
     int bWidth, int bHeight
 );
 

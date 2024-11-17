@@ -5,6 +5,7 @@
 
 class FragmentShader {
 public:
+    static void applyMaterial(); // Beta
     static void applyTexture(); // Beta
     static void phongShading();
 
@@ -16,20 +17,29 @@ public:
     static void customShader();
 };
 
+__global__ void applyMaterialKernel( // Beta
+    // Mesh material
+    float *kdr, float *kdg, float *kdb,
+    // Buffer
+    bool *bActive, LLInt *bMat,
+    float *bCr, float *bCg, float *bCb, float *bCa,
+    int bWidth, int bHeight
+);
+
 __global__ void applyTextureKernel( // Beta
-    bool *buffActive, float *buffTu, float *buffTv,
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
-    int buffWidth, int buffHeight,
+    bool *bActive, float *bTu, float *bTv,
+    float *bCr, float *bCg, float *bCb, float *bCa,
+    int bWidth, int bHeight,
     Vec3f *texture, int textureWidth, int textureHeight
 );
 
 __global__ void phongShadingKernel(
-    bool *buffActive,
-    float *buffWx, float *buffWy, float *buffWz,
-    float *buffTu, float *buffTv,
-    float *buffNx, float *buffNy, float *buffNz,
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
-    int buffWidth, int buffHeight,
+    bool *bActive,
+    float *bWx, float *bWy, float *bWz,
+    float *bTu, float *bTv,
+    float *bNx, float *bNy, float *bNz,
+    float *bCr, float *bCg, float *bCb, float *bCa,
+    int bWidth, int bHeight,
 
     LightSrc light
 );
@@ -48,23 +58,23 @@ __global__ void createShadowMapKernel(
     int shdwTileNumX, int shdwTileNumY, int shdwTileSizeX, int shdwTileSizeY
 );
 __global__ void applyShadowMapKernel(
-    bool *buffActive,
-    float *buffWx, float *buffWy, float *buffWz,
-    float *buffNx, float *buffNy, float *buffNz,
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
-    int buffWidth, int buffHeight,
+    bool *bActive,
+    float *bWx, float *bWy, float *bWz,
+    float *bNx, float *bNy, float *bNz,
+    float *bCr, float *bCg, float *bCb, float *bCa,
+    int bWidth, int bHeight,
 
     float *shadowDepth, int shdwWidth, int shdwHeight
 );
 
 __global__ void customShaderKernel(
-    bool *buffActive, ULLInt *buffFaceId, float *buffDepth,
-    float *buffBrx, float *buffBry, float *buffBrz, // Bary
-    float *buffWx, float *buffWy, float *buffWz, // World
-    float *buffTu, float *buffTv, // Texture
-    float *buffNx, float *buffNy, float *buffNz, // Normal
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa, // Color
-    int buffWidth, int buffHeight
+    bool *bActive, ULLInt *bFaceId, float *bDepth,
+    float *bBrx, float *bBry, float *bBrz, // Bary
+    float *bWx, float *bWy, float *bWz, // World
+    float *bTu, float *bTv, // Texture
+    float *bNx, float *bNy, float *bNz, // Normal
+    float *bCr, float *bCg, float *bCb, float *bCa, // Color
+    int bWidth, int bHeight
 );
 
 #endif

@@ -23,6 +23,7 @@ public:
     bool *active;
     float *depth;
     ULLInt *faceID;
+    LLInt *matID;
     Vec3f_ptr bary;
     Vec3f_ptr world;
     Vec2f_ptr texture;

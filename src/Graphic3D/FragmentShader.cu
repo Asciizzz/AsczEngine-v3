@@ -2,6 +2,20 @@
 
 // ======================== Static functions ========================
 
+void FragmentShader::applyMaterial() { // Beta
+    Graphic3D &grphic = Graphic3D::instance();
+    Buffer3D &buff = grphic.buffer;
+    Mesh3D &mesh = grphic.mesh;
+
+    applyMaterialKernel<<<buff.blockNum, buff.blockSize>>>(
+        mesh.m.kd.x, mesh.m.kd.y, mesh.m.kd.z,
+        buff.active, buff.matID,
+        buff.color.x, buff.color.y, buff.color.z, buff.color.w,
+        buff.width, buff.height
+    );
+    cudaDeviceSynchronize();
+}
+
 void FragmentShader::applyTexture() { // Beta
     Graphic3D &grphic = Graphic3D::instance();
     Buffer3D &buff = grphic.buffer;
@@ -96,6 +110,26 @@ void FragmentShader::customShader() {
 }
 
 // ======================== Kernels ========================
+
+__global__ void applyMaterialKernel( // Beta
+    // Mesh material
+    float *kdr, float *kdg, float *kdb,
+    // Buffer
+    bool *bActive, LLInt *bMat,
+    float *bCr, float *bCg, float *bCb, float *bCa,
+    int bWidth, int bHeight
+) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i >= bWidth * bHeight || !bActive[i]) return;
+
+    LLInt matIdx = bMat[i];
+    if (matIdx < 0) return;
+
+    bCr[i] = kdr[matIdx] * 255;
+    bCg[i] = kdg[matIdx] * 255;
+    bCb[i] = kdb[matIdx] * 255;
+    bCa[i] = 255;
+}
 
 __global__ void applyTextureKernel( // Beta
     bool *buffActive, float *buffTu, float *buffTv,

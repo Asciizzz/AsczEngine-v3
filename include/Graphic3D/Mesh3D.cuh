@@ -43,7 +43,6 @@ struct Mesh {
     VectF wx, wy, wz;
     VectF tu, tv;
     VectF nx, ny, nz;
-    VectF cr, cg, cb, ca;
 
     // Face data
     VectULLI fw;
@@ -61,7 +60,6 @@ struct Mesh {
         VectF wx, VectF wy, VectF wz,
         VectF tu, VectF tv,
         VectF nx, VectF ny, VectF nz,
-        VectF cr, VectF cg, VectF cb, VectF ca,
         // Face data
         VectULLI fw, VectLLI ft, VectLLI fn, VectLLI fm,
         // Material data
@@ -74,7 +72,6 @@ struct Mesh {
     Vec3f w3f(ULLInt i);
     Vec2f t2f(ULLInt i);
     Vec3f n3f(ULLInt i);
-    Vec4f c4f(ULLInt i);
 
     // Section 1 transformations
     void translateIni(Vec3f t);
@@ -93,7 +90,6 @@ struct Vertex_ptr {
     Vec3f_ptr w;
     Vec2f_ptr t;
     Vec3f_ptr n;
-    Vec4f_ptr c;
 
     void malloc(ULLInt size);
     void free();
@@ -118,9 +114,8 @@ struct Material_ptr {
     Vec3f_ptr ka;
     Vec3f_ptr kd;
     Vec3f_ptr ks;
-    ULLInt *map_Kd;
-    float *ns;
 
+    ULLInt size;
     void malloc(ULLInt size);
     void free();
     void operator+=(Material_ptr &material);
@@ -130,18 +125,8 @@ struct Material_ptr {
 class Mesh3D {
 public:
     Vertex_ptr v; // s w t n c
-    Face_ptr f; // v t n mat
-    // Material data
-    Vec3f_ptr ka; // r g b - ignore for now
-    Vec3f_ptr kd; // r g b - focus on this
-    Vec3f_ptr ks; // r g b - ignore for now
-    ULLInt *map_Kd; // Texture id - focus on this
-    float *ns; // shininess - ignore for now
-    // Texture data (very sophisticated)
-    ULLInt tNum; // Number of textures
-    float *txtr; // Texture data (flattened to 1D)
-    ULLInt *tstart; // Texture start index
-    Vec2f_ptr *tsize; // Texture width and height
+    Face_ptr f; // v t n m
+    Material_ptr m; // ka kd ks map_Kd ns
 
     // Free
     void free();

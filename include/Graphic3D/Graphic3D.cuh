@@ -28,7 +28,6 @@ struct Face3D {
     float *wx, *wy, *wz;
     float *nx, *ny, *nz;
     float *tu, *tv;
-    float *cr, *cg, *cb, *ca;
     // x1
     bool *active;
     LLInt *mat;

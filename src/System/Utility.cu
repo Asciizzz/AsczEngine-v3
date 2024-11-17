@@ -13,7 +13,12 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectULLI fw;
     VectLLI ft, fn, fm;
 
+    VectF kdr, kdg, kdb;
+
     int matIdx = -1;
+
+    std::unordered_map<std::string, MTL> mtlMap;
+    std::vector<MTL> mtlList;
 
     // We will use these value to shift the mesh to the origin
     float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
@@ -32,19 +37,67 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         std::string type;
         ss >> type;
 
-        // if (type == "matlib") {
-        //     std::string mtlPath;
-        //     ss >> mtlPath;
+        if (type == "mtllib") {
+            std::string mtlPath;
+            ss >> mtlPath;
 
-        //     readMtlFile(mtlPath);
-        // }
+            // Get the relative path of the .mtl file by removing the file name
+            std::string mtlDir = path.substr(0, path.find_last_of("/\\") + 1);
+            std::ifstream mtlFile(mtlDir + mtlPath);
+            if (!mtlFile.is_open()) continue;
 
-        // if (type == "usemtl") {
-        //     // Extract the n from usemtl mat<n>
-        //     std::string matN;
-        //     ss >> matN;
-        //     matIdx = std::stoi(matN.substr(3)) - 1;
-        // }
+            std::string mtlLine;
+            while (std::getline(mtlFile, mtlLine)) {
+                if (mtlLine.size() == 0 || mtlLine[0] == '#') continue;
+
+                std::stringstream mtlSS(mtlLine);
+                std::string mtlType;
+                mtlSS >> mtlType;
+
+                if (mtlType == "newmtl") {
+                    std::string mtlName;
+                    mtlSS >> mtlName;
+
+                    MTL mtl;
+                    mtl.mIdx = mtlList.size();
+                    mtl.kdr = 1;
+                    mtl.kdg = 1;
+                    mtl.kdb = 1;
+
+                    mtlMap[mtlName] = mtl;
+                    mtlList.push_back(mtl);
+
+                    kdr.push_back(1);
+                    kdg.push_back(1);
+                    kdb.push_back(1);
+                }
+
+                if (mtlType == "Kd") {
+                    float r, g, b;
+                    mtlSS >> r >> g >> b;
+                    mtlList.back().kdr = r;
+                    mtlList.back().kdg = g;
+                    mtlList.back().kdb = b;
+
+                    kdr.back() = r;
+                    kdg.back() = g;
+                    kdb.back() = b;
+                }
+            }
+        }
+
+        if (type == "usemtl") {
+            std::string mtlName;
+            ss >> mtlName;
+
+            // If not in the map, set it to -1
+            if (mtlMap.find(mtlName) == mtlMap.end()) {
+                matIdx = -1;
+            } else {
+            // Get the idx of the material based on the mtlMap
+                matIdx = mtlMap[mtlName].mIdx;
+            }
+        }
 
         if (type == "v") {
             Vec3f v;
@@ -61,7 +114,6 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             wx.push_back(v.x);
             wy.push_back(v.y);
             wz.push_back(v.z);
-            
         } else if (type == "vt") {
             Vec2f t;
             ss >> t.x >> t.y;
@@ -135,25 +187,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         }
     }
 
-    #pragma omp parallel
+    #pragma omp parallel for
     for (size_t i = 0; i < wx.size(); i++) {
-        if (rainbow) {
-            // Set the color based on the ratio of x, y, and z
-            float r = (wx[i] - minX) / (maxX - minX);
-            float g = (wy[i] - minY) / (maxY - minY);
-            float b = (wz[i] - minZ) / (maxZ - minZ);
-            cr.push_back(255 - r * 155);
-            cg.push_back(g * 155 + 100);
-            cb.push_back(b * 155 + 100);
-            ca.push_back(255);
-        } else {
-            // Just set it to white
-            cr.push_back(255);
-            cg.push_back(255);
-            cb.push_back(255);
-            ca.push_back(255);
-        }
-
         // Shift to center of xz plane
         if (placement > 0) {
             wx[i] -= (minX + maxX) / 2;
@@ -171,9 +206,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         wx, wy, wz,
         tu, tv,
         nx, ny, nz,
-        cr, cg, cb, ca,
         fw, ft, fn, fm,
-        {}, {}, {}
+        kdr, kdg, kdb
     };
 
     return mesh;

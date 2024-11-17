@@ -33,7 +33,6 @@ void VertexShader::frustumCulling() {
         mesh.v.w.x, mesh.v.w.y, mesh.v.w.z,
         mesh.v.t.x, mesh.v.t.y,
         mesh.v.n.x, mesh.v.n.y, mesh.v.n.z,
-        mesh.v.c.x, mesh.v.c.y, mesh.v.c.z, mesh.v.c.w,
         mesh.f.v, mesh.f.t, mesh.f.n, mesh.f.m,
         mesh.f.size / 3,
 
@@ -41,7 +40,6 @@ void VertexShader::frustumCulling() {
         face.wx, face.wy, face.wz,
         face.tu, face.tv,
         face.nx, face.ny, face.nz,
-        face.cr, face.cg, face.cb, face.ca,
         face.active, face.mat, face.area
     );
     cudaDeviceSynchronize();
@@ -122,18 +120,16 @@ void VertexShader::rasterization() {
     Face3D &face = grph.rtFaces;
 
     rasterizationKernel<<<buff.blockNum, buff.blockSize>>>(
-        face.sw,
+        face.sw, face.mat,
         face.wx, face.wy, face.wz,
         face.tu, face.tv,
         face.nx, face.ny, face.nz,
-        face.cr, face.cg, face.cb, face.ca,
 
-        buff.active, buff.faceID,
+        buff.active, buff.faceID, buff.matID,
         buff.bary.x, buff.bary.y, buff.bary.z,
         buff.world.x, buff.world.y, buff.world.z,
         buff.texture.x, buff.texture.y,
         buff.normal.x, buff.normal.y, buff.normal.z,
-        buff.color.x, buff.color.y, buff.color.z, buff.color.w,
         buff.width, buff.height
     );
     cudaDeviceSynchronize();
@@ -164,7 +160,6 @@ __global__ void frustumCullingKernel(
     const float *wx, const float *wy, const float *wz,
     const float *tu, const float *tv,
     const float *nx, const float *ny, const float *nz,
-    const float *cr, const float *cg, const float *cb, const float *ca,
     const ULLInt *fWs, const LLInt *fTs, const LLInt *fNs, const LLInt *fMs,
     ULLInt numFs,
 
@@ -173,7 +168,6 @@ __global__ void frustumCullingKernel(
     float *rtWx, float *rtWy, float *rtWz,
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
-    float *rtCr, float *rtCg, float *rtCb, float *rtCa,
     bool *rtActive, LLInt *rtMat, float *rtArea
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -232,11 +226,6 @@ __global__ void frustumCullingKernel(
         Vec3f(nx[fn[1]], ny[fn[1]], nz[fn[1]]),
         Vec3f(nx[fn[2]], ny[fn[2]], nz[fn[2]])
     };
-    Vec4f rtCs[3] = {
-        Vec4f(cr[fw[0]], cg[fw[0]], cb[fw[0]], ca[fw[0]]),
-        Vec4f(cr[fw[1]], cg[fw[1]], cb[fw[1]], ca[fw[1]]),
-        Vec4f(cr[fw[2]], cg[fw[2]], cb[fw[2]], ca[fw[2]])
-    };
 
     // If all inside, return
     bool inside1 = VertexShader::insideFrustum(rtSs[0]);
@@ -269,17 +258,12 @@ __global__ void frustumCullingKernel(
         rtNy[idx0] = rtNs[0].y; rtNy[idx1] = rtNs[1].y; rtNy[idx2] = rtNs[2].y;
         rtNz[idx0] = rtNs[0].z; rtNz[idx1] = rtNs[1].z; rtNz[idx2] = rtNs[2].z;
 
-        rtCr[idx0] = rtCs[0].x; rtCr[idx1] = rtCs[1].x; rtCr[idx2] = rtCs[2].x;
-        rtCg[idx0] = rtCs[0].y; rtCg[idx1] = rtCs[1].y; rtCg[idx2] = rtCs[2].y;
-        rtCb[idx0] = rtCs[0].z; rtCb[idx1] = rtCs[1].z; rtCb[idx2] = rtCs[2].z;
-        rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
-
         rtActive[fIdx * 4] = true;
         rtMat[fIdx * 4] = fm;
 
         // Find the area of the triangle's bounding box
-        float ndcX[3] = {rtSs[0].x / rtSs[0].w, rtSs[1].x / rtSs[1].w, rtSs[2].x / rtSs[2].w};
-        float ndcY[3] = {rtSs[0].y / rtSs[0].w, rtSs[1].y / rtSs[1].w, rtSs[2].y / rtSs[2].w};
+        float ndcX[3] = {rtSs[0].x/rtSs[0].w, rtSs[1].x/rtSs[1].w, rtSs[2].x/rtSs[2].w};
+        float ndcY[3] = {rtSs[0].y/rtSs[0].w, rtSs[1].y/rtSs[1].w, rtSs[2].y/rtSs[2].w};
 
         float minX = min(min(ndcX[0], ndcX[1]), ndcX[2]);
         float maxX = max(max(ndcX[0], ndcX[1]), ndcX[2]);
@@ -295,14 +279,12 @@ __global__ void frustumCullingKernel(
     Vec3f tempW1[6] = { rtWs[0], rtWs[1], rtWs[2] };
     Vec2f tempT1[6] = { rtTs[0], rtTs[1], rtTs[2] };
     Vec3f tempN1[6] = { rtNs[0], rtNs[1], rtNs[2] };
-    Vec4f tempC1[6] = { rtCs[0], rtCs[1], rtCs[2] };
 
     int temp2Count = 0;
     Vec4f tempS2[6];
     Vec3f tempW2[6];
     Vec2f tempT2[6];
     Vec3f tempN2[6];
-    Vec4f tempC2[6];
 
     // There are alot of repetition here, will fix it later
 
@@ -320,7 +302,6 @@ __global__ void frustumCullingKernel(
             tempW2[temp2Count] = tempW1[a];
             tempT2[temp2Count] = tempT1[a];
             tempN2[temp2Count] = tempN1[a];
-            tempC2[temp2Count] = tempC1[a];
             temp2Count++;
 
             if (szB >= -swB) continue;
@@ -331,14 +312,12 @@ __global__ void frustumCullingKernel(
         Vec3f w_w = tempW1[a]/swA + (tempW1[b]/swB - tempW1[a]/swA) * tFact;
         Vec2f t_w = tempT1[a]/swA + (tempT1[b]/swB - tempT1[a]/swA) * tFact;
         Vec3f n_w = tempN1[a]/swA + (tempN1[b]/swB - tempN1[a]/swA) * tFact;
-        Vec4f c_w = tempC1[a]/swA + (tempC1[b]/swB - tempC1[a]/swA) * tFact;
 
         float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
         tempS2[temp2Count] = s_w / homo1DivW;
         tempW2[temp2Count] = w_w / homo1DivW;
         tempT2[temp2Count] = t_w / homo1DivW;
         tempN2[temp2Count] = n_w / homo1DivW;
-        tempC2[temp2Count] = c_w / homo1DivW;
         temp2Count++;
     }
     if (temp2Count < 3) return;
@@ -358,7 +337,6 @@ __global__ void frustumCullingKernel(
             tempW1[temp1Count] = tempW2[a];
             tempT1[temp1Count] = tempT2[a];
             tempN1[temp1Count] = tempN2[a];
-            tempC1[temp1Count] = tempC2[a];
             temp1Count++;
 
             if (sxB >= -swB) continue;
@@ -369,14 +347,12 @@ __global__ void frustumCullingKernel(
         Vec3f w_w = tempW2[a]/swA + (tempW2[b]/swB - tempW2[a]/swA) * tFact;
         Vec2f t_w = tempT2[a]/swA + (tempT2[b]/swB - tempT2[a]/swA) * tFact;
         Vec3f n_w = tempN2[a]/swA + (tempN2[b]/swB - tempN2[a]/swA) * tFact;
-        Vec4f c_w = tempC2[a]/swA + (tempC2[b]/swB - tempC2[a]/swA) * tFact;
 
         float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
         tempS1[temp1Count] = s_w / homo1DivW;
         tempW1[temp1Count] = w_w / homo1DivW;
         tempT1[temp1Count] = t_w / homo1DivW;
         tempN1[temp1Count] = n_w / homo1DivW;
-        tempC1[temp1Count] = c_w / homo1DivW;
         temp1Count++;
     }
     if (temp1Count < 3) return;
@@ -396,7 +372,6 @@ __global__ void frustumCullingKernel(
             tempW2[temp2Count] = tempW1[a];
             tempT2[temp2Count] = tempT1[a];
             tempN2[temp2Count] = tempN1[a];
-            tempC2[temp2Count] = tempC1[a];
             temp2Count++;
 
             if (sxB <= swB) continue;
@@ -407,14 +382,12 @@ __global__ void frustumCullingKernel(
         Vec3f w_w = tempW1[a]/swA + (tempW1[b]/swB - tempW1[a]/swA) * tFact;
         Vec2f t_w = tempT1[a]/swA + (tempT1[b]/swB - tempT1[a]/swA) * tFact;
         Vec3f n_w = tempN1[a]/swA + (tempN1[b]/swB - tempN1[a]/swA) * tFact;
-        Vec4f c_w = tempC1[a]/swA + (tempC1[b]/swB - tempC1[a]/swA) * tFact;
 
         float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
         tempS2[temp2Count] = s_w / homo1DivW;
         tempW2[temp2Count] = w_w / homo1DivW;
         tempT2[temp2Count] = t_w / homo1DivW;
         tempN2[temp2Count] = n_w / homo1DivW;
-        tempC2[temp2Count] = c_w / homo1DivW;
         temp2Count++;
     }
     if (temp2Count < 3) return;
@@ -434,7 +407,6 @@ __global__ void frustumCullingKernel(
             tempW1[temp1Count] = tempW2[a];
             tempT1[temp1Count] = tempT2[a];
             tempN1[temp1Count] = tempN2[a];
-            tempC1[temp1Count] = tempC2[a];
             temp1Count++;
 
             if (syB >= -swB) continue;
@@ -445,14 +417,12 @@ __global__ void frustumCullingKernel(
         Vec3f w_w = tempW2[a]/swA + (tempW2[b]/swB - tempW2[a]/swA) * tFact;
         Vec2f t_w = tempT2[a]/swA + (tempT2[b]/swB - tempT2[a]/swA) * tFact;
         Vec3f n_w = tempN2[a]/swA + (tempN2[b]/swB - tempN2[a]/swA) * tFact;
-        Vec4f c_w = tempC2[a]/swA + (tempC2[b]/swB - tempC2[a]/swA) * tFact;
 
         float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
         tempS1[temp1Count] = s_w / homo1DivW;
         tempW1[temp1Count] = w_w / homo1DivW;
         tempT1[temp1Count] = t_w / homo1DivW;
         tempN1[temp1Count] = n_w / homo1DivW;
-        tempC1[temp1Count] = c_w / homo1DivW;
         temp1Count++;
     }
     if (temp1Count < 3) return;
@@ -472,7 +442,6 @@ __global__ void frustumCullingKernel(
             tempW2[temp2Count] = tempW1[a];
             tempT2[temp2Count] = tempT1[a];
             tempN2[temp2Count] = tempN1[a];
-            tempC2[temp2Count] = tempC1[a];
             temp2Count++;
 
             if (syB <= swB) continue;
@@ -483,14 +452,12 @@ __global__ void frustumCullingKernel(
         Vec3f w_w = tempW1[a]/swA + (tempW1[b]/swB - tempW1[a]/swA) * tFact;
         Vec2f t_w = tempT1[a]/swA + (tempT1[b]/swB - tempT1[a]/swA) * tFact;
         Vec3f n_w = tempN1[a]/swA + (tempN1[b]/swB - tempN1[a]/swA) * tFact;
-        Vec4f c_w = tempC1[a]/swA + (tempC1[b]/swB - tempC1[a]/swA) * tFact;
 
         float homo1DivW = 1/swA + (1/swB - 1/swA) * tFact;
         tempS2[temp2Count] = s_w / homo1DivW;
         tempW2[temp2Count] = w_w / homo1DivW;
         tempT2[temp2Count] = t_w / homo1DivW;
         tempN2[temp2Count] = n_w / homo1DivW;
-        tempC2[temp2Count] = c_w / homo1DivW;
         temp2Count++;
     }
     if (temp2Count < 3) return;
@@ -521,11 +488,6 @@ __global__ void frustumCullingKernel(
         rtNx[idx0] = tempN2[0].x; rtNx[idx1] = tempN2[i + 1].x; rtNx[idx2] = tempN2[i + 2].x;
         rtNy[idx0] = tempN2[0].y; rtNy[idx1] = tempN2[i + 1].y; rtNy[idx2] = tempN2[i + 2].y;
         rtNz[idx0] = tempN2[0].z; rtNz[idx1] = tempN2[i + 1].z; rtNz[idx2] = tempN2[i + 2].z;
-
-        rtCr[idx0] = tempC2[0].x; rtCr[idx1] = tempC2[i + 1].x; rtCr[idx2] = tempC2[i + 2].x;
-        rtCg[idx0] = tempC2[0].y; rtCg[idx1] = tempC2[i + 1].y; rtCg[idx2] = tempC2[i + 2].y;
-        rtCb[idx0] = tempC2[0].z; rtCb[idx1] = tempC2[i + 1].z; rtCb[idx2] = tempC2[i + 2].z;
-        rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
 
         rtActive[fIdx * 4 + i] = true;
         rtMat[fIdx * 4 + i] = fm;
@@ -650,18 +612,17 @@ __global__ void createDepthMapKernel(
 }
 
 __global__ void rasterizationKernel(
-    const float *rtSw,
+    const float *rtSw, const LLInt *rtMat,
     const float *rtWx, const float *rtWy, const float *rtWz,
     const float *rtTu, const float *rtTv,
     const float *rtNx, const float *rtNy, const float *rtNz,
-    const float *rtCr, const float *rtCg, const float *rtCb, const float *rtCa,
 
     const bool *bActive, const ULLInt *bFaceId,
+    LLInt *bMat,  // Material
     float *bBrx, float *bBry, float *bBrz, // Bary
     float *bWx, float *bWy, float *bWz, // World
     float *bTu, float *bTv, // Texture
     float *bNx, float *bNy, float *bNz, // Normal
-    float *bCr, float *bCg, float *bCb, float *bCa, // Color
     int bWidth, int bHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -673,34 +634,37 @@ __global__ void rasterizationKernel(
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
 
+    // Set material
+    bMat[i] = rtMat[fIdx];
+
     // Get barycentric coordinates
     float alp = bBrx[i];
     float bet = bBry[i];
     float gam = bBrz[i];
 
     // Get homogenous 1/w
-    float homo1divW = alp / rtSw[idx0] + bet / rtSw[idx1] + gam / rtSw[idx2];
+    float homo1divW = alp/rtSw[idx0] + bet/rtSw[idx1] + gam/rtSw[idx2];
 
     // Set world position
-    float wx_sw = rtWx[idx0] / rtSw[idx0] * alp + rtWx[idx1] / rtSw[idx1] * bet + rtWx[idx2] / rtSw[idx2] * gam;
-    float wy_sw = rtWy[idx0] / rtSw[idx0] * alp + rtWy[idx1] / rtSw[idx1] * bet + rtWy[idx2] / rtSw[idx2] * gam;
-    float wz_sw = rtWz[idx0] / rtSw[idx0] * alp + rtWz[idx1] / rtSw[idx1] * bet + rtWz[idx2] / rtSw[idx2] * gam;
+    float wx_sw = rtWx[idx0]/rtSw[idx0] * alp + rtWx[idx1]/rtSw[idx1] * bet + rtWx[idx2]/rtSw[idx2] * gam;
+    float wy_sw = rtWy[idx0]/rtSw[idx0] * alp + rtWy[idx1]/rtSw[idx1] * bet + rtWy[idx2]/rtSw[idx2] * gam;
+    float wz_sw = rtWz[idx0]/rtSw[idx0] * alp + rtWz[idx1]/rtSw[idx1] * bet + rtWz[idx2]/rtSw[idx2] * gam;
 
     bWx[i] = wx_sw / homo1divW;
     bWy[i] = wy_sw / homo1divW;
     bWz[i] = wz_sw / homo1divW;
 
     // Set texture
-    float tu_sw = rtTu[idx0] / rtSw[idx0] * alp + rtTu[idx1] / rtSw[idx1] * bet + rtTu[idx2] / rtSw[idx2] * gam;
-    float tv_sw = rtTv[idx0] / rtSw[idx0] * alp + rtTv[idx1] / rtSw[idx1] * bet + rtTv[idx2] / rtSw[idx2] * gam;
+    float tu_sw = rtTu[idx0]/rtSw[idx0] * alp + rtTu[idx1]/rtSw[idx1] * bet + rtTu[idx2]/rtSw[idx2] * gam;
+    float tv_sw = rtTv[idx0]/rtSw[idx0] * alp + rtTv[idx1]/rtSw[idx1] * bet + rtTv[idx2]/rtSw[idx2] * gam;
 
     bTu[i] = tu_sw / homo1divW;
     bTv[i] = tv_sw / homo1divW;
 
     // Set normal
-    float nx_sw = rtNx[idx0] / rtSw[idx0] * alp + rtNx[idx1] / rtSw[idx1] * bet + rtNx[idx2] / rtSw[idx2] * gam;
-    float ny_sw = rtNy[idx0] / rtSw[idx0] * alp + rtNy[idx1] / rtSw[idx1] * bet + rtNy[idx2] / rtSw[idx2] * gam;
-    float nz_sw = rtNz[idx0] / rtSw[idx0] * alp + rtNz[idx1] / rtSw[idx1] * bet + rtNz[idx2] / rtSw[idx2] * gam;
+    float nx_sw = rtNx[idx0]/rtSw[idx0] * alp + rtNx[idx1]/rtSw[idx1] * bet + rtNx[idx2]/rtSw[idx2] * gam;
+    float ny_sw = rtNy[idx0]/rtSw[idx0] * alp + rtNy[idx1]/rtSw[idx1] * bet + rtNy[idx2]/rtSw[idx2] * gam;
+    float nz_sw = rtNz[idx0]/rtSw[idx0] * alp + rtNz[idx1]/rtSw[idx1] * bet + rtNz[idx2]/rtSw[idx2] * gam;
 
     bNx[i] = nx_sw / homo1divW;
     bNy[i] = ny_sw / homo1divW;
@@ -712,16 +676,5 @@ __global__ void rasterizationKernel(
     );
     bNx[i] /= mag;
     bNy[i] /= mag;
-    bNz[i] /= mag; 
-
-    // Set color
-    float cr_sw = rtCr[idx0] / rtSw[idx0] * alp + rtCr[idx1] / rtSw[idx1] * bet + rtCr[idx2] / rtSw[idx2] * gam;
-    float cg_sw = rtCg[idx0] / rtSw[idx0] * alp + rtCg[idx1] / rtSw[idx1] * bet + rtCg[idx2] / rtSw[idx2] * gam;
-    float cb_sw = rtCb[idx0] / rtSw[idx0] * alp + rtCb[idx1] / rtSw[idx1] * bet + rtCb[idx2] / rtSw[idx2] * gam;
-    float ca_sw = rtCa[idx0] / rtSw[idx0] * alp + rtCa[idx1] / rtSw[idx1] * bet + rtCa[idx2] / rtSw[idx2] * gam;
-
-    bCr[i] = cr_sw / homo1divW;
-    bCg[i] = cg_sw / homo1divW;
-    bCb[i] = cb_sw / homo1divW;
-    bCa[i] = ca_sw / homo1divW;
+    bNz[i] /= mag;
 }
