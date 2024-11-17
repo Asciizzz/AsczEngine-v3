@@ -54,7 +54,8 @@ __global__ void frustumCullingKernel(
     const float *tu, const float *tv,
     const float *nx, const float *ny, const float *nz,
     const float *cr, const float *cg, const float *cb, const float *ca,
-    const ULLInt *fWs, const ULLInt *fTs, const ULLInt *fNs, ULLInt numFs,
+    const ULLInt *fWs, const ULLInt *fTs, const ULLInt *fNs,
+    const long long *fMs, ULLInt numFs,
 
     // Runtime faces
     float *rtSx, float *rtSy, float *rtSz, float *rtSw,
@@ -62,7 +63,7 @@ __global__ void frustumCullingKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    float *rtArea, bool *rtActive
+    bool *rtActive, long long *rtMat, float *rtArea
 );
 
 __global__ void runtimeIndexingKernel(

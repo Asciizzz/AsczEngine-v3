@@ -4,13 +4,13 @@
 
 void FragmentShader::applyTexture() { // Beta
     Graphic3D &grphic = Graphic3D::instance();
-    Buffer3D &buffer = grphic.buffer;
+    Buffer3D &buff = grphic.buffer;
 
-    applyTextureKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        buffer.active,
-        buffer.texture.x, buffer.texture.y,
-        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
-        buffer.width, buffer.height,
+    applyTextureKernel<<<buff.blockNum, buff.blockSize>>>(
+        buff.active,
+        buff.texture.x, buff.texture.y,
+        buff.color.x, buff.color.y, buff.color.z, buff.color.w,
+        buff.width, buff.height,
 
         grphic.d_texture, grphic.textureWidth, grphic.textureHeight
     );
@@ -19,15 +19,15 @@ void FragmentShader::applyTexture() { // Beta
 
 void FragmentShader::phongShading() {
     Graphic3D &grphic = Graphic3D::instance();
-    Buffer3D &buffer = grphic.buffer;
+    Buffer3D &buff = grphic.buffer;
 
-    phongShadingKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        buffer.active,
-        buffer.world.x, buffer.world.y, buffer.world.z,
-        buffer.texture.x, buffer.texture.y,
-        buffer.normal.x, buffer.normal.y, buffer.normal.z,
-        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
-        buffer.width, buffer.height,
+    phongShadingKernel<<<buff.blockNum, buff.blockSize>>>(
+        buff.active,
+        buff.world.x, buff.world.y, buff.world.z,
+        buff.texture.x, buff.texture.y,
+        buff.normal.x, buff.normal.y, buff.normal.z,
+        buff.color.x, buff.color.y, buff.color.z, buff.color.w,
+        buff.width, buff.height,
 
         grphic.light
     );
@@ -65,14 +65,14 @@ void FragmentShader::createShadowMap() {
 
 void FragmentShader::applyShadowMap() {
     Graphic3D &grphic = Graphic3D::instance();
-    Buffer3D &buffer = grphic.buffer;
+    Buffer3D &buff = grphic.buffer;
 
-    applyShadowMapKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        buffer.active,
-        buffer.world.x, buffer.world.y, buffer.world.z,
-        buffer.normal.x, buffer.normal.y, buffer.normal.z,
-        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
-        buffer.width, buffer.height,
+    applyShadowMapKernel<<<buff.blockNum, buff.blockSize>>>(
+        buff.active,
+        buff.world.x, buff.world.y, buff.world.z,
+        buff.normal.x, buff.normal.y, buff.normal.z,
+        buff.color.x, buff.color.y, buff.color.z, buff.color.w,
+        buff.width, buff.height,
 
         grphic.shadowDepth, grphic.shdwWidth, grphic.shdwHeight
     );
@@ -81,16 +81,16 @@ void FragmentShader::applyShadowMap() {
 
 void FragmentShader::customShader() {
     Graphic3D &grphic = Graphic3D::instance();
-    Buffer3D &buffer = grphic.buffer;
+    Buffer3D &buff = grphic.buffer;
 
-    customShaderKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        buffer.active, buffer.faceID, buffer.depth,
-        buffer.bary.x, buffer.bary.y, buffer.bary.z,
-        buffer.world.x, buffer.world.y, buffer.world.z,
-        buffer.texture.x, buffer.texture.y,
-        buffer.normal.x, buffer.normal.y, buffer.normal.z,
-        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
-        buffer.width, buffer.height
+    customShaderKernel<<<buff.blockNum, buff.blockSize>>>(
+        buff.active, buff.faceID, buff.depth,
+        buff.bary.x, buff.bary.y, buff.bary.z,
+        buff.world.x, buff.world.y, buff.world.z,
+        buff.texture.x, buff.texture.y,
+        buff.normal.x, buff.normal.y, buff.normal.z,
+        buff.color.x, buff.color.y, buff.color.z, buff.color.w,
+        buff.width, buff.height
     );
     cudaDeviceSynchronize();
 }

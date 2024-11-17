@@ -37,7 +37,7 @@
 
 # assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
 # assets/Models/Anime/Sukuna.obj 3 0 0 0 0 0 0
-assets/Models/Anime/Miyu.obj 20 -90 0 0
+assets/Models/Anime/Miyu.obj 20 -90 180 0
 # assets/Models/Anime/MalevolentShrine.obj 1
 
 # assets/Models/Structure/Street.obj 1 0 0 0 0 4.2 0

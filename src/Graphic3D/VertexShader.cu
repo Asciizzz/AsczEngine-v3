@@ -10,9 +10,9 @@ __device__ bool VertexShader::insideFrustum(const Vec4f &v) {
 // Render pipeline
 
 void VertexShader::cameraProjection() {
-    Graphic3D &grphic = Graphic3D::instance();
-    Camera3D &camera = grphic.camera;
-    Mesh3D &mesh = grphic.mesh;
+    Graphic3D &grph = Graphic3D::instance();
+    Camera3D &camera = grph.camera;
+    Mesh3D &mesh = grph.mesh;
 
     ULLInt gridSize = (mesh.w.size + 255) / 256;
     cameraProjectionKernel<<<gridSize, 256>>>(
@@ -23,9 +23,9 @@ void VertexShader::cameraProjection() {
 }
 
 void VertexShader::frustumCulling() {
-    Graphic3D &grphic = Graphic3D::instance();
-    Mesh3D &mesh = grphic.mesh;
-    Face3D &faces = grphic.rtFaces;
+    Graphic3D &grph = Graphic3D::instance();
+    Mesh3D &mesh = grph.mesh;
+    Face3D &face = grph.rtFaces;
 
     ULLInt gridSize = (mesh.f.size / 3 + 255) / 256;
     frustumCullingKernel<<<gridSize, 256>>>(
@@ -34,43 +34,44 @@ void VertexShader::frustumCulling() {
         mesh.t.x, mesh.t.y,
         mesh.n.x, mesh.n.y, mesh.n.z,
         mesh.c.x, mesh.c.y, mesh.c.z, mesh.c.w,
-        mesh.f.v, mesh.f.t, mesh.f.n, mesh.f.size / 3,
+        mesh.f.v, mesh.f.t, mesh.f.n, mesh.f.m,
+        mesh.f.size / 3,
 
-        faces.sx, faces.sy, faces.sz, faces.sw,
-        faces.wx, faces.wy, faces.wz,
-        faces.tu, faces.tv,
-        faces.nx, faces.ny, faces.nz,
-        faces.cr, faces.cg, faces.cb, faces.ca,
-        faces.area, faces.active
+        face.sx, face.sy, face.sz, face.sw,
+        face.wx, face.wy, face.wz,
+        face.tu, face.tv,
+        face.nx, face.ny, face.nz,
+        face.cr, face.cg, face.cb, face.ca,
+        face.active, face.mat, face.area
     );
     cudaDeviceSynchronize();
 
-    cudaMemset(grphic.d_rtCount1, 0, sizeof(ULLInt));
-    cudaMemset(grphic.d_rtCount2, 0, sizeof(ULLInt));
+    cudaMemset(grph.d_rtCount1, 0, sizeof(ULLInt));
+    cudaMemset(grph.d_rtCount2, 0, sizeof(ULLInt));
 
-    gridSize = (faces.size / 3 + 255) / 256;
+    gridSize = (face.size / 3 + 255) / 256;
     runtimeIndexingKernel<<<gridSize, 256>>>(
-        faces.active, faces.area, faces.size / 3,
-        grphic.rtIndex1, grphic.d_rtCount1,
-        grphic.rtIndex2, grphic.d_rtCount2
+        face.active, face.area, face.size / 3,
+        grph.rtIndex1, grph.d_rtCount1,
+        grph.rtIndex2, grph.d_rtCount2
     );
     cudaDeviceSynchronize();
 
-    cudaMemcpy(&grphic.rtCount1, grphic.d_rtCount1, sizeof(ULLInt), cudaMemcpyDeviceToHost);
-    cudaMemcpy(&grphic.rtCount2, grphic.d_rtCount2, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grph.rtCount1, grph.d_rtCount1, sizeof(ULLInt), cudaMemcpyDeviceToHost);
+    cudaMemcpy(&grph.rtCount2, grph.d_rtCount2, sizeof(ULLInt), cudaMemcpyDeviceToHost);
 }
 
 void VertexShader::createDepthMap() {
-    Graphic3D &grphic = Graphic3D::instance();
-    Buffer3D &buffer = grphic.buffer;
-    Face3D &faces = grphic.rtFaces;
-    cudaStream_t *streams = grphic.rtStreams;
+    Graphic3D &grph = Graphic3D::instance();
+    Buffer3D &buff = grph.buffer;
+    Face3D &face = grph.rtFaces;
+    cudaStream_t *streams = grph.rtStreams;
 
-    buffer.clearBuffer();
-    buffer.defaultColor();
+    buff.clearBuffer();
+    buff.defaultColor();
 
-    // int bw = buffer.width;
-    // int bh = buffer.height;
+    // int bw = buff.width;
+    // int bh = buff.height;
 
     // Set tile data
     ULLInt tileSizeX[2] = { 800, 25 };
@@ -82,12 +83,12 @@ void VertexShader::createDepthMap() {
         tileNumX[1] * tileNumY[1]
     };
     ULLInt rtCount[2] = {
-        grphic.rtCount1,
-        grphic.rtCount2
+        grph.rtCount1,
+        grph.rtCount2
     };
     ULLInt *rtIndex[2] = {
-        grphic.rtIndex1,
-        grphic.rtIndex2
+        grph.rtIndex1,
+        grph.rtIndex2
     };
 
     dim3 blockSize(16, 32);
@@ -100,12 +101,12 @@ void VertexShader::createDepthMap() {
 
         createDepthMapKernel<<<blockNum, blockSize, 0, streams[i]>>>(
             rtIndex[i],
-            faces.active, faces.sx, faces.sy, faces.sz, faces.sw,
+            face.active, face.sx, face.sy, face.sz, face.sw,
             rtCount[i], 0,
 
-            buffer.active, buffer.depth, buffer.faceID,
-            buffer.bary.x, buffer.bary.y, buffer.bary.z,
-            buffer.width, buffer.height,
+            buff.active, buff.depth, buff.faceID,
+            buff.bary.x, buff.bary.y, buff.bary.z,
+            buff.width, buff.height,
             tileNumX[i], tileNumY[i], tileSizeX[i], tileSizeY[i]
         );
     }
@@ -116,24 +117,24 @@ void VertexShader::createDepthMap() {
 }
 
 void VertexShader::rasterization() {
-    Graphic3D &grphic = Graphic3D::instance();
-    Buffer3D &buffer = grphic.buffer;
-    Face3D &faces = grphic.rtFaces;
+    Graphic3D &grph = Graphic3D::instance();
+    Buffer3D &buff = grph.buffer;
+    Face3D &face = grph.rtFaces;
 
-    rasterizationKernel<<<buffer.blockNum, buffer.blockSize>>>(
-        faces.sw,
-        faces.wx, faces.wy, faces.wz,
-        faces.tu, faces.tv,
-        faces.nx, faces.ny, faces.nz,
-        faces.cr, faces.cg, faces.cb, faces.ca,
+    rasterizationKernel<<<buff.blockNum, buff.blockSize>>>(
+        face.sw,
+        face.wx, face.wy, face.wz,
+        face.tu, face.tv,
+        face.nx, face.ny, face.nz,
+        face.cr, face.cg, face.cb, face.ca,
 
-        buffer.active, buffer.faceID,
-        buffer.bary.x, buffer.bary.y, buffer.bary.z,
-        buffer.world.x, buffer.world.y, buffer.world.z,
-        buffer.texture.x, buffer.texture.y,
-        buffer.normal.x, buffer.normal.y, buffer.normal.z,
-        buffer.color.x, buffer.color.y, buffer.color.z, buffer.color.w,
-        buffer.width, buffer.height
+        buff.active, buff.faceID,
+        buff.bary.x, buff.bary.y, buff.bary.z,
+        buff.world.x, buff.world.y, buff.world.z,
+        buff.texture.x, buff.texture.y,
+        buff.normal.x, buff.normal.y, buff.normal.z,
+        buff.color.x, buff.color.y, buff.color.z, buff.color.w,
+        buff.width, buff.height
     );
     cudaDeviceSynchronize();
 }
@@ -164,7 +165,8 @@ __global__ void frustumCullingKernel(
     const float *tu, const float *tv,
     const float *nx, const float *ny, const float *nz,
     const float *cr, const float *cg, const float *cb, const float *ca,
-    const ULLInt *fWs, const ULLInt *fTs, const ULLInt *fNs, ULLInt numFs,
+    const ULLInt *fWs, const ULLInt *fTs, const ULLInt *fNs,
+    const long long *fMs, ULLInt numFs,
 
     // Runtime faces
     float *rtSx, float *rtSy, float *rtSz, float *rtSw,
@@ -172,7 +174,7 @@ __global__ void frustumCullingKernel(
     float *rtTu, float *rtTv,
     float *rtNx, float *rtNy, float *rtNz,
     float *rtCr, float *rtCg, float *rtCb, float *rtCa,
-    float *rtArea, bool *rtActive
+    bool *rtActive, long long *rtMat, float *rtArea
 ) {
     ULLInt fIdx = blockIdx.x * blockDim.x + threadIdx.x;
     if (fIdx >= numFs) return;
@@ -182,6 +184,11 @@ __global__ void frustumCullingKernel(
     rtActive[fIdx * 4 + 1] = false;
     rtActive[fIdx * 4 + 2] = false;
     rtActive[fIdx * 4 + 3] = false;
+    // Reset Material
+    rtMat[fIdx * 4] = -1;
+    rtMat[fIdx * 4 + 1] = -1;
+    rtMat[fIdx * 4 + 2] = -1;
+    rtMat[fIdx * 4 + 3] = -1;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = idx0 + 1;
@@ -260,6 +267,9 @@ __global__ void frustumCullingKernel(
         rtCb[idx0] = rtCs[0].z; rtCb[idx1] = rtCs[1].z; rtCb[idx2] = rtCs[2].z;
         rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
 
+        rtActive[fIdx * 4] = true;
+        rtMat[fIdx * 4] = fMs[fIdx];
+
         // Find the area of the triangle's bounding box
         float ndcX[3] = {rtSs[0].x / rtSs[0].w, rtSs[1].x / rtSs[1].w, rtSs[2].x / rtSs[2].w};
         float ndcY[3] = {rtSs[0].y / rtSs[0].w, rtSs[1].y / rtSs[1].w, rtSs[2].y / rtSs[2].w};
@@ -269,8 +279,6 @@ __global__ void frustumCullingKernel(
         float minY = min(min(ndcY[0], ndcY[1]), ndcY[2]);
         float maxY = max(max(ndcY[0], ndcY[1]), ndcY[2]);
         rtArea[fIdx * 4] = abs((maxX - minX) * (maxY - minY));
-
-        rtActive[fIdx * 4] = true;
 
         return;
     }
@@ -507,6 +515,9 @@ __global__ void frustumCullingKernel(
         rtCb[idx0] = tempC2[0].z; rtCb[idx1] = tempC2[i + 1].z; rtCb[idx2] = tempC2[i + 2].z;
         rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
 
+        rtActive[fIdx * 4 + i] = true;
+        rtMat[fIdx * 4 + i] = fMs[fIdx];
+
         // Find the area of the triangle's bounding box
         float ndcX[3] = {tempS2[0].x / tempS2[0].w, tempS2[i + 1].x / tempS2[i + 1].w, tempS2[i + 2].x / tempS2[i + 2].w};
         float ndcY[3] = {tempS2[0].y / tempS2[0].w, tempS2[i + 1].y / tempS2[i + 1].w, tempS2[i + 2].y / tempS2[i + 2].w};
@@ -516,8 +527,6 @@ __global__ void frustumCullingKernel(
         float minY = min(min(ndcY[0], ndcY[1]), ndcY[2]);
         float maxY = max(max(ndcY[0], ndcY[1]), ndcY[2]);
         rtArea[fIdx * 4 + i] = abs((maxX - minX) * (maxY - minY));
-
-        rtActive[fIdx * 4 + i] = true;
     }
 }
 

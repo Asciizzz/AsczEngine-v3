@@ -30,9 +30,9 @@ struct Face3D {
     float *tu, *tv;
     float *cr, *cg, *cb, *ca;
     // x1
-    float *area;
     bool *active;
     long long *mat;
+    float *area;
 
     ULInt size = 0;
 
