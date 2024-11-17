@@ -58,7 +58,7 @@ void Graphic3D::free() {
 
 // Graphic faces (runtime)
 void Graphic3D::mallocRuntimeFaces() {
-    rtFaces.malloc(mesh.faces.size * 4);
+    rtFaces.malloc(mesh.fvtn.size * 4);
 
     cudaMalloc(&d_rtCount1, sizeof(ULLInt));
     cudaMalloc(&d_rtCount2, sizeof(ULLInt));

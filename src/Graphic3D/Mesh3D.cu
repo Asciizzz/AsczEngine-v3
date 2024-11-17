@@ -192,10 +192,10 @@ void Mesh3D::resizeVertices(ULLInt numWs, ULLInt numTs, ULLInt numNs) {
 // Faces allocation
 void Mesh3D::mallocFaces(ULLInt numFs) {
     // 1 Face = 3 indices
-    faces.malloc(numFs * 3);
+    fvtn.malloc(numFs * 3);
 }
 void Mesh3D::freeFaces() {
-    faces.free();
+    fvtn.free();
 }
 void Mesh3D::resizeFaces(ULLInt numFs) {
     freeFaces();
@@ -224,17 +224,17 @@ void Mesh3D::push(Mesh &mesh) {
     Vec2f_ptr newTexture;
     Vec3f_ptr newNormal;
     Vec4f_ptr newColor;
-    Vec4ulli_ptr newFaces;
+    Vec4ulli_ptr newFvtn;
     ULLInt worldSize = mesh.wx.size();
     ULLInt textureSize = mesh.tu.size();
     ULLInt normalSize = mesh.nx.size();
     ULLInt colorSize = mesh.cr.size();
-    ULLInt faceSize = mesh.fw.size();
+    ULLInt fvtnSize = mesh.fw.size();
     newWorld.malloc(worldSize);
     newTexture.malloc(textureSize);
     newNormal.malloc(normalSize);
     newColor.malloc(colorSize);
-    newFaces.malloc(faceSize);
+    newFvtn.malloc(fvtnSize);
 
     // Stream for async memory copy
     cudaStream_t stream;
@@ -256,21 +256,21 @@ void Mesh3D::push(Mesh &mesh) {
     cudaMemcpyAsync(newColor.z, mesh.cb.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newColor.w, mesh.ca.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
-    cudaMemcpyAsync(newFaces.v, mesh.fw.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newFaces.t, mesh.ft.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newFaces.n, mesh.fn.data(), faceSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newFvtn.v, mesh.fw.data(), fvtnSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newFvtn.t, mesh.ft.data(), fvtnSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newFvtn.n, mesh.fn.data(), fvtnSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment face indices
-    ULLInt gridSize = (faceSize + 255) / 256;
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.v, offsetV, faceSize);
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.t, offsetT, faceSize);
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFaces.n, offsetN, faceSize);
+    ULLInt gridSize = (fvtnSize + 255) / 256;
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtn.v, offsetV, fvtnSize);
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtn.t, offsetT, fvtnSize);
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtn.n, offsetN, fvtnSize);
 
     world += newWorld;
     normal += newNormal;
     texture += newTexture;
     color += newColor;
-    faces += newFaces;
+    fvtn += newFvtn;
 
     screen.free();
     screen.malloc(world.size);
