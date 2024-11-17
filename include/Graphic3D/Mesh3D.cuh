@@ -75,17 +75,18 @@ struct Mesh {
 class Mesh3D {
 public:
     // Geometry data
-    Vec4f_ptr s;
-    Vec3f_ptr w;
-    Vec2f_ptr t;
-    Vec3f_ptr n;
-    Vec4f_ptr c;
-    Vec4ulli_ptr f;
+    Vec4f_ptr s; // x y z w
+    Vec3f_ptr w; // x y z
+    Vec2f_ptr t; // u v
+    Vec3f_ptr n; // nx ny nz
+    Vec4f_ptr c; // r g b a
+    // Face data
+    Vec4ulli_ptr f; // v t n mat
     // Material data
-    Vec3f_ptr ka;
-    Vec3f_ptr kd;
-    Vec3f_ptr ks;
-    float *ns;
+    Vec3f_ptr ka; // r g b
+    Vec3f_ptr kd; // r g b
+    Vec3f_ptr ks; // r g b
+    float *ns; // shininess
 
     // Free
     void free();
