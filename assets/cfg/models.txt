@@ -7,7 +7,7 @@
 # .heavy/City.obj
 # .heavy/Room.obj
 
-~
+
 
 # Back wall
 # assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
@@ -31,32 +31,25 @@
 # assets/Models/Structure/Stronghold.obj .1 0 0 0 0 26.8 0
 # assets/Models/Structure/Medieval.obj 1 0 0 0 0 6 0
 # assets/Models/Structure/City.obj 1 -90 0 0 0 0 0
+# assets/Models/Structure/Street.obj 1 0 0 0 0 4.2 0
 
 # assets/Models/Shapes/Cube.obj .4 45 1 0 .4 0 -2
 # assets/Models/Shapes/Cube.obj 1
 
-# assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
+assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
 # assets/Models/Anime/Sukuna.obj 3 0 0 0 0 0 0
-assets/Models/Anime/Miyu.obj 20 -90 180 0
+# assets/Models/Anime/Miyu.obj 20 -90 180 0
 # assets/Models/Anime/MalevolentShrine.obj 1
 
-# assets/Models/Structure/Street.obj 1 0 0 0 0 4.2 0
 
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 6
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 8
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 10
 
-#assets/Models/Structure/Fnaf.obj .01 0 0 0 0 3.9 0
+# assets/Models/Structure/Fnaf.obj .01 0 0 0 0 3.9 0
 
-# Testing skybox
-#assets/Models/Shapes/Wall.obj 100 0 0 0 0 100 100
-#assets/Models/Shapes/Wall.obj 100 0 180 0 0 100 -100
-#assets/Models/Shapes/Wall.obj 100 0 90 0 100 100 0
-#assets/Models/Shapes/Wall.obj 100 0 -90 0 -100 100 0
-#assets/Models/Shapes/Wall.obj 100 -90 0 0 0 100 0
-
-
+~
 
 assets/Models/Shapes/Wall.obj 60 90 0 0 0 0 0
 
