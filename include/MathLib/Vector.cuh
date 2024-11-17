@@ -107,6 +107,7 @@ struct Vec2f_ptr {
     void malloc(ULLInt size);
     void free();
     void operator+=(Vec2f_ptr &vec);
+    void setAll(float val);
 };
 struct Vec3f_ptr {
     float *x, *y, *z;
@@ -114,8 +115,8 @@ struct Vec3f_ptr {
 
     void malloc(ULLInt size);
     void free();
-
     void operator+=(Vec3f_ptr &vec);
+    void setAll(float val);
 };
 struct Vec4f_ptr {
     float *x, *y, *z, *w;
@@ -124,21 +125,14 @@ struct Vec4f_ptr {
     void malloc(ULLInt size);
     void free();
     void operator+=(Vec4f_ptr &vec);
-};
-
-// Mainly used for faces
-struct Vec4ulli_ptr {
-    // Vertex, texture, normal, and material id
-    ULLInt *v, *t, *n, *m;
-    ULLInt size;
-
-    void malloc(ULLInt size);
-    void free();
-    void operator+=(Vec4ulli_ptr &vec);
+    void setAll(float val);
 };
 
 // Atomic functions for float
 __device__ bool atomicMinFloat(float* addr, float value);
 __device__ bool atomicMinDouble(double* addr, double value);
+
+// Helpful kernels
+__global__ void setAllKernel(float *arr, float val, ULLInt size);
 
 #endif

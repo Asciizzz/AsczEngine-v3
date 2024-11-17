@@ -23,13 +23,16 @@ struct LightSrc {
 };
 
 struct Face3D {
+    // x3
+    float *sx, *sy, *sz, *sw;
     float *wx, *wy, *wz;
     float *nx, *ny, *nz;
     float *tu, *tv;
     float *cr, *cg, *cb, *ca;
-    float *sx, *sy, *sz, *sw;
+    // x1
     float *area;
     bool *active;
+    long long *mat;
 
     ULInt size = 0;
 

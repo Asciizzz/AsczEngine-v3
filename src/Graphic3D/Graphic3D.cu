@@ -5,34 +5,38 @@
 
 void Face3D::malloc(ULLInt size) {
     this->size = size;
-    cudaMalloc(&wx, sizeof(float) * size);
-    cudaMalloc(&wy, sizeof(float) * size);
-    cudaMalloc(&wz, sizeof(float) * size);
-    cudaMalloc(&nx, sizeof(float) * size);
-    cudaMalloc(&ny, sizeof(float) * size);
-    cudaMalloc(&nz, sizeof(float) * size);
-    cudaMalloc(&tu, sizeof(float) * size);
-    cudaMalloc(&tv, sizeof(float) * size);
-    cudaMalloc(&cr, sizeof(float) * size);
-    cudaMalloc(&cg, sizeof(float) * size);
-    cudaMalloc(&cb, sizeof(float) * size);
-    cudaMalloc(&ca, sizeof(float) * size);
     cudaMalloc(&sx, sizeof(float) * size);
     cudaMalloc(&sy, sizeof(float) * size);
     cudaMalloc(&sz, sizeof(float) * size);
     cudaMalloc(&sw, sizeof(float) * size);
+    cudaMalloc(&wx, sizeof(float) * size);
+    cudaMalloc(&wy, sizeof(float) * size);
+    cudaMalloc(&wz, sizeof(float) * size);
+    cudaMalloc(&tu, sizeof(float) * size);
+    cudaMalloc(&tv, sizeof(float) * size);
+    cudaMalloc(&nx, sizeof(float) * size);
+    cudaMalloc(&ny, sizeof(float) * size);
+    cudaMalloc(&nz, sizeof(float) * size);
+    cudaMalloc(&cr, sizeof(float) * size);
+    cudaMalloc(&cg, sizeof(float) * size);
+    cudaMalloc(&cb, sizeof(float) * size);
+    cudaMalloc(&ca, sizeof(float) * size);
     cudaMalloc(&area, sizeof(float) * size / 3);
     cudaMalloc(&active, sizeof(bool) * size / 3);
+    cudaMalloc(&mat, sizeof(long long) * size / 3);
 }
 void Face3D::free() {
     size = 0;
-    if (wx) cudaFree(wx); if (wy) cudaFree(wy); if (wz) cudaFree(wz);
-    if (nx) cudaFree(nx); if (ny) cudaFree(ny); if (nz) cudaFree(nz);
-    if (tu) cudaFree(tu); if (tv) cudaFree(tv);
-    if (cr) cudaFree(cr); if (cg) cudaFree(cg); if (cb) cudaFree(cb); if (ca) cudaFree(ca);
+
     if (sx) cudaFree(sx); if (sy) cudaFree(sy); if (sz) cudaFree(sz); if (sw) cudaFree(sw);
+    if (wx) cudaFree(wx); if (wy) cudaFree(wy); if (wz) cudaFree(wz);
+    if (tu) cudaFree(tu); if (tv) cudaFree(tv);
+    if (nx) cudaFree(nx); if (ny) cudaFree(ny); if (nz) cudaFree(nz);
+    if (cr) cudaFree(cr); if (cg) cudaFree(cg); if (cb) cudaFree(cb); if (ca) cudaFree(ca);
+
     if (area) cudaFree(area);
     if (active) cudaFree(active);
+    if (mat) cudaFree(mat);
 }
 
 // Graphic stuff below

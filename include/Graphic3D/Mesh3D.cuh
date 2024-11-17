@@ -81,7 +81,7 @@ struct Mesh {
 // Face Ptr
 struct Face_ptr {
     ULLInt *v, *t, *n;
-    long long *m;
+    long long *m; // -1 by default for no material
     ULLInt size;
 
     void malloc(ULLInt size);

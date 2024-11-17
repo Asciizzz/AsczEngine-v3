@@ -246,6 +246,10 @@ void Vec2f_ptr::operator+=(Vec2f_ptr& vec) {
     // Update
     *this = newVec;
 }
+void Vec2f_ptr::setAll(float val) {
+    setAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
+    setAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
+}
 
 void Vec3f_ptr::malloc(ULLInt size) {
     this->size = size;
@@ -279,6 +283,11 @@ void Vec3f_ptr::operator+=(Vec3f_ptr& vec) {
 
     // Update
     *this = newVec;
+}
+void Vec3f_ptr::setAll(float val) {
+    setAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
+    setAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
+    setAllKernel<<<(size + 255) / 256, 256>>>(z, val, size);
 }
 
 void Vec4f_ptr::malloc(ULLInt size) {
@@ -318,42 +327,11 @@ void Vec4f_ptr::operator+=(Vec4f_ptr& vec) {
     // Update
     *this = newVec;
 }
-
-void Vec4ulli_ptr::malloc(ULLInt size) {
-    this->size = size;
-    cudaMalloc(&v, size * sizeof(ULLInt));
-    cudaMalloc(&t, size * sizeof(ULLInt));
-    cudaMalloc(&n, size * sizeof(ULLInt));
-    cudaMalloc(&m, size * sizeof(ULLInt));
-}
-void Vec4ulli_ptr::free() {
-    this->size = 0;
-    cudaFree(v);
-    cudaFree(t);
-    cudaFree(n);
-}
-void Vec4ulli_ptr::operator+=(Vec4ulli_ptr& vec) {
-    Vec4ulli_ptr newVec;
-    newVec.malloc(size + vec.size);
-
-    // Copy original data
-    cudaMemcpy(newVec.v, v, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newVec.t, t, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newVec.n, n, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newVec.m, m, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-
-    // Copy new data
-    cudaMemcpy(newVec.v + size, vec.v, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newVec.t + size, vec.t, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newVec.n + size, vec.n, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newVec.m + size, vec.m, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-
-    // Free datas
-    free();
-    vec.free();
-
-    // Update
-    *this = newVec;
+void Vec4f_ptr::setAll(float val) {
+    setAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
+    setAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
+    setAllKernel<<<(size + 255) / 256, 256>>>(z, val, size);
+    setAllKernel<<<(size + 255) / 256, 256>>>(w, val, size);
 }
 
 // Atomics
@@ -379,4 +357,11 @@ __device__ bool atomicMinDouble(double* addr, double value) {
     } while (assumed != old);
 
     return __longlong_as_double(old) > value;
+}
+
+// Helper functions
+
+__global__ void setAllKernel(float *arr, float val, ULLInt size) {
+    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size) arr[i] = val;
 }
