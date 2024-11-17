@@ -42,8 +42,8 @@ struct Mesh {
     VectF tu, tv;
     VectF nx, ny, nz;
     VectF cr, cg, cb, ca;
-    VectULLI fw, ft, fn;
-    VectLLI fm;
+    VectULLI fw;
+    VectLLI ft, fn, fm;
 
     // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
@@ -56,7 +56,7 @@ struct Mesh {
         VectF nx, VectF ny, VectF nz,
         VectF cr, VectF cg, VectF cb, VectF ca,
         // Face data
-        VectULLI fw, VectULLI ft, VectULLI fn, VectLLI fm = {}
+        VectULLI fw, VectLLI ft, VectLLI fn, VectLLI fm = {}
     );
 
     void push(Mesh &mesh);

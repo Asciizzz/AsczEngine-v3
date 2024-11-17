@@ -5,7 +5,7 @@
 # .heavy/Island.obj .2
 # .heavy/Ivy.obj .2 0 0 180 
 # .heavy/City.obj
-.heavy/Room.obj
+# .heavy/Room.obj
 
 ~
 
@@ -56,7 +56,7 @@ assets/Models/Anime/Miyu.obj 20 -90 180 0
 #assets/Models/Shapes/Wall.obj 100 0 -90 0 -100 100 0
 #assets/Models/Shapes/Wall.obj 100 -90 0 0 0 100 0
 
-~
+
 
 assets/Models/Shapes/Wall.obj 60 90 0 0 0 0 0
 

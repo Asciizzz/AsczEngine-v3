@@ -9,7 +9,7 @@ Mesh::Mesh(
     VectF tu, VectF tv,
     VectF nx, VectF ny, VectF nz,
     VectF cr, VectF cg, VectF cb, VectF ca,
-    VectULLI fw, VectULLI ft, VectULLI fn, VectLLI fm
+    VectULLI fw, VectLLI ft, VectLLI fn, VectLLI fm
 ) : wx(wx), wy(wy), wz(wz),
     tu(tu), tv(tv),
     nx(nx), ny(ny), nz(nz), 
@@ -43,7 +43,10 @@ void Mesh::push(Mesh &mesh) {
     // Increment face indices
     for (ULLInt i = 0; i < mesh.fw.size(); i++) {
         fw.push_back(mesh.fw[i] + wx.size());
-        ft.push_back(mesh.ft[i] + tu.size());
+
+        if (mesh.ft[i] < 0) ft.push_back(-1);
+        else ft.push_back(mesh.ft[i] + tu.size());
+
         fn.push_back(mesh.fn[i] + nx.size());
     }
 }
@@ -316,7 +319,7 @@ __global__ void incFaceIdxKernel1(ULLInt *f, ULLInt offset, ULLInt numFs) {
 }
 __global__ void incFaceIdxKernel2(LLInt *f, ULLInt offset, ULLInt numFs) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < numFs) f[idx] += offset;
+    if (idx < numFs && f[idx] >= 0) f[idx] += offset;
 }
 
 // Kernel for transforming vertices

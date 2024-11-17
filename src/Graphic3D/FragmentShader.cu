@@ -106,6 +106,10 @@ __global__ void applyTextureKernel( // Beta
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
 
+    // Lack of texture => Ignore
+    if (buffTu[i] < 0 || buffTu[i] > 1 ||
+        buffTv[i] < 0 || buffTv[i] > 1) return;
+
     int x = buffTu[i] * textureWidth;
     int y = buffTv[i] * textureHeight;
     int tIdx = x + y * textureWidth;

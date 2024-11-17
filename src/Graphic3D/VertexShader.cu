@@ -74,11 +74,11 @@ void VertexShader::createDepthMap() {
     // int bh = buff.height;
 
     // Set tile data
-    ULLInt tileSizeX[2] = { buff.width, 25 };
-    ULLInt tileSizeY[2] = { buff.height, 25 };
-    ULLInt tileNumX[2] = { 1, buff.width / 25 };
-    ULLInt tileNumY[2] = { 1, buff.height / 25 };
-    ULLInt tileNum[2] = {
+    int tileSizeX[2] = { buff.width, 25 };
+    int tileSizeY[2] = { buff.height, 25 };
+    int tileNumX[2] = { 1, buff.width / 25 };
+    int tileNumY[2] = { 1, buff.height / 25 };
+    int tileNum[2] = {
         tileNumX[0] * tileNumY[0],
         tileNumX[1] * tileNumY[1]
     };
@@ -195,8 +195,8 @@ __global__ void frustumCullingKernel(
     ULLInt idx2 = idx0 + 2;
 
     ULLInt fw[3] = {fWs[idx0], fWs[idx1], fWs[idx2]};
-    ULLInt ft[3] = {fTs[idx0], fTs[idx1], fTs[idx2]};
-    ULLInt fn[3] = {fNs[idx0], fNs[idx1], fNs[idx2]};
+    LLInt ft[3] = {fTs[idx0], fTs[idx1], fTs[idx2]};
+    LLInt fn[3] = {fNs[idx0], fNs[idx1], fNs[idx2]};
 
     // Early culling (for outside the frustum)
     Vec4f rtSs[3] = {
@@ -255,8 +255,14 @@ __global__ void frustumCullingKernel(
         rtWy[idx0] = rtWs[0].y; rtWy[idx1] = rtWs[1].y; rtWy[idx2] = rtWs[2].y;
         rtWz[idx0] = rtWs[0].z; rtWz[idx1] = rtWs[1].z; rtWz[idx2] = rtWs[2].z;
 
-        rtTu[idx0] = rtTs[0].x; rtTu[idx1] = rtTs[1].x; rtTu[idx2] = rtTs[2].x;
-        rtTv[idx0] = rtTs[0].y; rtTv[idx1] = rtTs[1].y; rtTv[idx2] = rtTs[2].y;
+        // Lack of texture = -1
+        if (ft[0] < 0) {
+            rtTu[idx0] = -1; rtTu[idx1] = -1; rtTu[idx2] = -1;
+            rtTv[idx0] = -1; rtTv[idx1] = -1; rtTv[idx2] = -1;
+        } else {
+            rtTu[idx0] = rtTs[0].x; rtTu[idx1] = rtTs[1].x; rtTu[idx2] = rtTs[2].x;
+            rtTv[idx0] = rtTs[0].y; rtTv[idx1] = rtTs[1].y; rtTv[idx2] = rtTs[2].y;
+        }
 
         rtNx[idx0] = rtNs[0].x; rtNx[idx1] = rtNs[1].x; rtNx[idx2] = rtNs[2].x;
         rtNy[idx0] = rtNs[0].y; rtNy[idx1] = rtNs[1].y; rtNy[idx2] = rtNs[2].y;
@@ -503,8 +509,13 @@ __global__ void frustumCullingKernel(
         rtWy[idx0] = tempW2[0].y; rtWy[idx1] = tempW2[i + 1].y; rtWy[idx2] = tempW2[i + 2].y;
         rtWz[idx0] = tempW2[0].z; rtWz[idx1] = tempW2[i + 1].z; rtWz[idx2] = tempW2[i + 2].z;
 
-        rtTu[idx0] = tempT2[0].x; rtTu[idx1] = tempT2[i + 1].x; rtTu[idx2] = tempT2[i + 2].x;
-        rtTv[idx0] = tempT2[0].y; rtTv[idx1] = tempT2[i + 1].y; rtTv[idx2] = tempT2[i + 2].y;
+        if (ft[0] < 0) {
+            rtTu[idx0] = -1; rtTu[idx1] = -1; rtTu[idx2] = -1;
+            rtTv[idx0] = -1; rtTv[idx1] = -1; rtTv[idx2] = -1;
+        } else {
+            rtTu[idx0] = tempT2[0].x; rtTu[idx1] = tempT2[i + 1].x; rtTu[idx2] = tempT2[i + 2].x;
+            rtTv[idx0] = tempT2[0].y; rtTv[idx1] = tempT2[i + 1].y; rtTv[idx2] = tempT2[i + 2].y;
+        }
 
         rtNx[idx0] = tempN2[0].x; rtNx[idx1] = tempN2[i + 1].x; rtNx[idx2] = tempN2[i + 2].x;
         rtNy[idx0] = tempN2[0].y; rtNy[idx1] = tempN2[i + 1].y; rtNy[idx2] = tempN2[i + 2].y;

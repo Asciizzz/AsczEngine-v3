@@ -10,7 +10,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectF tu, tv;
     VectF nx, ny, nz;
     VectF cr, cg, cb, ca;
-    VectULLI fw, ft, fn;
+    VectULLI fw;
+    VectLLI ft, fn, fm;
 
     // We will use these value to shift the mesh to the origin
     float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
@@ -66,18 +67,42 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             cb.push_back(c.z * 255);
             ca.push_back(c.w * 255);
         } else if (type == "f") {
-            VectULLI vs, ts, ns;
+            VectULLI vs;
+            VectLLI ts, ns;
             while (ss.good()) {
                 std::string vtn;
                 ss >> vtn;
 
-                ULLInt v, t, n;
+                ULLInt v;
+                LLInt t = 0, n = 0;
                 std::stringstream ss2(vtn);
-                ss2 >> v; ss2.ignore(1); ss2 >> t; ss2.ignore(1); ss2 >> n;
 
-                vs.push_back(v - fIdxBased);
-                ts.push_back(t - fIdxBased);
-                ns.push_back(n - fIdxBased);
+                // Read vertex index
+                ss2 >> v;
+
+                // Check for texture index (skip if missing)
+                if (ss2.peek() == '/') {
+                    ss2.ignore(1); // Ignore the first '/'
+                    if (ss2.peek() != '/') {
+                        ss2 >> t; // Read texture index if present
+                    } else {
+                        t = fIdxBased - 1; // No texture index provided
+                    }
+                } else {
+                    t = fIdxBased - 1; // No slashes, so no texture coordinate
+                }
+
+                // Check for normal index
+                if (ss2.peek() == '/') {
+                    ss2.ignore(1); // Ignore the second '/'
+                    ss2 >> n; // Read normal index
+                } else {
+                    n = fIdxBased - 1 ; // No normal index provided
+                }
+
+                vs.push_back(v - fIdxBased); // Adjust to 0-based index
+                ts.push_back(t - fIdxBased); // Adjust to 0-based index
+                ns.push_back(n - fIdxBased); // Adjust to 0-based index
             }
 
             /* For n points, we will construct n - 2 triangles
@@ -137,7 +162,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         tu, tv,
         nx, ny, nz,
         cr, cg, cb, ca,
-        fw, ft, fn
+        fw, ft, fn, fm
     };
 
     return mesh;
