@@ -20,6 +20,10 @@ We will have 4 arrays for vertex data:
 
 #define Meshs3D std::vector<Mesh3D>
 
+#define VectF std::vector<float>
+#define VectULLI std::vector<ULLInt>
+#define VectLL std::vector<long long>
+
 struct Mesh {
     /* VERY IMPORTANT NOTE:
 
@@ -34,21 +38,24 @@ struct Mesh {
     */
 
     // Section 1: initialization
-    std::vector<float> wx, wy, wz;
-    std::vector<float> tu, tv;
-    std::vector<float> nx, ny, nz;
-    std::vector<float> cr, cg, cb, ca;
-    std::vector<ULLInt> fw, ft, fn, fo;
+    VectF wx, wy, wz;
+    VectF tu, tv;
+    VectF nx, ny, nz;
+    VectF cr, cg, cb, ca;
+    VectULLI fw, ft, fn;
+    VectLL fm;
 
     // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
 
     Mesh(
-        std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
-        std::vector<float> tu, std::vector<float> tv,
-        std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
-        std::vector<float> cr, std::vector<float> cg, std::vector<float> cb, std::vector<float> ca,
-        std::vector<ULLInt> fw, std::vector<ULLInt> ft, std::vector<ULLInt> fn
+        // Vertex data
+        VectF wx, VectF wy, VectF wz,
+        VectF tu, VectF tv,
+        VectF nx, VectF ny, VectF nz,
+        VectF cr, VectF cg, VectF cb, VectF ca,
+        // Face data
+        VectULLI fw, VectULLI ft, VectULLI fn, VectLL fm = {}
     );
     Mesh();
 
@@ -71,22 +78,39 @@ struct Mesh {
     void scaleRuntime(Vec3f origin, Vec3f scl);
 };
 
+// Face Ptr
+struct Face_ptr {
+    ULLInt *v, *t, *n;
+    long long *m;
+    ULLInt size;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Face_ptr &face);
+};
+
 // Device mesh (SoA for coalesced memory access)
 class Mesh3D {
 public:
-    // Geometry data
+    // Vertex data
     Vec4f_ptr s; // x y z w
     Vec3f_ptr w; // x y z
     Vec2f_ptr t; // u v
     Vec3f_ptr n; // nx ny nz
     Vec4f_ptr c; // r g b a
     // Face data
-    Vec4ulli_ptr f; // v t n mat
+    Face_ptr f; // v t n mat
     // Material data
-    Vec3f_ptr ka; // r g b
-    Vec3f_ptr kd; // r g b
-    Vec3f_ptr ks; // r g b
-    float *ns; // shininess
+    Vec3f_ptr ka; // r g b - ignore for now
+    Vec3f_ptr kd; // r g b - focus on this
+    Vec3f_ptr ks; // r g b - ignore for now
+    ULLInt *map_Kd; // Texture id - focus on this
+    float *ns; // shininess - ignore for now
+    // Texture data (very sophisticated)
+    ULLInt tNum; // Number of textures
+    float *txtr; // Texture data (flattened to 1D)
+    ULLInt *tstart; // Texture start index
+    Vec2f_ptr *tsize; // Texture width and height
 
     // Free
     void free();

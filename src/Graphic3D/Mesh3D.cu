@@ -4,13 +4,17 @@
 // ======================= Mesh object =======================
 
 Mesh::Mesh(
-    std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
-    std::vector<float> tu, std::vector<float> tv,
-    std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
-    std::vector<float> cr, std::vector<float> cg, std::vector<float> cb, std::vector<float> ca,
-    std::vector<ULLInt> fw, std::vector<ULLInt> ft, std::vector<ULLInt> fn
-) : wx(wx), wy(wy), wz(wz), tu(tu), tv(tv), nx(nx), ny(ny), nz(nz), 
-    cr(cr), cg(cg), cb(cb), ca(ca), fw(fw), ft(ft), fn(fn) {}
+    VectF wx, VectF wy, VectF wz,
+    VectF tu, VectF tv,
+    VectF nx, VectF ny, VectF nz,
+    VectF cr, VectF cg, VectF cb, VectF ca,
+    VectULLI fw, VectULLI ft, VectULLI fn, VectLL fm
+) : wx(wx), wy(wy), wz(wz),
+    tu(tu), tv(tv),
+    nx(nx), ny(ny), nz(nz), 
+    cr(cr), cg(cg), cb(cb), ca(ca),
+    fw(fw), ft(ft), fn(fn), fm(fm)
+{}
 
 Mesh::Mesh() {}
 
@@ -163,6 +167,50 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
     cudaDeviceSynchronize();
 }
 
+// ======================= Face_ptr =======================
+
+void Face_ptr::malloc(ULLInt size) {
+    cudaMalloc(&v, size * sizeof(ULLInt));
+    cudaMalloc(&t, size * sizeof(ULLInt));
+    cudaMalloc(&n, size * sizeof(ULLInt));
+    cudaMalloc(&m, size * sizeof(long long));
+    this->size = size;
+}
+void Face_ptr::free() {
+    if (v) cudaFree(v);
+    if (t) cudaFree(t);
+    if (n) cudaFree(n);
+    if (m) cudaFree(m);
+}
+void Face_ptr::operator+=(Face_ptr &face) {
+    ULLInt size = this->size + face.size;
+
+    ULLInt *newV, *newT, *newN;
+    long long *newM;
+    cudaMalloc(&newV, size * sizeof(ULLInt));
+    cudaMalloc(&newT, size * sizeof(ULLInt));
+    cudaMalloc(&newN, size * sizeof(ULLInt));
+    cudaMalloc(&newM, size * sizeof(long long));
+
+    cudaMemcpy(newV, v, this->size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newT, t, this->size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newN, n, this->size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newM, m, this->size * sizeof(long long), cudaMemcpyDeviceToDevice);
+
+    cudaMemcpy(newV + this->size, face.v, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newT + this->size, face.t, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newN + this->size, face.n, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newM + this->size, face.m, face.size * sizeof(long long), cudaMemcpyDeviceToDevice);
+
+    free();
+
+    v = newV;
+    t = newT;
+    n = newN;
+    m = newM;
+    this->size = size;
+}
+
 // ======================= Mesh3D =======================
 
 // Free
@@ -173,6 +221,14 @@ void Mesh3D::free() {
     n.free();
     c.free();
     f.free();
+    ka.free();
+    kd.free();
+    ks.free();
+    cudaFree(map_Kd);
+    cudaFree(ns);
+    cudaFree(txtr);
+    cudaFree(tstart);
+    cudaFree(tsize);
 }
 
 // Push
@@ -191,7 +247,7 @@ void Mesh3D::push(Mesh &mesh) {
     Vec2f_ptr newT;
     Vec3f_ptr newN;
     Vec4f_ptr newC;
-    Vec4ulli_ptr newFvtnm;
+    Face_ptr newFvtnm;
     ULLInt wSize = mesh.wx.size();
     ULLInt tSize = mesh.tu.size();
     ULLInt nSize = mesh.nx.size();
