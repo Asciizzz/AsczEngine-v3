@@ -31,11 +31,17 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         lines.push_back(line);
     }
 
+    bool off = false;
+
     #pragma omp parallel for collapse(2)
     for (size_t i = 0; i < lines.size(); i++) {
         std::stringstream ss(lines[i]);
         std::string type;
         ss >> type;
+
+        if (type == "off") off = true;
+        if (type == "on") off = false;
+        if (off) continue;
 
         if (type == "mtllib") {
             std::string mtlPath;
