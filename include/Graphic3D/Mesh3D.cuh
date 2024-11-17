@@ -48,6 +48,7 @@ struct Mesh {
     // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
 
+    Mesh();
     Mesh(
         // Vertex data
         VectF wx, VectF wy, VectF wz,
@@ -57,7 +58,6 @@ struct Mesh {
         // Face data
         VectULLI fw, VectULLI ft, VectULLI fn, VectLL fm = {}
     );
-    Mesh();
 
     void push(Mesh &mesh);
 

@@ -3,6 +3,7 @@
 
 // ======================= Mesh object =======================
 
+Mesh::Mesh() {}
 Mesh::Mesh(
     VectF wx, VectF wy, VectF wz,
     VectF tu, VectF tv,
@@ -15,8 +16,6 @@ Mesh::Mesh(
     cr(cr), cg(cg), cb(cb), ca(ca),
     fw(fw), ft(ft), fn(fn), fm(fm)
 {}
-
-Mesh::Mesh() {}
 
 void Mesh::push(Mesh &mesh) {
     for (ULLInt i = 0; i < mesh.wx.size(); i++) {
