@@ -5,25 +5,10 @@
 #include <fstream>
 #include <sstream>
 
-struct ObjPath {
-    std::string dotObj;
-    std::string dotMtl;
-
-    bool mtllib = false;
-
-    ObjPath(std::string dotObj, std::string dotMtl) {
-        this->dotObj = dotObj;
-        this->dotMtl = dotMtl;
-        mtllib = true;
-    }
-    ObjPath(std::string dotObj) {
-        this->dotObj = dotObj;
-    }
-};
-
 class Utils {
 public:
-    static Mesh readObjFile(ObjPath path, short fIdxBased=1, short placement=0, bool rainbow=false);
+    static Mesh readMtlFile(std::string path);
+    static Mesh readObjFile(std::string path, short fIdxBased=1, short placement=0, bool rainbow=false);
 
     static void applyTransformation(std::vector<Mesh> objs);
 };

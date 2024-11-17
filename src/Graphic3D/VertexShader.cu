@@ -74,10 +74,10 @@ void VertexShader::createDepthMap() {
     // int bh = buff.height;
 
     // Set tile data
-    ULLInt tileSizeX[2] = { 800, 25 };
-    ULLInt tileSizeY[2] = { 450, 25 };
-    ULLInt tileNumX[2] = { 1, 32 };
-    ULLInt tileNumY[2] = { 1, 18 };
+    ULLInt tileSizeX[2] = { buff.width, 25 };
+    ULLInt tileSizeY[2] = { buff.height, 25 };
+    ULLInt tileNumX[2] = { 1, buff.width / 25 };
+    ULLInt tileNumY[2] = { 1, buff.height / 25 };
     ULLInt tileNum[2] = {
         tileNumX[0] * tileNumY[0],
         tileNumX[1] * tileNumY[1]

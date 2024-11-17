@@ -5,9 +5,9 @@
 # .heavy/Island.obj .2
 # .heavy/Ivy.obj .2 0 0 180 
 # .heavy/City.obj
-# .heavy/Room.obj
+.heavy/Room.obj
 
-
+~
 
 # Back wall
 # assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4

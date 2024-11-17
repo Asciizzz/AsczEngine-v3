@@ -1,16 +1,16 @@
 #include <Utility.cuh>
 
-Mesh Utils::readObjFile(ObjPath path, short fIdxBased, short placement, bool rainbow) {
-    std::ifstream file(path.dotObj);
+Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool rainbow) {
+    std::ifstream file(path);
     if (!file.is_open()) return Mesh();
 
     std::string line;
 
-    std::vector<float> wx, wy, wz;
-    std::vector<float> tu, tv;
-    std::vector<float> nx, ny, nz;
-    std::vector<float> cr, cg, cb, ca;
-    std::vector<ULLInt> fw, ft, fn;
+    VectF wx, wy, wz;
+    VectF tu, tv;
+    VectF nx, ny, nz;
+    VectF cr, cg, cb, ca;
+    VectULLI fw, ft, fn;
 
     // We will use these value to shift the mesh to the origin
     float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
@@ -66,7 +66,7 @@ Mesh Utils::readObjFile(ObjPath path, short fIdxBased, short placement, bool rai
             cb.push_back(c.z * 255);
             ca.push_back(c.w * 255);
         } else if (type == "f") {
-            std::vector<ULLInt> vs, ts, ns;
+            VectULLI vs, ts, ns;
             while (ss.good()) {
                 std::string vtn;
                 ss >> vtn;

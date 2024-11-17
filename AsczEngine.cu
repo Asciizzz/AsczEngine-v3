@@ -16,10 +16,10 @@ int main() {
     FpsHandler &FPS = FpsHandler::instance();
     CsLogHandler LOG = CsLogHandler();
 
-    int width, height, pixelSize, tileSizeX, tileSizeY;
+    int width, height, pixelSize;
     // Note: higher pixelSize = lower resolution
     std::ifstream("assets/cfg/resolution.txt")
-        >> width >> height >> pixelSize >> tileSizeX >> tileSizeY;
+        >> width >> height >> pixelSize;
 
     Graphic3D &GRAPHIC = Graphic3D::instance();
     GRAPHIC.setResolution(width, height, pixelSize);
