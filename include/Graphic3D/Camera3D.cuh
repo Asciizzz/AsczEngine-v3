@@ -8,8 +8,6 @@
 
 class Camera3D {
 public:
-    Camera3D() {};
-
     Vec3f pos, rot; // Pitch, Yaw, Roll (roll rarely used)
     void restrictRot();
 

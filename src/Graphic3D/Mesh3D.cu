@@ -1,7 +1,7 @@
 #include <Mesh3D.cuh>
 #include <Graphic3D.cuh> // For the Graphic.mesh object
 
-// Mesh object
+// ======================= Mesh object =======================
 
 Mesh::Mesh(
     std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
@@ -163,50 +163,12 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
     cudaDeviceSynchronize();
 }
 
-// Mesh3D
+// ======================= Mesh3D =======================
 
-Mesh3D::Mesh3D(ULLInt numWs, ULLInt numTs, ULLInt numNs, ULLInt numFs) {
-    mallocVertices(numWs, numTs, numNs);
-    mallocFaces(numFs);
-}
-
-// Vertices allocation
-void Mesh3D::mallocVertices(ULLInt numWs, ULLInt numTs, ULLInt numNs) {
-    s.malloc(numWs);
-    w.malloc(numWs);
-    t.malloc(numTs);
-    n.malloc(numNs);
-    c.malloc(numWs);
-}
-void Mesh3D::freeVertices() {
-    s.free();
-    w.free();
-    n.free();
-    t.free();
-    c.free();
-}
-void Mesh3D::resizeVertices(ULLInt numWs, ULLInt numTs, ULLInt numNs) {
-    freeVertices();
-    mallocVertices(numWs, numNs, numTs);
-}
-
-// Faces allocation
-void Mesh3D::mallocFaces(ULLInt numFs) {
-    // 1 Face = 3 indices
-    fvtn.malloc(numFs * 3);
-}
-void Mesh3D::freeFaces() {
-    fvtn.free();
-}
-void Mesh3D::resizeFaces(ULLInt numFs) {
-    freeFaces();
-    mallocFaces(numFs);
-}
-
-// Free all memory
+// Free
 void Mesh3D::free() {
-    freeVertices();
-    freeFaces();
+    w.free(); t.free(); n.free();
+    c.free(); fvtn.free();
 }
 
 // Push

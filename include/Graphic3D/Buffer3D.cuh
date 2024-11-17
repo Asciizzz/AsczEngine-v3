@@ -29,7 +29,6 @@ public:
     Vec3f_ptr normal;
     Vec4f_ptr color;
 
-    Buffer3D();
     void resize(int width, int height, int pixelSize=1);
     void free();
 

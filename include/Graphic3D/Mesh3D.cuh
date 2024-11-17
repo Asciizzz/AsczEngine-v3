@@ -74,6 +74,7 @@ struct Mesh {
 // Cool device mesh (for parallel processing)
 class Mesh3D {
 public:
+    // Geometry data
     Vec4f_ptr s;
     Vec3f_ptr w;
     Vec2f_ptr t;
@@ -81,18 +82,10 @@ public:
     Vec4f_ptr c;
     Vec3ulli_ptr fvtn;
 
-    Mesh3D(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
+    // Material data
 
-    void mallocVertices(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0);
-    void freeVertices();
-    void resizeVertices(ULLInt numWs, ULLInt numTs, ULLInt numNs);
-
-    void mallocFaces(ULLInt numFs=0);
-    void freeFaces();
-    void resizeFaces(ULLInt numFs);
-
+    // Free
     void free();
-
     // Resize + Append
     void push(Mesh &mesh);
     void push(std::vector<Mesh> &meshs);
