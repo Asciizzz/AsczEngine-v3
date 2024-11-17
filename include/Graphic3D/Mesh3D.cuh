@@ -21,8 +21,8 @@ We will have 4 arrays for vertex data:
 #define Meshs3D std::vector<Mesh3D>
 
 #define VectF std::vector<float>
+#define VectLLI std::vector<LLInt>
 #define VectULLI std::vector<ULLInt>
-#define VectLL std::vector<long long>
 
 struct Mesh {
     /* VERY IMPORTANT NOTE:
@@ -43,7 +43,7 @@ struct Mesh {
     VectF nx, ny, nz;
     VectF cr, cg, cb, ca;
     VectULLI fw, ft, fn;
-    VectLL fm;
+    VectLLI fm;
 
     // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
@@ -56,7 +56,7 @@ struct Mesh {
         VectF nx, VectF ny, VectF nz,
         VectF cr, VectF cg, VectF cb, VectF ca,
         // Face data
-        VectULLI fw, VectULLI ft, VectULLI fn, VectLL fm = {}
+        VectULLI fw, VectULLI ft, VectULLI fn, VectLLI fm = {}
     );
 
     void push(Mesh &mesh);
@@ -80,8 +80,10 @@ struct Mesh {
 
 // Face Ptr
 struct Face_ptr {
-    ULLInt *v, *t, *n;
-    long long *m; // -1 by default for no material
+    ULLInt *v;
+    LLInt *t;
+    LLInt *n;
+    LLInt *m; // -1 by default for no material
     ULLInt size;
 
     void malloc(ULLInt size);
@@ -120,7 +122,8 @@ public:
 };
 
 // Kernel for preparing faces
-__global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs);
+__global__ void incFaceIdxKernel1(ULLInt *f, ULLInt offset, ULLInt numFs);
+__global__ void incFaceIdxKernel2(LLInt *f, ULLInt offset, ULLInt numFs);
 
 // Kernel for transformations
 // Note: rotation and scaling also affects normals

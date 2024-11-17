@@ -22,7 +22,7 @@ void Face3D::malloc(ULLInt size) {
     cudaMalloc(&cb, sizeof(float) * size);
     cudaMalloc(&ca, sizeof(float) * size);
     cudaMalloc(&active, sizeof(bool) * size / 3);
-    cudaMalloc(&mat, sizeof(long long) * size / 3);
+    cudaMalloc(&mat, sizeof(LLInt) * size / 3);
     cudaMalloc(&area, sizeof(float) * size / 3);
 }
 void Face3D::free() {

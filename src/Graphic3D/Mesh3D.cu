@@ -9,7 +9,7 @@ Mesh::Mesh(
     VectF tu, VectF tv,
     VectF nx, VectF ny, VectF nz,
     VectF cr, VectF cg, VectF cb, VectF ca,
-    VectULLI fw, VectULLI ft, VectULLI fn, VectLL fm
+    VectULLI fw, VectULLI ft, VectULLI fn, VectLLI fm
 ) : wx(wx), wy(wy), wz(wz),
     tu(tu), tv(tv),
     nx(nx), ny(ny), nz(nz), 
@@ -170,9 +170,9 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
 
 void Face_ptr::malloc(ULLInt size) {
     cudaMalloc(&v, size * sizeof(ULLInt));
-    cudaMalloc(&t, size * sizeof(ULLInt));
-    cudaMalloc(&n, size * sizeof(ULLInt));
-    cudaMalloc(&m, size * sizeof(long long));
+    cudaMalloc(&t, size * sizeof(LLInt));
+    cudaMalloc(&n, size * sizeof(LLInt));
+    cudaMalloc(&m, size * sizeof(LLInt));
     this->size = size;
 }
 void Face_ptr::free() {
@@ -184,22 +184,24 @@ void Face_ptr::free() {
 void Face_ptr::operator+=(Face_ptr &face) {
     ULLInt size = this->size + face.size;
 
-    ULLInt *newV, *newT, *newN;
-    long long *newM;
+    ULLInt *newV;
+    LLInt *newT;
+    LLInt *newN;
+    LLInt *newM;
     cudaMalloc(&newV, size * sizeof(ULLInt));
-    cudaMalloc(&newT, size * sizeof(ULLInt));
-    cudaMalloc(&newN, size * sizeof(ULLInt));
-    cudaMalloc(&newM, size * sizeof(long long));
+    cudaMalloc(&newT, size * sizeof(LLInt));
+    cudaMalloc(&newN, size * sizeof(LLInt));
+    cudaMalloc(&newM, size * sizeof(LLInt));
 
     cudaMemcpy(newV, v, this->size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newT, t, this->size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newN, n, this->size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newM, m, this->size * sizeof(long long), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newT, t, this->size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newN, n, this->size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newM, m, this->size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
 
     cudaMemcpy(newV + this->size, face.v, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newT + this->size, face.t, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newN + this->size, face.n, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newM + this->size, face.m, face.size * sizeof(long long), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newT + this->size, face.t, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newN + this->size, face.n, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newM + this->size, face.m, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
 
     free();
 
@@ -236,6 +238,8 @@ void Mesh3D::push(Mesh &mesh) {
     ULLInt offsetT = t.size;
     ULLInt offsetN = n.size;
 
+    // Vertex data
+
     // Set the range of stuff
     mesh.w_range = {offsetV, offsetV + mesh.wx.size()};
     mesh.t_range = {offsetT, offsetT + mesh.tu.size()};
@@ -246,17 +250,14 @@ void Mesh3D::push(Mesh &mesh) {
     Vec2f_ptr newT;
     Vec3f_ptr newN;
     Vec4f_ptr newC;
-    Face_ptr newFvtnm;
     ULLInt wSize = mesh.wx.size();
     ULLInt tSize = mesh.tu.size();
     ULLInt nSize = mesh.nx.size();
     ULLInt cSize = mesh.cr.size();
-    ULLInt fvtnmSize = mesh.fw.size();
     newW.malloc(wSize);
     newT.malloc(tSize);
     newN.malloc(nSize);
     newC.malloc(cSize);
-    newFvtnm.malloc(fvtnmSize);
 
     // Stream for async memory copy
     cudaStream_t stream;
@@ -278,31 +279,42 @@ void Mesh3D::push(Mesh &mesh) {
     cudaMemcpyAsync(newC.z, mesh.cb.data(), cSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newC.w, mesh.ca.data(), cSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
-    cudaMemcpyAsync(newFvtnm.v, mesh.fw.data(), fvtnmSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newFvtnm.t, mesh.ft.data(), fvtnmSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newFvtnm.n, mesh.fn.data(), fvtnmSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
-
-    // Increment face indices
-    ULLInt gridSize = (fvtnmSize + 255) / 256;
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtnm.v, offsetV, fvtnmSize);
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtnm.t, offsetT, fvtnmSize);
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtnm.n, offsetN, fvtnmSize);
-
     w += newW;
     t += newT;
     n += newN;
     c += newC;
-    f += newFvtnm;
 
     s.free();
     s.malloc(w.size);
+
+    // Face data
+
+    Face_ptr newF;
+    ULLInt fSize = mesh.fw.size();
+    newF.malloc(fSize);
+
+    cudaMemcpyAsync(newF.v, mesh.fw.data(), fSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newF.t, mesh.ft.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newF.n, mesh.fn.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newF.m, mesh.fm.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
+
+    // Increment face indices
+    ULLInt gridSize = (fSize + 255) / 256;
+    incFaceIdxKernel1<<<gridSize, 256>>>(newF.v, offsetV, fSize);
+    incFaceIdxKernel2<<<gridSize, 256>>>(newF.t, offsetT, fSize);
+    incFaceIdxKernel2<<<gridSize, 256>>>(newF.n, offsetN, fSize);
+    f += newF;
 }
 void Mesh3D::push(std::vector<Mesh> &meshes) {
     for (Mesh &mesh : meshes) push(mesh);
 }
 
 // Kernel for incrementing face indices
-__global__ void incrementFaceIdxKernel(ULLInt *f, ULLInt offset, ULLInt numFs) { // BETA
+__global__ void incFaceIdxKernel1(ULLInt *f, ULLInt offset, ULLInt numFs) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < numFs) f[idx] += offset;
+}
+__global__ void incFaceIdxKernel2(LLInt *f, ULLInt offset, ULLInt numFs) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numFs) f[idx] += offset;
 }
