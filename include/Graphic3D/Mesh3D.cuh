@@ -79,7 +79,7 @@ public:
     Vec2f_ptr texture;
     Vec4f_ptr color;
     Vec4f_ptr screen;
-    Vec4ulli_ptr fvtn;
+    Vec3ulli_ptr fvtn;
 
     Mesh3D(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);
 

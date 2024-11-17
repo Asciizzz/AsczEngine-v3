@@ -224,7 +224,7 @@ void Mesh3D::push(Mesh &mesh) {
     Vec2f_ptr newTexture;
     Vec3f_ptr newNormal;
     Vec4f_ptr newColor;
-    Vec4ulli_ptr newFvtn;
+    Vec3ulli_ptr newFvtn;
     ULLInt worldSize = mesh.wx.size();
     ULLInt textureSize = mesh.tu.size();
     ULLInt normalSize = mesh.nx.size();
