@@ -14,11 +14,11 @@ void VertexShader::cameraProjection() {
     Camera3D &camera = grph.camera;
     Mesh3D &mesh = grph.mesh;
 
-    ULLInt gridSize = (mesh.w.size + 255) / 256;
+    ULLInt gridSize = (mesh.v.w.size + 255) / 256;
     cameraProjectionKernel<<<gridSize, 256>>>(
-        mesh.w.x, mesh.w.y, mesh.w.z,
-        mesh.s.x, mesh.s.y, mesh.s.z, mesh.s.w,
-        camera.mvp, mesh.w.size
+        mesh.v.w.x, mesh.v.w.y, mesh.v.w.z,
+        mesh.v.s.x, mesh.v.s.y, mesh.v.s.z, mesh.v.s.w,
+        camera.mvp, mesh.v.w.size
     );
 }
 
@@ -29,11 +29,11 @@ void VertexShader::frustumCulling() {
 
     ULLInt gridSize = (mesh.f.size / 3 + 255) / 256;
     frustumCullingKernel<<<gridSize, 256>>>(
-        mesh.s.x, mesh.s.y, mesh.s.z, mesh.s.w,
-        mesh.w.x, mesh.w.y, mesh.w.z,
-        mesh.t.x, mesh.t.y,
-        mesh.n.x, mesh.n.y, mesh.n.z,
-        mesh.c.x, mesh.c.y, mesh.c.z, mesh.c.w,
+        mesh.v.s.x, mesh.v.s.y, mesh.v.s.z, mesh.v.s.w,
+        mesh.v.w.x, mesh.v.w.y, mesh.v.w.z,
+        mesh.v.t.x, mesh.v.t.y,
+        mesh.v.n.x, mesh.v.n.y, mesh.v.n.z,
+        mesh.v.c.x, mesh.v.c.y, mesh.v.c.z, mesh.v.c.w,
         mesh.f.v, mesh.f.t, mesh.f.n, mesh.f.m,
         mesh.f.size / 3,
 
@@ -197,6 +197,7 @@ __global__ void frustumCullingKernel(
     ULLInt fw[3] = {fWs[idx0], fWs[idx1], fWs[idx2]};
     LLInt ft[3] = {fTs[idx0], fTs[idx1], fTs[idx2]};
     LLInt fn[3] = {fNs[idx0], fNs[idx1], fNs[idx2]};
+    LLInt fm = fMs[idx0];
 
     // Early culling (for outside the frustum)
     Vec4f rtSs[3] = {
@@ -274,7 +275,7 @@ __global__ void frustumCullingKernel(
         rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
 
         rtActive[fIdx * 4] = true;
-        rtMat[fIdx * 4] = fMs[idx0];
+        rtMat[fIdx * 4] = fm;
 
         // Find the area of the triangle's bounding box
         float ndcX[3] = {rtSs[0].x / rtSs[0].w, rtSs[1].x / rtSs[1].w, rtSs[2].x / rtSs[2].w};
@@ -527,7 +528,7 @@ __global__ void frustumCullingKernel(
         rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
 
         rtActive[fIdx * 4 + i] = true;
-        rtMat[fIdx * 4 + i] = fMs[idx0];
+        rtMat[fIdx * 4 + i] = fm;
 
         // Find the area of the triangle's bounding box
         float ndcX[3] = {tempS2[0].x / tempS2[0].w, tempS2[i + 1].x / tempS2[i + 1].w, tempS2[i + 2].x / tempS2[i + 2].w};

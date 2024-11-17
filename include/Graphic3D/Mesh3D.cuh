@@ -38,12 +38,19 @@ struct Mesh {
     */
 
     // Section 1: initialization
+    
+    // Vertex data
     VectF wx, wy, wz;
     VectF tu, tv;
     VectF nx, ny, nz;
     VectF cr, cg, cb, ca;
+
+    // Face data
     VectULLI fw;
     VectLLI ft, fn, fm;
+
+    // Material data
+    VectF kdr, kdg, kdb;
 
     // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
@@ -56,7 +63,9 @@ struct Mesh {
         VectF nx, VectF ny, VectF nz,
         VectF cr, VectF cg, VectF cb, VectF ca,
         // Face data
-        VectULLI fw, VectLLI ft, VectLLI fn, VectLLI fm = {}
+        VectULLI fw, VectLLI ft, VectLLI fn, VectLLI fm,
+        // Material data
+        VectF kdr, VectF kdg, VectF kdb
     );
 
     void push(Mesh &mesh);
@@ -78,6 +87,19 @@ struct Mesh {
     void scaleRuntime(Vec3f origin, Vec3f scl);
 };
 
+// Vertex Ptr
+struct Vertex_ptr {
+    Vec4f_ptr s;
+    Vec3f_ptr w;
+    Vec2f_ptr t;
+    Vec3f_ptr n;
+    Vec4f_ptr c;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Vertex_ptr &vertex);
+};
+
 // Face Ptr
 struct Face_ptr {
     ULLInt *v;
@@ -91,16 +113,23 @@ struct Face_ptr {
     void operator+=(Face_ptr &face);
 };
 
+// Material Ptr
+struct Material_ptr {
+    Vec3f_ptr ka;
+    Vec3f_ptr kd;
+    Vec3f_ptr ks;
+    ULLInt *map_Kd;
+    float *ns;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Material_ptr &material);
+};
+
 // Device mesh (SoA for coalesced memory access)
 class Mesh3D {
 public:
-    // Vertex data
-    Vec4f_ptr s; // x y z w
-    Vec3f_ptr w; // x y z
-    Vec2f_ptr t; // u v
-    Vec3f_ptr n; // nx ny nz
-    Vec4f_ptr c; // r g b a
-    // Face data
+    Vertex_ptr v; // s w t n c
     Face_ptr f; // v t n mat
     // Material data
     Vec3f_ptr ka; // r g b - ignore for now

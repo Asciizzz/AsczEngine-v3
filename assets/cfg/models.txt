@@ -1,13 +1,11 @@
 # For very large models
-# .heavy/mountains.obj 1 0 0 0 0 0 0
+# .heavy/mountains.obj 100 0 0 0 0 0 0
 # .heavy/NightCity.obj 1 0 0 0 0 6 0
 # .heavy/Ikaros.obj 1
 # .heavy/Island.obj .2
 # .heavy/Ivy.obj .2 0 0 180 
 # .heavy/City.obj
 # .heavy/Room.obj
-
-
 
 # Back wall
 # assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
@@ -42,8 +40,6 @@
 # assets/Models/Anime/MalevolentShrine.obj 1
 
 assets/Models/Anime/Arisu.obj 1 -90 0 0 0 0 0
-
-
 
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 6

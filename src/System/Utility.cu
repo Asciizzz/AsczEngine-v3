@@ -1,12 +1,5 @@
 #include <Utility.cuh>
 
-MTLs Utils::readMtlFile(std::string path) {
-    std::ifstream file(path);
-    // if (!file.is_open()) return MTLMaterial();
-
-    return MTLs();
-}
-
 Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool rainbow) {
     std::ifstream file(path);
     if (!file.is_open()) return Mesh();
@@ -20,7 +13,6 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectULLI fw;
     VectLLI ft, fn, fm;
 
-    MTLs mats;
     int matIdx = -1;
 
     // We will use these value to shift the mesh to the origin
@@ -40,19 +32,19 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         std::string type;
         ss >> type;
 
-        if (type == "matlib") {
-            std::string mtlPath;
-            ss >> mtlPath;
+        // if (type == "matlib") {
+        //     std::string mtlPath;
+        //     ss >> mtlPath;
 
-            readMtlFile(mtlPath);
-        }
+        //     readMtlFile(mtlPath);
+        // }
 
-        if (type == "usemtl") {
-            // Extract the n from usemtl mat<n>
-            std::string matN;
-            ss >> matN;
-            matIdx = std::stoi(matN.substr(3)) - 1;
-        }
+        // if (type == "usemtl") {
+        //     // Extract the n from usemtl mat<n>
+        //     std::string matN;
+        //     ss >> matN;
+        //     matIdx = std::stoi(matN.substr(3)) - 1;
+        // }
 
         if (type == "v") {
             Vec3f v;
@@ -84,13 +76,6 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             nx.push_back(n.x);
             ny.push_back(n.y);
             nz.push_back(n.z);
-        } else if (type == "vc") { // NOTE: This is not in a standard .obj file format
-            Vec4f c;
-            ss >> c.x >> c.y >> c.z >> c.w;
-            cr.push_back(c.x * 255);
-            cg.push_back(c.y * 255);
-            cb.push_back(c.z * 255);
-            ca.push_back(c.w * 255);
         } else if (type == "f") {
             VectULLI vs;
             VectLLI ts, ns;
@@ -150,37 +135,35 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         }
     }
 
-    if (cr.size() == 0) {
-        #pragma omp parallel
-        for (size_t i = 0; i < wx.size(); i++) {
-            if (rainbow) {
-                // Set the color based on the ratio of x, y, and z
-                float r = (wx[i] - minX) / (maxX - minX);
-                float g = (wy[i] - minY) / (maxY - minY);
-                float b = (wz[i] - minZ) / (maxZ - minZ);
-                cr.push_back(255 - r * 155);
-                cg.push_back(g * 155 + 100);
-                cb.push_back(b * 155 + 100);
-                ca.push_back(255);
-            } else {
-                // Just set it to white
-                cr.push_back(255);
-                cg.push_back(255);
-                cb.push_back(255);
-                ca.push_back(255);
-            }
+    #pragma omp parallel
+    for (size_t i = 0; i < wx.size(); i++) {
+        if (rainbow) {
+            // Set the color based on the ratio of x, y, and z
+            float r = (wx[i] - minX) / (maxX - minX);
+            float g = (wy[i] - minY) / (maxY - minY);
+            float b = (wz[i] - minZ) / (maxZ - minZ);
+            cr.push_back(255 - r * 155);
+            cg.push_back(g * 155 + 100);
+            cb.push_back(b * 155 + 100);
+            ca.push_back(255);
+        } else {
+            // Just set it to white
+            cr.push_back(255);
+            cg.push_back(255);
+            cb.push_back(255);
+            ca.push_back(255);
+        }
 
-            // Shift to center of xz plane
-            if (placement > 0) {
-                wx[i] -= (minX + maxX) / 2;
-                wz[i] -= (minZ + maxZ) / 2;
-            }
+        // Shift to center of xz plane
+        if (placement > 0) {
+            wx[i] -= (minX + maxX) / 2;
+            wz[i] -= (minZ + maxZ) / 2;
+        }
 
-            if (placement == 1) { // Shift to center
-                wy[i] -= (minY + maxY) / 2;
-            } else if (placement == 2) { // Shift to floor
-                wy[i] -= minY;
-            }
+        if (placement == 1) { // Shift to center
+            wy[i] -= (minY + maxY) / 2;
+        } else if (placement == 2) { // Shift to floor
+            wy[i] -= minY;
         }
     }
 
@@ -189,7 +172,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         tu, tv,
         nx, ny, nz,
         cr, cg, cb, ca,
-        fw, ft, fn, fm
+        fw, ft, fn, fm,
+        {}, {}, {}
     };
 
     return mesh;
