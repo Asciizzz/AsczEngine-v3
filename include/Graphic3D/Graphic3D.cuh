@@ -87,7 +87,7 @@ public:
     void createTexture(const std::string &path);
     void freeTexture();
 
-    // BETA: LightSrc
+    // BETA: Lighting
     LightSrc light;
 
     // BETA: Shadow mapping

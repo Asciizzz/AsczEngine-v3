@@ -319,31 +319,34 @@ void Vec4f_ptr::operator+=(Vec4f_ptr& vec) {
     *this = newVec;
 }
 
-void Vec3ulli_ptr::malloc(ULLInt size) {
+void Vec4ulli_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&v, size * sizeof(ULLInt));
     cudaMalloc(&t, size * sizeof(ULLInt));
     cudaMalloc(&n, size * sizeof(ULLInt));
+    cudaMalloc(&m, size * sizeof(ULLInt));
 }
-void Vec3ulli_ptr::free() {
+void Vec4ulli_ptr::free() {
     this->size = 0;
     cudaFree(v);
     cudaFree(t);
     cudaFree(n);
 }
-void Vec3ulli_ptr::operator+=(Vec3ulli_ptr& vec) {
-    Vec3ulli_ptr newVec;
+void Vec4ulli_ptr::operator+=(Vec4ulli_ptr& vec) {
+    Vec4ulli_ptr newVec;
     newVec.malloc(size + vec.size);
 
     // Copy original data
     cudaMemcpy(newVec.v, v, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.t, t, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.n, n, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.m, m, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
 
     // Copy new data
     cudaMemcpy(newVec.v + size, vec.v, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.t + size, vec.t, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.n + size, vec.n, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.m + size, vec.m, vec.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
 
     // Free datas
     free();

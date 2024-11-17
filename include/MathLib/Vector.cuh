@@ -127,14 +127,14 @@ struct Vec4f_ptr {
 };
 
 // Mainly used for faces
-struct Vec3ulli_ptr {
-    // Vertex, texture, normal, and objId
-    ULLInt *v, *t, *n;
+struct Vec4ulli_ptr {
+    // Vertex, texture, normal, and material id
+    ULLInt *v, *t, *n, *m;
     ULLInt size;
 
     void malloc(ULLInt size);
     void free();
-    void operator+=(Vec3ulli_ptr &vec);
+    void operator+=(Vec4ulli_ptr &vec);
 };
 
 // Atomic functions for float

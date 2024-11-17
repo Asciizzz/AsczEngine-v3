@@ -167,8 +167,12 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
 
 // Free
 void Mesh3D::free() {
-    w.free(); t.free(); n.free();
-    c.free(); fvtn.free();
+    s.free();
+    w.free();
+    t.free();
+    n.free();
+    c.free();
+    f.free();
 }
 
 // Push
@@ -187,17 +191,17 @@ void Mesh3D::push(Mesh &mesh) {
     Vec2f_ptr newT;
     Vec3f_ptr newN;
     Vec4f_ptr newC;
-    Vec3ulli_ptr newFvtn;
+    Vec4ulli_ptr newFvtnm;
     ULLInt wSize = mesh.wx.size();
     ULLInt tSize = mesh.tu.size();
     ULLInt nSize = mesh.nx.size();
     ULLInt cSize = mesh.cr.size();
-    ULLInt fvtnSize = mesh.fw.size();
+    ULLInt fvtnmSize = mesh.fw.size();
     newW.malloc(wSize);
     newT.malloc(tSize);
     newN.malloc(nSize);
     newC.malloc(cSize);
-    newFvtn.malloc(fvtnSize);
+    newFvtnm.malloc(fvtnmSize);
 
     // Stream for async memory copy
     cudaStream_t stream;
@@ -219,21 +223,21 @@ void Mesh3D::push(Mesh &mesh) {
     cudaMemcpyAsync(newC.z, mesh.cb.data(), cSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newC.w, mesh.ca.data(), cSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
-    cudaMemcpyAsync(newFvtn.v, mesh.fw.data(), fvtnSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newFvtn.t, mesh.ft.data(), fvtnSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newFvtn.n, mesh.fn.data(), fvtnSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newFvtnm.v, mesh.fw.data(), fvtnmSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newFvtnm.t, mesh.ft.data(), fvtnmSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newFvtnm.n, mesh.fn.data(), fvtnmSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment face indices
-    ULLInt gridSize = (fvtnSize + 255) / 256;
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtn.v, offsetV, fvtnSize);
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtn.t, offsetT, fvtnSize);
-    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtn.n, offsetN, fvtnSize);
+    ULLInt gridSize = (fvtnmSize + 255) / 256;
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtnm.v, offsetV, fvtnmSize);
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtnm.t, offsetT, fvtnmSize);
+    incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtnm.n, offsetN, fvtnmSize);
 
     w += newW;
     t += newT;
     n += newN;
     c += newC;
-    fvtn += newFvtn;
+    f += newFvtnm;
 
     s.free();
     s.malloc(w.size);

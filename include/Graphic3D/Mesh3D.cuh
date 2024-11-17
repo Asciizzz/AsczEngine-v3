@@ -71,7 +71,7 @@ struct Mesh {
     void scaleRuntime(Vec3f origin, Vec3f scl);
 };
 
-// Cool device mesh (for parallel processing)
+// Device mesh (SoA for coalesced memory access)
 class Mesh3D {
 public:
     // Geometry data
@@ -80,9 +80,12 @@ public:
     Vec2f_ptr t;
     Vec3f_ptr n;
     Vec4f_ptr c;
-    Vec3ulli_ptr fvtn;
-
+    Vec4ulli_ptr f;
     // Material data
+    Vec3f_ptr ka;
+    Vec3f_ptr kd;
+    Vec3f_ptr ks;
+    float *ns;
 
     // Free
     void free();

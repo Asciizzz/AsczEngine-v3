@@ -27,14 +27,14 @@ void VertexShader::frustumCulling() {
     Mesh3D &mesh = grphic.mesh;
     Face3D &faces = grphic.rtFaces;
 
-    ULLInt gridSize = (mesh.fvtn.size / 3 + 255) / 256;
+    ULLInt gridSize = (mesh.f.size / 3 + 255) / 256;
     frustumCullingKernel<<<gridSize, 256>>>(
         mesh.s.x, mesh.s.y, mesh.s.z, mesh.s.w,
         mesh.w.x, mesh.w.y, mesh.w.z,
         mesh.t.x, mesh.t.y,
         mesh.n.x, mesh.n.y, mesh.n.z,
         mesh.c.x, mesh.c.y, mesh.c.z, mesh.c.w,
-        mesh.fvtn.v, mesh.fvtn.t, mesh.fvtn.n, mesh.fvtn.size / 3,
+        mesh.f.v, mesh.f.t, mesh.f.n, mesh.f.size / 3,
 
         faces.sx, faces.sy, faces.sz, faces.sw,
         faces.wx, faces.wy, faces.wz,

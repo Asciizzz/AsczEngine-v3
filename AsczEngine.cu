@@ -337,9 +337,9 @@ int main() {
             " x " + std::to_string(height) + "\n" +
             "| Pixel Size: " + std::to_string(pixelSize) + "\n" +
             "| RTFace1: " + std::to_string(GRAPHIC.rtCount1) + " / "
-            + std::to_string(GRAPHIC.mesh.fvtn.size / 3) + "\n" +
+            + std::to_string(GRAPHIC.mesh.f.size / 3) + "\n" +
             "| RTFace2: " + std::to_string(GRAPHIC.rtCount2) + " / "
-            + std::to_string(GRAPHIC.mesh.fvtn.size / 3),
+            + std::to_string(GRAPHIC.mesh.f.size / 3),
             sf::Color(255, 160, 160)
         );
         LOG.addLog(CAMERA.data(), sf::Color(160, 255, 160));
