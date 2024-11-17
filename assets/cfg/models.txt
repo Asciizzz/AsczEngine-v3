@@ -36,10 +36,13 @@
 # assets/Models/Shapes/Cube.obj .4 45 1 0 .4 0 -2
 # assets/Models/Shapes/Cube.obj 1
 
-assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
+# assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
 # assets/Models/Anime/Sukuna.obj 3 0 0 0 0 0 0
 # assets/Models/Anime/Miyu.obj 20 -90 180 0
 # assets/Models/Anime/MalevolentShrine.obj 1
+
+assets/Models/Anime/Arisu.obj 1 -90 0 0 0 0 0
+
 
 
 #assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4

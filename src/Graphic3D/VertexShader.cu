@@ -165,8 +165,8 @@ __global__ void frustumCullingKernel(
     const float *tu, const float *tv,
     const float *nx, const float *ny, const float *nz,
     const float *cr, const float *cg, const float *cb, const float *ca,
-    const ULLInt *fWs, const LLInt *fTs, const LLInt *fNs,
-    const LLInt *fMs, ULLInt numFs,
+    const ULLInt *fWs, const LLInt *fTs, const LLInt *fNs, const LLInt *fMs,
+    ULLInt numFs,
 
     // Runtime faces
     float *rtSx, float *rtSy, float *rtSz, float *rtSw,
@@ -274,7 +274,7 @@ __global__ void frustumCullingKernel(
         rtCa[idx0] = rtCs[0].w; rtCa[idx1] = rtCs[1].w; rtCa[idx2] = rtCs[2].w;
 
         rtActive[fIdx * 4] = true;
-        rtMat[fIdx * 4] = fMs[fIdx];
+        rtMat[fIdx * 4] = fMs[idx0];
 
         // Find the area of the triangle's bounding box
         float ndcX[3] = {rtSs[0].x / rtSs[0].w, rtSs[1].x / rtSs[1].w, rtSs[2].x / rtSs[2].w};
@@ -527,7 +527,7 @@ __global__ void frustumCullingKernel(
         rtCa[idx0] = tempC2[0].w; rtCa[idx1] = tempC2[i + 1].w; rtCa[idx2] = tempC2[i + 2].w;
 
         rtActive[fIdx * 4 + i] = true;
-        rtMat[fIdx * 4 + i] = fMs[fIdx];
+        rtMat[fIdx * 4 + i] = fMs[idx0];
 
         // Find the area of the triangle's bounding box
         float ndcX[3] = {tempS2[0].x / tempS2[0].w, tempS2[i + 1].x / tempS2[i + 1].w, tempS2[i + 2].x / tempS2[i + 2].w};

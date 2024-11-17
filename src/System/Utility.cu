@@ -1,5 +1,12 @@
 #include <Utility.cuh>
 
+MTLs Utils::readMtlFile(std::string path) {
+    std::ifstream file(path);
+    // if (!file.is_open()) return MTLMaterial();
+
+    return MTLs();
+}
+
 Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool rainbow) {
     std::ifstream file(path);
     if (!file.is_open()) return Mesh();
@@ -13,6 +20,9 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectULLI fw;
     VectLLI ft, fn, fm;
 
+    MTLs mats;
+    int matIdx = -1;
+
     // We will use these value to shift the mesh to the origin
     float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
     float maxX = -INFINITY, maxY = -INFINITY, maxZ = -INFINITY;
@@ -20,6 +30,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     std::vector<std::string> lines;
 
     while (std::getline(file, line)) {
+        if (line.size() == 0 || line[0] == '#') continue;
         lines.push_back(line);
     }
 
@@ -28,6 +39,20 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         std::stringstream ss(lines[i]);
         std::string type;
         ss >> type;
+
+        if (type == "matlib") {
+            std::string mtlPath;
+            ss >> mtlPath;
+
+            readMtlFile(mtlPath);
+        }
+
+        if (type == "usemtl") {
+            // Extract the n from usemtl mat<n>
+            std::string matN;
+            ss >> matN;
+            matIdx = std::stoi(matN.substr(3)) - 1;
+        }
 
         if (type == "v") {
             Vec3f v;
@@ -113,12 +138,14 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
 
             Note:  .obj files are assumed to organized the points
                     in a clockwise (or counter-clockwise) order
+                    If they don't, well, sucks to be you
             */
 
             for (int i = 1; i < vs.size() - 1; i++) {
                 fw.push_back(vs[0]); fw.push_back(vs[i]); fw.push_back(vs[i + 1]);
                 ft.push_back(ts[0]); ft.push_back(ts[i]); ft.push_back(ts[i + 1]);
                 fn.push_back(ns[0]); fn.push_back(ns[i]); fn.push_back(ns[i + 1]);
+                fm.push_back(matIdx); fm.push_back(matIdx); fm.push_back(matIdx);
             }
         }
     }
