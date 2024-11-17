@@ -1,14 +1,14 @@
 #include <Utility.cuh>
 
-Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool rainbow) {
-    std::ifstream file(path);
+Mesh Utils::readObjFile(ObjPath path, short fIdxBased, short placement, bool rainbow) {
+    std::ifstream file(path.dotObj);
     if (!file.is_open()) return Mesh();
 
     std::string line;
 
     std::vector<float> wx, wy, wz;
-    std::vector<float> nx, ny, nz;
     std::vector<float> tu, tv;
+    std::vector<float> nx, ny, nz;
     std::vector<float> cr, cg, cb, ca;
     std::vector<ULLInt> fw, ft, fn;
 
@@ -43,6 +43,12 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             wx.push_back(v.x);
             wy.push_back(v.y);
             wz.push_back(v.z);
+            
+        } else if (type == "vt") {
+            Vec2f t;
+            ss >> t.x >> t.y;
+            tu.push_back(t.x);
+            tv.push_back(t.y);
         } else if (type == "vn") {
             Vec3f n;
             ss >> n.x >> n.y >> n.z;
@@ -52,11 +58,6 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             nx.push_back(n.x);
             ny.push_back(n.y);
             nz.push_back(n.z);
-        } else if (type == "vt") {
-            Vec2f t;
-            ss >> t.x >> t.y;
-            tu.push_back(t.x);
-            tv.push_back(t.y);
         } else if (type == "vc") { // NOTE: This is not in a standard .obj file format
             Vec4f c;
             ss >> c.x >> c.y >> c.z >> c.w;
@@ -133,8 +134,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
 
     Mesh mesh = {
         wx, wy, wz,
-        nx, ny, nz,
         tu, tv,
+        nx, ny, nz,
         cr, cg, cb, ca,
         fw, ft, fn
     };

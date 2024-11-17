@@ -55,7 +55,7 @@ void FragmentShader::createShadowMap() {
     dim3 blockNum(blockNumTile, blockNumFace);
 
     createShadowMapKernel<<<blockNum, blockSize>>>(
-        mesh.world.x, mesh.world.y, mesh.world.z,
+        mesh.w.x, mesh.w.y, mesh.w.z,
         mesh.fvtn.v, mesh.fvtn.size / 3,
         grphic.shadowDepth, grphic.shdwWidth, grphic.shdwHeight,
         grphic.shdwTileNumX, grphic.shdwTileNumY, grphic.shdwTileSizeX, grphic.shdwTileSizeY

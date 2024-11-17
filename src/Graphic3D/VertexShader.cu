@@ -14,11 +14,11 @@ void VertexShader::cameraProjection() {
     Camera3D &camera = grphic.camera;
     Mesh3D &mesh = grphic.mesh;
 
-    ULLInt gridSize = (mesh.world.size + 255) / 256;
+    ULLInt gridSize = (mesh.w.size + 255) / 256;
     cameraProjectionKernel<<<gridSize, 256>>>(
-        mesh.world.x, mesh.world.y, mesh.world.z,
-        mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
-        camera.mvp, mesh.world.size
+        mesh.w.x, mesh.w.y, mesh.w.z,
+        mesh.s.x, mesh.s.y, mesh.s.z, mesh.s.w,
+        camera.mvp, mesh.w.size
     );
 }
 
@@ -29,11 +29,11 @@ void VertexShader::frustumCulling() {
 
     ULLInt gridSize = (mesh.fvtn.size / 3 + 255) / 256;
     frustumCullingKernel<<<gridSize, 256>>>(
-        mesh.screen.x, mesh.screen.y, mesh.screen.z, mesh.screen.w,
-        mesh.world.x, mesh.world.y, mesh.world.z,
-        mesh.texture.x, mesh.texture.y,
-        mesh.normal.x, mesh.normal.y, mesh.normal.z,
-        mesh.color.x, mesh.color.y, mesh.color.z, mesh.color.w,
+        mesh.s.x, mesh.s.y, mesh.s.z, mesh.s.w,
+        mesh.w.x, mesh.w.y, mesh.w.z,
+        mesh.t.x, mesh.t.y,
+        mesh.n.x, mesh.n.y, mesh.n.z,
+        mesh.c.x, mesh.c.y, mesh.c.z, mesh.c.w,
         mesh.fvtn.v, mesh.fvtn.t, mesh.fvtn.n, mesh.fvtn.size / 3,
 
         faces.sx, faces.sy, faces.sz, faces.sw,

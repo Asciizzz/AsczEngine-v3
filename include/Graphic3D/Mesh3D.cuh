@@ -35,8 +35,8 @@ struct Mesh {
 
     // Section 1: initialization
     std::vector<float> wx, wy, wz;
-    std::vector<float> nx, ny, nz;
     std::vector<float> tu, tv;
+    std::vector<float> nx, ny, nz;
     std::vector<float> cr, cg, cb, ca;
     std::vector<ULLInt> fw, ft, fn, fo;
 
@@ -45,9 +45,9 @@ struct Mesh {
 
     Mesh(
         std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
-        std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
         std::vector<float> tu, std::vector<float> tv,
-        std::vector<float> cr, std::vector<float> colorG, std::vector<float> colorB, std::vector<float> colorA,
+        std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
+        std::vector<float> cr, std::vector<float> cg, std::vector<float> cb, std::vector<float> ca,
         std::vector<ULLInt> fw, std::vector<ULLInt> ft, std::vector<ULLInt> fn
     );
     Mesh();
@@ -56,8 +56,8 @@ struct Mesh {
 
     // Return vertex data
     Vec3f w3f(ULLInt i);
-    Vec3f n3f(ULLInt i);
     Vec2f t2f(ULLInt i);
+    Vec3f n3f(ULLInt i);
     Vec4f c4f(ULLInt i);
 
     // Section 1 transformations
@@ -74,11 +74,11 @@ struct Mesh {
 // Cool device mesh (for parallel processing)
 class Mesh3D {
 public:
-    Vec3f_ptr world;
-    Vec3f_ptr normal;
-    Vec2f_ptr texture;
-    Vec4f_ptr color;
-    Vec4f_ptr screen;
+    Vec4f_ptr s;
+    Vec3f_ptr w;
+    Vec2f_ptr t;
+    Vec3f_ptr n;
+    Vec4f_ptr c;
     Vec3ulli_ptr fvtn;
 
     Mesh3D(ULLInt numWs=0, ULLInt numTs=0, ULLInt numNs=0, ULLInt numFs=0);

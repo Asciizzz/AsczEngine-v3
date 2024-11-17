@@ -5,11 +5,11 @@
 
 Mesh::Mesh(
     std::vector<float> wx, std::vector<float> wy, std::vector<float> wz,
-    std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
     std::vector<float> tu, std::vector<float> tv,
+    std::vector<float> nx, std::vector<float> ny, std::vector<float> nz,
     std::vector<float> cr, std::vector<float> cg, std::vector<float> cb, std::vector<float> ca,
     std::vector<ULLInt> fw, std::vector<ULLInt> ft, std::vector<ULLInt> fn
-) : wx(wx), wy(wy), wz(wz), nx(nx), ny(ny), nz(nz), tu(tu), tv(tv),
+) : wx(wx), wy(wy), wz(wz), tu(tu), tv(tv), nx(nx), ny(ny), nz(nz), 
     cr(cr), cg(cg), cb(cb), ca(ca), fw(fw), ft(ft), fn(fn) {}
 
 Mesh::Mesh() {}
@@ -20,15 +20,16 @@ void Mesh::push(Mesh &mesh) {
         wy.push_back(mesh.wy[i]);
         wz.push_back(mesh.wz[i]);
     }
+    for (ULLInt i = 0; i < mesh.tu.size(); i++) {
+        tu.push_back(mesh.tu[i]);
+        tv.push_back(mesh.tv[i]);
+    }
     for (ULLInt i = 0; i < mesh.nx.size(); i++) {
         nx.push_back(mesh.nx[i]);
         ny.push_back(mesh.ny[i]);
         nz.push_back(mesh.nz[i]);
     }
-    for (ULLInt i = 0; i < mesh.tu.size(); i++) {
-        tu.push_back(mesh.tu[i]);
-        tv.push_back(mesh.tv[i]);
-    }
+
     for (ULLInt i = 0; i < mesh.cr.size(); i++) {
         cr.push_back(mesh.cr[i]);
         cg.push_back(mesh.cg[i]);
@@ -45,8 +46,8 @@ void Mesh::push(Mesh &mesh) {
 }
 
 Vec3f Mesh::w3f(ULLInt i) { return Vec3f(wx[i], wy[i], wz[i]); }
-Vec3f Mesh::n3f(ULLInt i) { return Vec3f(nx[i], ny[i], nz[i]); }
 Vec2f Mesh::t2f(ULLInt i) { return Vec2f(tu[i], tv[i]); }
+Vec3f Mesh::n3f(ULLInt i) { return Vec3f(nx[i], ny[i], nz[i]); }
 Vec4f Mesh::c4f(ULLInt i) { return Vec4f(cr[i], cg[i], cb[i], ca[i]); }
 
 void Mesh::translateIni(Vec3f t) {
@@ -108,7 +109,7 @@ void Mesh::scaleIni(Vec3f origin, Vec3f scl, bool sclNormal) {
 }
 
 void Mesh::translateRuntime(Vec3f t) {
-    Vec3f_ptr &world = Graphic3D::instance().mesh.world;
+    Vec3f_ptr &w = Graphic3D::instance().mesh.w;
 
     ULLInt start = w_range.x, end = w_range.y;
 
@@ -116,14 +117,14 @@ void Mesh::translateRuntime(Vec3f t) {
     ULLInt gridSize = (numWs + 255) / 256;
 
     translateMeshKernel<<<gridSize, 256>>>(
-        world.x + start, world.y + start, world.z + start,
+        w.x + start, w.y + start, w.z + start,
         t.x, t.y, t.z, numWs
     );
     cudaDeviceSynchronize();
 }
 void Mesh::rotateRuntime(Vec3f origin, float r, short axis) {
-    Vec3f_ptr &world = Graphic3D::instance().mesh.world;
-    Vec3f_ptr &normal = Graphic3D::instance().mesh.normal;
+    Vec3f_ptr &w = Graphic3D::instance().mesh.w;
+    Vec3f_ptr &n = Graphic3D::instance().mesh.n;
 
     ULLInt startW = w_range.x, endW = w_range.y;
     ULLInt startN = n_range.x, endN = n_range.y;
@@ -135,15 +136,15 @@ void Mesh::rotateRuntime(Vec3f origin, float r, short axis) {
     ULLInt gridSize = (num + 255) / 256;    
 
     rotateMeshKernel<<<gridSize, 256>>>(
-        world.x + startW, world.y + startW, world.z + startW, numWs,
-        normal.x + startN, normal.y + startN, normal.z + startN, numNs,
+        w.x + startW, w.y + startW, w.z + startW, numWs,
+        n.x + startN, n.y + startN, n.z + startN, numNs,
         origin.x, origin.y, origin.z, r, axis
     );
     cudaDeviceSynchronize();
 }
 void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
-    Vec3f_ptr &world = Graphic3D::instance().mesh.world;
-    Vec3f_ptr &normal = Graphic3D::instance().mesh.normal;
+    Vec3f_ptr &w = Graphic3D::instance().mesh.w;
+    Vec3f_ptr &n = Graphic3D::instance().mesh.n;
 
     ULLInt startW = w_range.x, endW = w_range.y;
     ULLInt startN = n_range.x, endN = n_range.y;
@@ -155,8 +156,8 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
     ULLInt gridSize = (num + 255) / 256;
 
     scaleMeshKernel<<<gridSize, 256>>>(
-        world.x + startW, world.y + startW, world.z + startW, numWs,
-        normal.x + startN, normal.y + startN, normal.z + startN, numNs,
+        w.x + startW, w.y + startW, w.z + startW, numWs,
+        n.x + startN, n.y + startN, n.z + startN, numNs,
         origin.x, origin.y, origin.z, scl.x, scl.y, scl.z
     );
     cudaDeviceSynchronize();
@@ -164,25 +165,25 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
 
 // Mesh3D
 
-Mesh3D::Mesh3D(ULLInt numWs, ULLInt numNs, ULLInt numTs, ULLInt numFs) {
-    mallocVertices(numWs, numNs, numTs);
+Mesh3D::Mesh3D(ULLInt numWs, ULLInt numTs, ULLInt numNs, ULLInt numFs) {
+    mallocVertices(numWs, numTs, numNs);
     mallocFaces(numFs);
 }
 
 // Vertices allocation
-void Mesh3D::mallocVertices(ULLInt numWs, ULLInt numNs, ULLInt numTs) {
-    world.malloc(numWs);
-    normal.malloc(numNs);
-    texture.malloc(numTs);
-    color.malloc(numWs);
-    screen.malloc(numWs);
+void Mesh3D::mallocVertices(ULLInt numWs, ULLInt numTs, ULLInt numNs) {
+    s.malloc(numWs);
+    w.malloc(numWs);
+    t.malloc(numTs);
+    n.malloc(numNs);
+    c.malloc(numWs);
 }
 void Mesh3D::freeVertices() {
-    world.free();
-    normal.free();
-    texture.free();
-    color.free();
-    screen.free();
+    s.free();
+    w.free();
+    n.free();
+    t.free();
+    c.free();
 }
 void Mesh3D::resizeVertices(ULLInt numWs, ULLInt numTs, ULLInt numNs) {
     freeVertices();
@@ -210,9 +211,9 @@ void Mesh3D::free() {
 
 // Push
 void Mesh3D::push(Mesh &mesh) {
-    ULLInt offsetV = world.size;
-    ULLInt offsetT = texture.size;
-    ULLInt offsetN = normal.size;
+    ULLInt offsetV = w.size;
+    ULLInt offsetT = t.size;
+    ULLInt offsetN = n.size;
 
     // Set the range of stuff
     mesh.w_range = {offsetV, offsetV + mesh.wx.size()};
@@ -220,41 +221,41 @@ void Mesh3D::push(Mesh &mesh) {
     mesh.n_range = {offsetN, offsetN + mesh.nx.size()};
     mesh.c_range = {offsetV, offsetV + mesh.cr.size()};
 
-    Vec3f_ptr newWorld;
-    Vec2f_ptr newTexture;
-    Vec3f_ptr newNormal;
-    Vec4f_ptr newColor;
+    Vec3f_ptr newW;
+    Vec2f_ptr newT;
+    Vec3f_ptr newN;
+    Vec4f_ptr newC;
     Vec3ulli_ptr newFvtn;
-    ULLInt worldSize = mesh.wx.size();
-    ULLInt textureSize = mesh.tu.size();
-    ULLInt normalSize = mesh.nx.size();
-    ULLInt colorSize = mesh.cr.size();
+    ULLInt wSize = mesh.wx.size();
+    ULLInt tSize = mesh.tu.size();
+    ULLInt nSize = mesh.nx.size();
+    ULLInt cSize = mesh.cr.size();
     ULLInt fvtnSize = mesh.fw.size();
-    newWorld.malloc(worldSize);
-    newTexture.malloc(textureSize);
-    newNormal.malloc(normalSize);
-    newColor.malloc(colorSize);
+    newW.malloc(wSize);
+    newT.malloc(tSize);
+    newN.malloc(nSize);
+    newC.malloc(cSize);
     newFvtn.malloc(fvtnSize);
 
     // Stream for async memory copy
     cudaStream_t stream;
     cudaStreamCreate(&stream);
 
-    cudaMemcpyAsync(newWorld.x, mesh.wx.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newWorld.y, mesh.wy.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newWorld.z, mesh.wz.data(), worldSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newW.x, mesh.wx.data(), wSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newW.y, mesh.wy.data(), wSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newW.z, mesh.wz.data(), wSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
-    cudaMemcpyAsync(newTexture.x, mesh.tu.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newTexture.y, mesh.tv.data(), textureSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newT.x, mesh.tu.data(), tSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newT.y, mesh.tv.data(), tSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
-    cudaMemcpyAsync(newNormal.x, mesh.nx.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newNormal.y, mesh.ny.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newNormal.z, mesh.nz.data(), normalSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newN.x, mesh.nx.data(), nSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newN.y, mesh.ny.data(), nSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newN.z, mesh.nz.data(), nSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
-    cudaMemcpyAsync(newColor.x, mesh.cr.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newColor.y, mesh.cg.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newColor.z, mesh.cb.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newColor.w, mesh.ca.data(), colorSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newC.x, mesh.cr.data(), cSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newC.y, mesh.cg.data(), cSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newC.z, mesh.cb.data(), cSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newC.w, mesh.ca.data(), cSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
     cudaMemcpyAsync(newFvtn.v, mesh.fw.data(), fvtnSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newFvtn.t, mesh.ft.data(), fvtnSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
@@ -266,14 +267,14 @@ void Mesh3D::push(Mesh &mesh) {
     incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtn.t, offsetT, fvtnSize);
     incrementFaceIdxKernel<<<gridSize, 256>>>(newFvtn.n, offsetN, fvtnSize);
 
-    world += newWorld;
-    normal += newNormal;
-    texture += newTexture;
-    color += newColor;
+    w += newW;
+    t += newT;
+    n += newN;
+    c += newC;
     fvtn += newFvtn;
 
-    screen.free();
-    screen.malloc(world.size);
+    s.free();
+    s.malloc(w.size);
 }
 void Mesh3D::push(std::vector<Mesh> &meshes) {
     for (Mesh &mesh : meshes) push(mesh);
