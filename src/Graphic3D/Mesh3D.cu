@@ -352,6 +352,8 @@ void Mesh3D::push(Mesh &mesh) {
 
     cudaMemcpyAsync(newM.mkd.x, mesh.mkd.data(), mSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
+    // Increment texture indices (will do later)
+    // ...
     m += newM;
 
     // =============== Face data ================
