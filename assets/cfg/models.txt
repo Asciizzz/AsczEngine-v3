@@ -40,7 +40,8 @@
 # assets/Models/Anime/Miyu.obj 20 -90 180 0
 # assets/Models/Anime/MalevolentShrine.obj 1
 
-assets/Models/Anime/Shiroko.obj 420 0 0 0 0 0 0
+#assets/Models/Anime/Shiroko.obj 420 0 0 0 0 0 0
+
 assets/Models/Anime/Arisu.obj 1 -90 0 0 -120 0 -120
 #assets/Models/Anime/Arisu.obj 1 -90 90 0 -120 0 120
 #assets/Models/Anime/Arisu.obj 1 -90 180 0 120 0 120
