@@ -99,6 +99,15 @@ struct Vec2ulli {
 
 // SoA structure Vecs
 
+struct Vec1f_ptr {
+    float *x;
+    ULLInt size;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Vec1f_ptr &vec);
+    void setAll(float val);
+};
 struct Vec2f_ptr {
     float *x, *y;
     ULLInt size;

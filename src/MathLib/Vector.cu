@@ -217,6 +217,26 @@ void Vec4f::limit(float min, float max) {
 
 // SoA structure Vecs
 
+void Vec1f_ptr::malloc(ULLInt size) {
+    this->size = size;
+    cudaMalloc(&x, size * sizeof(float));
+}
+void Vec1f_ptr::free() {
+    this->size = 0;
+    cudaFree(x);
+}
+void Vec1f_ptr::operator+=(Vec1f_ptr& vec) {
+    Vec1f_ptr newVec;
+    newVec.malloc(size + vec.size);
+
+    cudaMemcpy(newVec.x, x, size * sizeof(float), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
+
+    free();
+    vec.free();
+    *this = newVec;
+}
+
 void Vec2f_ptr::malloc(ULLInt size) {
     this->size = size;
     cudaMalloc(&x, size * sizeof(float));

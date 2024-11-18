@@ -78,7 +78,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                     mkd.push_back(-1);
                 }
 
-                if  (mtlType == "Ka") {
+                if (mtlType == "Ka") {
                     float r, g, b;
                     mtlSS >> r >> g >> b;
 
@@ -99,6 +99,10 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                     MTL &mtl = mtlList.back();
                     mtl.ksr = r; mtl.ksg = g; mtl.ksb = b;
                     ksr.back() = r; ksg.back() = g; ksb.back() = b;
+                } else if (mtlType == "map_Kd") {
+                    MTL &mtl = mtlList.back();
+                    mtl.mkd = 0;
+                    mkd.back() = 0;
                 }
             }
         }

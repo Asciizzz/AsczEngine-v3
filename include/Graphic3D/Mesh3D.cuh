@@ -90,6 +90,13 @@ struct Mesh {
     void scaleRuntime(Vec3f origin, Vec3f scl);
 };
 
+/* Note:
+
+Vertex_ptr and Texture_ptr don't have size because
+every values have their own size
+
+*/
+
 // Vertex Ptr
 struct Vertex_ptr {
     Vec4f_ptr s;
@@ -97,7 +104,6 @@ struct Vertex_ptr {
     Vec2f_ptr t;
     Vec3f_ptr n;
 
-    void malloc(ULLInt size);
     void free();
     void operator+=(Vertex_ptr &vertex);
 };
@@ -121,11 +127,39 @@ struct Material_ptr {
     Vec3f_ptr kd;
     Vec3f_ptr ks;
     Vec1lli_ptr mkd;
-
     ULLInt size;
+
     void malloc(ULLInt size);
     void free();
     void operator+=(Material_ptr &material);
+};
+
+// Texture Ptr
+struct Texture_ptr {
+    /* Explanation:
+    
+    Every texture will be flattened into a 1D array
+
+    The offset array will store the starting index of each texture
+
+    Example: a 100x100 and 200x200 texture
+
+    t will be a 1D array of size 100*100 + 200*200
+    w and h is straightforward
+    offset will be {0, 100*100} for the above example
+        offset_n = offset_n-1 + w_n * h_n
+    
+    */
+
+    float *t;
+    int *w;
+    int *h;
+    LLInt *offset;
+    ULLInt count;
+
+    void malloc(ULLInt count);
+    void free();
+    void operator+=(Texture_ptr &texture);
 };
 
 // Device mesh (SoA for coalesced memory access)
