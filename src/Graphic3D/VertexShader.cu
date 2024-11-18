@@ -572,17 +572,17 @@ __global__ void createDepthMapKernel(
     float sw1 = rtSw[idx1];
     float sw2 = rtSw[idx2];
 
-    float bx0 = (rtSx[idx0]/sw0 + 1) * bWidth / 2;
-    float bx1 = (rtSx[idx1]/sw1 + 1) * bWidth / 2;
-    float bx2 = (rtSx[idx2]/sw2 + 1) * bWidth / 2;
+    float bx0 = (rtSx[idx0] / sw0 + 1) * bWidth / 2;
+    float bx1 = (rtSx[idx1] / sw1 + 1) * bWidth / 2;
+    float bx2 = (rtSx[idx2] / sw2 + 1) * bWidth / 2;
 
-    float by0 = (1 - rtSy[idx0]/sw0) * bHeight / 2;
-    float by1 = (1 - rtSy[idx1]/sw1) * bHeight / 2;
-    float by2 = (1 - rtSy[idx2]/sw2) * bHeight / 2;
+    float by0 = (1 - rtSy[idx0] / sw0) * bHeight / 2;
+    float by1 = (1 - rtSy[idx1] / sw1) * bHeight / 2;
+    float by2 = (1 - rtSy[idx2] / sw2) * bHeight / 2;
 
-    float bz0 = (rtSz[idx0]/sw0 + 1) / 2;
-    float bz1 = (rtSz[idx1]/sw1 + 1) / 2;
-    float bz2 = (rtSz[idx2]/sw2 + 1) / 2;
+    float bz0 = (rtSz[idx0] / sw0 + 1) / 2;
+    float bz1 = (rtSz[idx1] / sw1 + 1) / 2;
+    float bz2 = (rtSz[idx2] / sw2 + 1) / 2;
 
     // Buffer bounding box based on the tile
     int tX = tIdx % tNumX;
