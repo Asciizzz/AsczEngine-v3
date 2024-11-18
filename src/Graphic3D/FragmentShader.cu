@@ -178,11 +178,13 @@ __global__ void phongShadingKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
 
-    if (buffNx[i] == 0 && buffNy[i] == 0 && buffNz[i] == 0) return;
-
     buffCr[i] *= light.color.x;
     buffCg[i] *= light.color.y;
     buffCb[i] *= light.color.z;
+
+    if (buffNx[i] == 0 &&
+        buffNy[i] == 0 &&
+        buffNz[i] == 0) return;
 
     // Find the light direction
     // Vec3f lightDir = light.dir * -1;

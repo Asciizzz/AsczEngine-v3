@@ -216,16 +216,27 @@ __global__ void frustumCullingKernel(
         Vec3f(wx[fw[1]], wy[fw[1]], wz[fw[1]]),
         Vec3f(wx[fw[2]], wy[fw[2]], wz[fw[2]])
     };
-    Vec2f rtTs[3] = {
-        Vec2f(tu[ft[0]], tv[ft[0]]),
-        Vec2f(tu[ft[1]], tv[ft[1]]),
-        Vec2f(tu[ft[2]], tv[ft[2]])
-    };
-    Vec3f rtNs[3] = {
-        Vec3f(nx[fn[0]], ny[fn[0]], nz[fn[0]]),
-        Vec3f(nx[fn[1]], ny[fn[1]], nz[fn[1]]),
-        Vec3f(nx[fn[2]], ny[fn[2]], nz[fn[2]])
-    };
+    Vec2f rtTs[3];
+    if (ft[0] < 0) {
+        rtTs[0] = Vec2f(-1, -1);
+        rtTs[1] = Vec2f(-1, -1);
+        rtTs[2] = Vec2f(-1, -1);
+    } else {
+        rtTs[0] = Vec2f(tu[ft[0]], tv[ft[0]]);
+        rtTs[1] = Vec2f(tu[ft[1]], tv[ft[1]]);
+        rtTs[2] = Vec2f(tu[ft[2]], tv[ft[2]]);
+    }
+
+    Vec3f rtNs[3];
+    if (fn[0] < 0) {
+        rtNs[0] = Vec3f(0, 0, 0);
+        rtNs[1] = Vec3f(0, 0, 0);
+        rtNs[2] = Vec3f(0, 0, 0);
+    } else {
+        rtNs[0] = Vec3f(nx[fn[0]], ny[fn[0]], nz[fn[0]]);
+        rtNs[1] = Vec3f(nx[fn[1]], ny[fn[1]], nz[fn[1]]);
+        rtNs[2] = Vec3f(nx[fn[2]], ny[fn[2]], nz[fn[2]]);
+    }
 
     // If all inside, return
     bool inside1 = VertexShader::insideFrustum(rtSs[0]);
