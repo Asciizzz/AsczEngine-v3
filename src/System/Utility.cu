@@ -13,6 +13,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectULLI fw;
     VectLLI ft, fn, fm;
 
+    VectF kar, kag, kab;
+    VectF ksr, ksg, ksb;
     VectF kdr, kdg, kdb;
 
     int matIdx = -1;
@@ -66,28 +68,39 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
 
                     MTL mtl;
                     mtl.mIdx = mtlList.size();
-                    mtl.kdr = 1;
-                    mtl.kdg = 1;
-                    mtl.kdb = 1;
+                    mtl.kar = 1; mtl.kag = 1; mtl.kab = 1;
+                    mtl.kdr = 1; mtl.kdg = 1; mtl.kdb = 1;
+                    mtl.ksr = 1; mtl.ksg = 1; mtl.ksb = 1;
 
                     mtlMap[mtlName] = mtl;
                     mtlList.push_back(mtl);
 
-                    kdr.push_back(1);
-                    kdg.push_back(1);
-                    kdb.push_back(1);
+                    kar.push_back(1); kag.push_back(1); kab.push_back(1);
+                    kdr.push_back(1); kdg.push_back(1); kdb.push_back(1);
+                    ksr.push_back(1); ksg.push_back(1); ksb.push_back(1);
                 }
 
-                if (mtlType == "Kd") {
+                if  (mtlType == "Ka") {
                     float r, g, b;
                     mtlSS >> r >> g >> b;
-                    mtlList.back().kdr = r;
-                    mtlList.back().kdg = g;
-                    mtlList.back().kdb = b;
 
-                    kdr.back() = r;
-                    kdg.back() = g;
-                    kdb.back() = b;
+                    MTL &mtl = mtlList.back();
+                    mtl.kar = r; mtl.kag = g; mtl.kab = b;
+                    kar.back() = r; kag.back() = g; kab.back() = b;
+                } else if (mtlType == "Kd") {
+                    float r, g, b;
+                    mtlSS >> r >> g >> b;
+
+                    MTL &mtl = mtlList.back();
+                    mtl.kdr = r; mtl.kdg = g; mtl.kdb = b;
+                    kdr.back() = r; kdg.back() = g; kdb.back() = b;
+                } else if (mtlType == "Ks") {
+                    float r, g, b;
+                    mtlSS >> r >> g >> b;
+
+                    MTL &mtl = mtlList.back();
+                    mtl.ksr = r; mtl.ksg = g; mtl.ksb = b;
+                    ksr.back() = r; ksg.back() = g; ksb.back() = b;
                 }
             }
         }
@@ -213,7 +226,9 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         tu, tv,
         nx, ny, nz,
         fw, ft, fn, fm,
-        kdr, kdg, kdb
+        kar, kag, kab,
+        kdr, kdg, kdb,
+        ksr, ksg, ksb
     };
 
     return mesh;

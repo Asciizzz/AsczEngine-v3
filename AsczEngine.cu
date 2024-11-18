@@ -46,9 +46,9 @@ int main() {
     DotObj dotObjs("assets/cfg/models.txt");
     GRAPHIC.mesh.push(dotObjs.objs);
 
-    // SolarSystem solarSystem;
-    // solarSystem.setStars(4, 400, 6000, 8000, 6);
-    // GRAPHIC.mesh.push(solarSystem.stars);
+    SolarSystem solarSystem;
+    solarSystem.setStars(4, 400, 6000, 8000, 6);
+    GRAPHIC.mesh.push(solarSystem.stars);
 
     GRAPHIC.mallocRuntimeFaces();
 
@@ -69,7 +69,7 @@ int main() {
     short cycle = 0;
 
     // Turn on/off features
-    bool textureMode = true;
+    bool materialMode = true;
     bool shadowMode = false;
     bool shadeMode = true;
     bool customMode = false;
@@ -113,7 +113,7 @@ int main() {
 
                 // Press 1 to toggle texture mode
                 if (event.key.code == sf::Keyboard::Num1)
-                    textureMode = !textureMode;
+                    materialMode = !materialMode;
                 // Press 2 to toggle shadow mode
                 if (event.key.code == sf::Keyboard::Num2)
                     shadowMode = !shadowMode;
@@ -268,16 +268,16 @@ int main() {
         GRAPHIC.light.dir = CAMERA.pos;
 
         // Rotate stars
-        // std::vector<Mesh> &stars = solarSystem.stars;
-        // stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
-        // stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
-        // stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
-        // stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
+        std::vector<Mesh> &stars = solarSystem.stars;
+        stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
+        stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
+        stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
+        stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
 
-        // stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
-        // stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
-        // stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
-        // stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
+        stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
+        stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
+        stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
+        stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
 
         // ========== Render Pipeline ==========
 
@@ -288,8 +288,10 @@ int main() {
         VertexShader::rasterization();
 
         // Fragment Shader (bunch of beta features)
-        if (textureMode) FragmentShader::applyMaterial();
-        if (textureMode) FragmentShader::applyTexture();
+        if (materialMode) {
+            FragmentShader::applyMaterial();
+            FragmentShader::applyTexture();
+        }
         if (shadowMode) {
             FragmentShader::resetShadowMap();
             FragmentShader::createShadowMap();
@@ -347,8 +349,8 @@ int main() {
         LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 160, 255));
         LOG.addLog("Shader (BETA)", sf::Color(255, 255, 255), 1);
         LOG.addLog(
-            "| Texture: " + std::to_string(textureMode),
-            sf::Color(textureMode ? 255 : 100, 50, 50)
+            "| Material: " + std::to_string(materialMode),
+            sf::Color(materialMode ? 255 : 100, 50, 50)
         );
         LOG.addLog(
             "| Shadow: " + std::to_string(shadowMode),

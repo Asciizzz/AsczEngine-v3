@@ -9,7 +9,9 @@
 
 struct MTL {
     ULLInt mIdx;
+    float kar, kag, kab;
     float kdr, kdg, kdb;
+    float ksr, ksg, ksb;
 };
 
 class Utils {

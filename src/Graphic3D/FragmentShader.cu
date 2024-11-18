@@ -122,8 +122,17 @@ __global__ void applyMaterialKernel( // Beta
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= bWidth * bHeight || !bActive[i]) return;
 
+    
+
     LLInt matIdx = bMat[i];
-    if (matIdx < 0) return;
+    if (matIdx < 0) {
+        // Set default to white
+        bCr[i] = 255;
+        bCg[i] = 255;
+        bCb[i] = 255;
+        bCa[i] = 255;
+        return;
+    }
 
     bCr[i] = kdr[matIdx] * 255;
     bCg[i] = kdg[matIdx] * 255;
