@@ -16,6 +16,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectF kar, kag, kab;
     VectF ksr, ksg, ksb;
     VectF kdr, kdg, kdb;
+    VectLLI mkd;
 
     int matIdx = -1;
 
@@ -66,11 +67,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                     std::string mtlName;
                     mtlSS >> mtlName;
 
-                    MTL mtl;
-                    mtl.mIdx = mtlList.size();
-                    mtl.kar = 1; mtl.kag = 1; mtl.kab = 1;
-                    mtl.kdr = 1; mtl.kdg = 1; mtl.kdb = 1;
-                    mtl.ksr = 1; mtl.ksg = 1; mtl.ksb = 1;
+                    MTL mtl(mtlList.size());
 
                     mtlMap[mtlName] = mtl;
                     mtlList.push_back(mtl);
@@ -78,6 +75,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                     kar.push_back(1); kag.push_back(1); kab.push_back(1);
                     kdr.push_back(1); kdg.push_back(1); kdb.push_back(1);
                     ksr.push_back(1); ksg.push_back(1); ksb.push_back(1);
+                    mkd.push_back(-1);
                 }
 
                 if  (mtlType == "Ka") {
@@ -114,7 +112,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                 matIdx = -1;
             } else {
             // Get the idx of the material based on the mtlMap
-                matIdx = mtlMap[mtlName].mIdx;
+                matIdx = mtlMap[mtlName].idx;
             }
         }
 
@@ -228,7 +226,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         fw, ft, fn, fm,
         kar, kag, kab,
         kdr, kdg, kdb,
-        ksr, ksg, ksb
+        ksr, ksg, ksb,
+        mkd
     };
 
     return mesh;

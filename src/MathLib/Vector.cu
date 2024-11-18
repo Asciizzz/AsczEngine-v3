@@ -231,24 +231,19 @@ void Vec2f_ptr::operator+=(Vec2f_ptr& vec) {
     Vec2f_ptr newVec;
     newVec.malloc(size + vec.size);
 
-    // Copy original data
     cudaMemcpy(newVec.x, x, size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.y, y, size * sizeof(float), cudaMemcpyDeviceToDevice);
 
-    // Copy new data
     cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.y + size, vec.y, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
 
-    // Free datas
     free();
     vec.free();
-
-    // Update
     *this = newVec;
 }
 void Vec2f_ptr::setAll(float val) {
-    setAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
-    setAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
 }
 
 void Vec3f_ptr::malloc(ULLInt size) {
@@ -267,27 +262,22 @@ void Vec3f_ptr::operator+=(Vec3f_ptr& vec) {
     Vec3f_ptr newVec;
     newVec.malloc(size + vec.size);
 
-    // Copy original data
     cudaMemcpy(newVec.x, x, size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.y, y, size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.z, z, size * sizeof(float), cudaMemcpyDeviceToDevice);
 
-    // Copy new data
     cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.y + size, vec.y, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.z + size, vec.z, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
 
-    // Free datas
     free();
     vec.free();
-
-    // Update
     *this = newVec;
 }
 void Vec3f_ptr::setAll(float val) {
-    setAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
-    setAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
-    setAllKernel<<<(size + 255) / 256, 256>>>(z, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(z, val, size);
 }
 
 void Vec4f_ptr::malloc(ULLInt size) {
@@ -308,30 +298,46 @@ void Vec4f_ptr::operator+=(Vec4f_ptr& vec) {
     Vec4f_ptr newVec;
     newVec.malloc(size + vec.size);
 
-    // Copy original data
     cudaMemcpy(newVec.x, x, size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.y, y, size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.z, z, size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.w, w, size * sizeof(float), cudaMemcpyDeviceToDevice);
 
-    // Copy new data
     cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.y + size, vec.y, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.z + size, vec.z, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newVec.w + size, vec.w, vec.size * sizeof(float), cudaMemcpyDeviceToDevice);
 
-    // Free datas
     free();
     vec.free();
-
-    // Update
     *this = newVec;
 }
 void Vec4f_ptr::setAll(float val) {
-    setAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
-    setAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
-    setAllKernel<<<(size + 255) / 256, 256>>>(z, val, size);
-    setAllKernel<<<(size + 255) / 256, 256>>>(w, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(y, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(z, val, size);
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(w, val, size);
+}
+
+void Vec1lli_ptr::malloc(ULLInt size) {
+    this->size = size;
+    cudaMalloc(&x, size * sizeof(LLInt));
+}
+void Vec1lli_ptr::free() {
+    this->size = 0;
+    cudaFree(x);
+}
+void Vec1lli_ptr::operator+=(Vec1lli_ptr& vec) {
+    Vec1lli_ptr newVec;
+    newVec.malloc(size + vec.size);
+
+    cudaMemcpy(newVec.x, x, size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+
+    free();
+    vec.free();
+
+    *this = newVec;
 }
 
 // Atomics
@@ -360,8 +366,11 @@ __device__ bool atomicMinDouble(double* addr, double value) {
 }
 
 // Helper functions
-
-__global__ void setAllKernel(float *arr, float val, ULLInt size) {
+__global__ void setFloatAllKernel(float *arr, float val, ULLInt size) {
+    ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < size) arr[i] = val;
+}
+__global__ void setLLIntAllKernel(LLInt *arr, LLInt val, ULLInt size) {
     ULLInt i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < size) arr[i] = val;
 }

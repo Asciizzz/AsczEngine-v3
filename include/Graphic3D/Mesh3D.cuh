@@ -52,6 +52,7 @@ struct Mesh {
     VectF kar, kag, kab;
     VectF kdr, kdg, kdb;
     VectF ksr, ksg, ksb;
+    VectLLI mkd;
 
     // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
@@ -67,7 +68,8 @@ struct Mesh {
         // Material data
         VectF kar, VectF kag, VectF kab,
         VectF kdr, VectF kdg, VectF kdb,
-        VectF ksr, VectF ksg, VectF ksb
+        VectF ksr, VectF ksg, VectF ksb,
+        VectLLI mkd
     );
 
     void push(Mesh &mesh);
@@ -118,6 +120,7 @@ struct Material_ptr {
     Vec3f_ptr ka;
     Vec3f_ptr kd;
     Vec3f_ptr ks;
+    Vec1lli_ptr mkd;
 
     ULLInt size;
     void malloc(ULLInt size);

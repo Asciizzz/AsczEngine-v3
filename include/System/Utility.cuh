@@ -8,10 +8,13 @@
 #include <unordered_map>
 
 struct MTL {
-    ULLInt mIdx;
-    float kar, kag, kab;
-    float kdr, kdg, kdb;
-    float ksr, ksg, ksb;
+    ULLInt idx;
+    float kar = 1, kag = 1, kab = 1;
+    float kdr = 1, kdg = 1, kdb = 1;
+    float ksr = 1, ksg = 1, ksb = 1;
+    LLInt mkd = -1;
+
+    MTL(ULLInt idx=0) : idx(idx) {}
 };
 
 class Utils {

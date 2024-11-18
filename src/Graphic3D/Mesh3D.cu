@@ -14,7 +14,8 @@ Mesh::Mesh(
     // Material data
     VectF kar, VectF kag, VectF kab,
     VectF kdr, VectF kdg, VectF kdb,
-    VectF ksr, VectF ksg, VectF ksb
+    VectF ksr, VectF ksg, VectF ksb,
+    VectLLI mkd
 ) : wx(wx), wy(wy), wz(wz),
     tu(tu), tv(tv),
     nx(nx), ny(ny), nz(nz),
@@ -23,7 +24,8 @@ Mesh::Mesh(
 
     kar(kar), kag(kag), kab(kab),
     kdr(kdr), kdg(kdg), kdb(kdb),
-    ksr(ksr), ksg(ksg), ksb(ksb)
+    ksr(ksr), ksg(ksg), ksb(ksb),
+    mkd(mkd)
 {}
 
 void Mesh::push(Mesh &mesh) {
@@ -266,18 +268,20 @@ void Material_ptr::malloc(ULLInt size) {
     ka.malloc(size);
     kd.malloc(size);
     ks.malloc(size);
+    mkd.malloc(size);
     this->size = size;
 }
 void Material_ptr::free() {
     ka.free();
     kd.free();
     ks.free();
+    mkd.free();
 }
 void Material_ptr::operator+=(Material_ptr &material) {
     ka += material.ka;
     kd += material.kd;
     ks += material.ks;
-    this->size = ka.size;
+    mkd += material.mkd;
 }
 
 
@@ -339,25 +343,32 @@ void Mesh3D::push(Mesh &mesh) {
     Vec3f_ptr newKa;
     Vec3f_ptr newKd;
     Vec3f_ptr newKs;
+    Vec1lli_ptr newMKd;
     ULLInt mSize = mesh.kdr.size();
     newKa.malloc(mSize);
     newKd.malloc(mSize);
     newKs.malloc(mSize);
+    newMKd.malloc(mSize);
 
     cudaMemcpyAsync(newKa.x, mesh.kar.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newKa.y, mesh.kag.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newKa.z, mesh.kab.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    
     cudaMemcpyAsync(newKd.x, mesh.kdr.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newKd.y, mesh.kdg.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newKd.z, mesh.kdb.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    
     cudaMemcpyAsync(newKs.x, mesh.ksr.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newKs.y, mesh.ksg.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newKs.z, mesh.ksb.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
 
+    cudaMemcpyAsync(newMKd.x, mesh.mkd.data(), mSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
+
+    m.size += mSize;
     m.kd += newKd;
     m.ka += newKa;
     m.ks += newKs;
-    m.size += mSize;
+    m.mkd += newMKd;
 
     // =============== Face data ================
 

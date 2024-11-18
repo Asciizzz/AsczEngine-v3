@@ -127,11 +127,21 @@ struct Vec4f_ptr {
     void setAll(float val);
 };
 
+struct Vec1lli_ptr {
+    LLInt *x;
+    ULLInt size;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Vec1lli_ptr &vec);
+};
+
 // Atomic functions for float
 __device__ bool atomicMinFloat(float* addr, float value);
 __device__ bool atomicMinDouble(double* addr, double value);
 
 // Helpful kernels
-__global__ void setAllKernel(float *arr, float val, ULLInt size);
+__global__ void setFloatAllKernel(float *arr, float val, ULLInt size);
+__global__ void setLLIntAllKernel(LLInt *arr, LLInt val, ULLInt size);
 
 #endif
