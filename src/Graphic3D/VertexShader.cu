@@ -245,7 +245,7 @@ __global__ void frustumCullingKernel(
         rtWy[idx0] = rtWs[0].y; rtWy[idx1] = rtWs[1].y; rtWy[idx2] = rtWs[2].y;
         rtWz[idx0] = rtWs[0].z; rtWz[idx1] = rtWs[1].z; rtWz[idx2] = rtWs[2].z;
 
-        // Lack of texture = -1
+        // Lack of texture = -1 -1
         if (ft[0] < 0) {
             rtTu[idx0] = -1; rtTu[idx1] = -1; rtTu[idx2] = -1;
             rtTv[idx0] = -1; rtTv[idx1] = -1; rtTv[idx2] = -1;
@@ -254,9 +254,16 @@ __global__ void frustumCullingKernel(
             rtTv[idx0] = rtTs[0].y; rtTv[idx1] = rtTs[1].y; rtTv[idx2] = rtTs[2].y;
         }
 
-        rtNx[idx0] = rtNs[0].x; rtNx[idx1] = rtNs[1].x; rtNx[idx2] = rtNs[2].x;
-        rtNy[idx0] = rtNs[0].y; rtNy[idx1] = rtNs[1].y; rtNy[idx2] = rtNs[2].y;
-        rtNz[idx0] = rtNs[0].z; rtNz[idx1] = rtNs[1].z; rtNz[idx2] = rtNs[2].z;
+        // Lack of normal = 0 0 0
+        if (fn[0] < 0) {
+            rtNx[idx0] = 0; rtNx[idx1] = 0; rtNx[idx2] = 0;
+            rtNy[idx0] = 0; rtNy[idx1] = 0; rtNy[idx2] = 0;
+            rtNz[idx0] = 0; rtNz[idx1] = 0; rtNz[idx2] = 0;
+        } else {
+            rtNx[idx0] = rtNs[0].x; rtNx[idx1] = rtNs[1].x; rtNx[idx2] = rtNs[2].x;
+            rtNy[idx0] = rtNs[0].y; rtNy[idx1] = rtNs[1].y; rtNy[idx2] = rtNs[2].y;
+            rtNz[idx0] = rtNs[0].z; rtNz[idx1] = rtNs[1].z; rtNz[idx2] = rtNs[2].z;
+        }
 
         rtActive[fIdx * 4] = true;
         rtMat[fIdx * 4] = fm;
@@ -485,9 +492,15 @@ __global__ void frustumCullingKernel(
             rtTv[idx0] = tempT2[0].y; rtTv[idx1] = tempT2[i + 1].y; rtTv[idx2] = tempT2[i + 2].y;
         }
 
-        rtNx[idx0] = tempN2[0].x; rtNx[idx1] = tempN2[i + 1].x; rtNx[idx2] = tempN2[i + 2].x;
-        rtNy[idx0] = tempN2[0].y; rtNy[idx1] = tempN2[i + 1].y; rtNy[idx2] = tempN2[i + 2].y;
-        rtNz[idx0] = tempN2[0].z; rtNz[idx1] = tempN2[i + 1].z; rtNz[idx2] = tempN2[i + 2].z;
+        if (fn[0] < 0) {
+            rtNx[idx0] = 0; rtNx[idx1] = 0; rtNx[idx2] = 0;
+            rtNy[idx0] = 0; rtNy[idx1] = 0; rtNy[idx2] = 0;
+            rtNz[idx0] = 0; rtNz[idx1] = 0; rtNz[idx2] = 0;
+        } else {
+            rtNx[idx0] = tempN2[0].x; rtNx[idx1] = tempN2[i + 1].x; rtNx[idx2] = tempN2[i + 2].x;
+            rtNy[idx0] = tempN2[0].y; rtNy[idx1] = tempN2[i + 1].y; rtNy[idx2] = tempN2[i + 2].y;
+            rtNz[idx0] = tempN2[0].z; rtNz[idx1] = tempN2[i + 1].z; rtNz[idx2] = tempN2[i + 2].z;
+        }
 
         rtActive[fIdx * 4 + i] = true;
         rtMat[fIdx * 4 + i] = fm;
@@ -669,6 +682,10 @@ __global__ void rasterizationKernel(
     bNx[i] = nx_sw / homo1divW;
     bNy[i] = ny_sw / homo1divW;
     bNz[i] = nz_sw / homo1divW;
+
+    // Lack of normal = 0 0 0
+    if (bNx[i] == 0 && bNy[i] == 0 && bNz[i] == 0) return;
+
     float mag = sqrt( // Normalize the normal
         bNx[i] * bNx[i] +
         bNy[i] * bNy[i] +

@@ -8,7 +8,7 @@
 # .heavy/Room.obj
 
 # Back wall
-#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
+assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
 # Left wall
 #assets/Models/Shapes/Wall.obj 4 0 -90 0 4 0 0
 # Right wall
@@ -16,7 +16,7 @@
 # Ceiling
 #assets/Models/Shapes/Wall.obj 4 -90 0 0 0 4 0
 # Floor
-assets/Models/Shapes/Wall.obj 320 90 0 0 0 -165 0
+#assets/Models/Shapes/Wall.obj 320 90 0 0 0 -165 0
 
 # assets/Models/Shapes/Octo.obj 4 0 0 0 0 0 0
 # assets/Models/Shapes/Sphere.obj 1 0 0 0 0 0 0

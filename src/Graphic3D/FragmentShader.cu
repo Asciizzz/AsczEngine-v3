@@ -122,8 +122,6 @@ __global__ void applyMaterialKernel( // Beta
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= bWidth * bHeight || !bActive[i]) return;
 
-    
-
     LLInt matIdx = bMat[i];
     if (matIdx < 0) {
         // Set default to white
@@ -148,6 +146,8 @@ __global__ void applyTextureKernel( // Beta
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+
+    return;
 
     // Lack of texture => Ignore
     if (buffTu[i] < 0 || buffTu[i] > 1 ||
@@ -177,6 +177,8 @@ __global__ void phongShadingKernel(
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+
+    if (buffNx[i] == 0 && buffNy[i] == 0 && buffNz[i] == 0) return;
 
     buffCr[i] *= light.color.x;
     buffCg[i] *= light.color.y;
