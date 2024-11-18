@@ -54,7 +54,7 @@ void Mesh::push(Mesh &mesh) {
         else fn.push_back(mesh.fn[i] + nx.size());
 
         if (mesh.fm[i] < 0) fm.push_back(-1);
-        else fm.push_back(mesh.fm[i] + kdr.size());
+        else fm.push_back(mesh.fm[i] + kar.size());
     }
 
     // Material data
@@ -277,7 +277,7 @@ void Material_ptr::operator+=(Material_ptr &material) {
     ka += material.ka;
     kd += material.kd;
     ks += material.ks;
-    this->size += material.size;
+    this->size = ka.size;
 }
 
 
@@ -357,6 +357,7 @@ void Mesh3D::push(Mesh &mesh) {
     m.kd += newKd;
     m.ka += newKa;
     m.ks += newKs;
+    m.size += mSize;
 
     // =============== Face data ================
 
