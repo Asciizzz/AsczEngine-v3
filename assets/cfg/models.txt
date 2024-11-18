@@ -18,11 +18,11 @@
 # Ceiling
 #assets/Models/Shapes/Wall.obj 4 -90 0 0 0 4 0
 # Floor
-#assets/Models/Shapes/Wall.obj 320 90 0 0 0 -165 0
+#assets/Models/Shapes/Wall.obj 4 90 0 0 0 -4 0
 
 # assets/Models/Shapes/Octo.obj 4 0 0 0 0 0 0
 # assets/Models/Shapes/Sphere.obj 1 0 0 0 0 0 0
-# assets/Models/Shapes/Hollow.obj 200 0 0 0 0 200 0
+assets/Models/Shapes/Hollow.obj 200 0 0 0 0 200 0
 # assets/Models/Shapes/Star.obj 1 0 0 0 0 0 0
 
 # assets/Models/Weapon/Awp.obj 1.2 0 90 0 0 0 0
@@ -33,16 +33,14 @@
 # assets/Models/Structure/Medieval.obj 1 0 0 0 0 6 0
 # assets/Models/Structure/City.obj 1 -90 0 0 0 0 0
 # assets/Models/Structure/Street.obj 1 0 0 0 0 4.2 0
-
-# assets/Models/Shapes/Cube.obj .4 45 1 0 .4 0 -2
-# assets/Models/Shapes/Cube.obj 1
+# assets/Models/Structure/Fnaf.obj .01 0 0 0 0 3.9 0
 
 # assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
 # assets/Models/Anime/Sukuna.obj 3 0 0 0 0 0 0
 # assets/Models/Anime/Miyu.obj 20 -90 180 0
 # assets/Models/Anime/MalevolentShrine.obj 1
 
-#assets/Models/Anime/Shiroko.obj 420 0 0 0 0 0 0
+# assets/Models/Anime/Shiroko.obj 420 0 0 0 0 0 0
 
 #assets/Models/Shapes/Wall.obj 320 90 0 0 0 -165 0
 #assets/Models/Anime/Arisu.obj 1 -90 0 0 -120 0 -120
@@ -50,14 +48,8 @@
 #assets/Models/Anime/Arisu.obj 1 -90 180 0 120 0 120
 #assets/Models/Anime/Arisu.obj 1 -90 270 0 120 0 -120
 
-assets/Models/Anime/Yuuka.obj 20
+#assets/Models/Anime/Yuuka.obj 20
 
-#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
-#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 6
-#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 8
-#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 10
-
-# assets/Models/Structure/Fnaf.obj .01 0 0 0 0 3.9 0
 
 ~
 
