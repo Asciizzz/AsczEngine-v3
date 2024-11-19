@@ -11,7 +11,6 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectF wx, wy, wz;
     VectF tu, tv;
     VectF nx, ny, nz;
-    VectF cr, cg, cb, ca;
     VectULLI fw;
     VectLLI ft, fn, fm;
 
@@ -23,6 +22,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectF kdr, kdg, kdb;
     VectLLI mkd;
 
+    std::unordered_map<std::string, int> txMap;
     ULLInt txSize = 0;
     int txCount = 0;
     VectF txr, txg, txb; // Color
@@ -92,6 +92,15 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                     ksr.back() = r; ksg.back() = g; ksb.back() = b;
                 } else if (mtlType == "map_Kd") {
                     std::string txPath; mtlSS >> txPath;
+
+                    // If already loaded, assign the index and continue
+                    if (txMap.find(txPath) != txMap.end()) {
+                        mkd.back() = txMap[txPath];
+                        continue;
+                    } else {
+                    // If not, add it to the map
+                        txMap[txPath] = txCount;
+                    }
 
                     // Get the texture data using SFML
                     sf::Image txImage;

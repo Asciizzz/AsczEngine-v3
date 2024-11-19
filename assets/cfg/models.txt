@@ -7,9 +7,13 @@
 # .heavy/City.obj
 # .heavy/Room.obj
 # .heavy/Town/Town.obj
+#.heavy/Fnaf/Fnaf1.obj 1 0 0 0 0 0 0
+#assets/Models/BlueArchive/Shiroko/Shiroko.obj 20 0 0 0 -2 -28.5 -237
 
 
-assets/Models/Skybox/Dream/Skybox.obj 10 0 0 0 0 0 0
+#assets/Models/Skybox/Dream/Skybox.obj 10 0 0 0 0 0 0
+
+#assets/Models/Structure/LivingRoom/InteriorTest.obj 1 0 0 0 0 0 0
 
 
 #assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 0 0
@@ -37,7 +41,7 @@ assets/Models/Skybox/Dream/Skybox.obj 10 0 0 0 0 0 0
 # assets/Models/Weapon/M4A1.obj .5 0 90 45 0 0 .3
 # assets/Models/Weapon/Ak47.obj .5 0 90 45 0 0 -.6
 
-# assets/Models/Structure/Stronghold.obj .1 0 0 0 0 26.8 0
+assets/Models/Structure/Stronghold/Stronghold.obj .1
 # assets/Models/Structure/Medieval.obj 1 0 0 0 0 6 0
 # assets/Models/Structure/City.obj 1 -90 0 0 0 0 0
 # assets/Models/Structure/Street.obj 1 0 0 0 0 4.2 0
@@ -55,11 +59,13 @@ assets/Models/Skybox/Dream/Skybox.obj 10 0 0 0 0 0 0
 #assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 180 0 120 0 120
 #assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 270 0 120 0 -120
 
-assets/Models/Shapes/Wall.obj .5 90 0 0 0 -.4 0
-assets/Models/BlueArchive/Shiroko/Shiroko.obj 1 0 0 0 0 0 0
+#assets/Models/Shapes/Wall.obj .5 90 0 0 0 -.4 0
+#assets/Models/BlueArchive/Shiroko/Shiroko.obj 1 0 0 0 0 0 0
 #assets/Models/BlueArchive/Shiroko/Shiroko.obj 10 0 0 0 0 10 0
 
 #assets/Models/BlueArchive/CherinoR8/CherinoR8.obj 10 0 0 0 0 10 0
+
+#assets/Models/Character/Foxy/Foxy.obj .05 0 0 0 0 0 0
 
 ~
 

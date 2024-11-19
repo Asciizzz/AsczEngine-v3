@@ -325,8 +325,6 @@ void Texture_ptr::operator+=(Texture_ptr &texture) {
     of += texture.of;
 }
 
-
-
 // ======================= Mesh3D =======================
 
 // Free
@@ -398,8 +396,8 @@ void Mesh3D::push(Mesh &mesh) {
     cudaMemcpyAsync(newTx.of.x, mesh.txof.data(), txCount * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment texture offset
-    incLLIntKernel<<<1, 1>>>(newTx.of.x, offsetTxs, txCount);
-
+    ULLInt gridSize = (txCount + 255) / 256;
+    incLLIntKernel<<<gridSize, 256>>>(newTx.of.x, offsetTxs, txCount);
     t += newTx;
 
     // =============== Material data ===============
@@ -425,7 +423,8 @@ void Mesh3D::push(Mesh &mesh) {
     cudaMemcpyAsync(newM.mkd.x, mesh.mkd.data(), mSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment texture indices
-    incLLIntKernel<<<1, 1>>>(newM.mkd.x, offsetTxc, mSize);
+    gridSize = (mSize + 255) / 256;
+    incLLIntKernel<<<gridSize, 256>>>(newM.mkd.x, offsetTxc, mSize);
     m += newM;
 
     // =============== Face data ================
@@ -440,7 +439,7 @@ void Mesh3D::push(Mesh &mesh) {
     cudaMemcpyAsync(newF.m, mesh.fm.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment face indices
-    ULLInt gridSize = (fSize + 255) / 256;
+    gridSize = (fSize + 255) / 256;
     incULLIntKernel<<<gridSize, 256>>>(newF.v, offsetV, fSize);
     incLLIntKernel<<<gridSize, 256>>>(newF.t, offsetT, fSize);
     incLLIntKernel<<<gridSize, 256>>>(newF.n, offsetN, fSize);

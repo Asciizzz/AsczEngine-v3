@@ -125,10 +125,10 @@ __global__ void applyMaterialKernel( // Beta
 
     LLInt matIdx = bMat[i];
     if (matIdx < 0) {
-        // Set default to white
-        bCr[i] = 255;
-        bCg[i] = 255;
-        bCb[i] = 255;
+        // Set default
+        bCr[i] = 200;
+        bCg[i] = 200;
+        bCb[i] = 200;
         bCa[i] = 255;
         return;
     }
