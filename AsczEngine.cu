@@ -169,7 +169,7 @@ int main() {
 
             // Camera look around
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
-            CAMERA.rot.y += dMx * CAMERA.mSens * FPS.dTimeSec;
+            CAMERA.rot.y -= dMx * CAMERA.mSens * FPS.dTimeSec;
         }
 
         // Update camera
@@ -185,8 +185,8 @@ int main() {
             if (k_w && !k_s) CAMERA.pos += CAMERA.forward * vel * FPS.dTimeSec;
             if (k_s && !k_w) CAMERA.pos -= CAMERA.forward * vel * FPS.dTimeSec;
             // Press A/D to move left/right
-            if (k_a && !k_d) CAMERA.pos += CAMERA.right * vel * FPS.dTimeSec;
-            if (k_d && !k_a) CAMERA.pos -= CAMERA.right * vel * FPS.dTimeSec;
+            if (k_a && !k_d) CAMERA.pos -= CAMERA.right * vel * FPS.dTimeSec;
+            if (k_d && !k_a) CAMERA.pos += CAMERA.right * vel * FPS.dTimeSec;
         }
 
         if (CAMERA.focus && moveMode) {
@@ -220,13 +220,13 @@ int main() {
             }
             if (k_a && !k_d) {
                 moving = true;
-                CAMERA.vel.x += CAMERA.right.x * FPS.dTimeSec;
-                CAMERA.vel.z += CAMERA.right.z * FPS.dTimeSec;
+                CAMERA.vel.x -= CAMERA.right.x * FPS.dTimeSec;
+                CAMERA.vel.z -= CAMERA.right.z * FPS.dTimeSec;
             }
             if (k_d && !k_a) {
                 moving = true;
-                CAMERA.vel.x -= CAMERA.right.x * FPS.dTimeSec;
-                CAMERA.vel.z -= CAMERA.right.z * FPS.dTimeSec;
+                CAMERA.vel.x += CAMERA.right.x * FPS.dTimeSec;
+                CAMERA.vel.z += CAMERA.right.z * FPS.dTimeSec;
             }
             if (vel_xz > 0 && !moving) {
                 CAMERA.vel.x /= 1.5;

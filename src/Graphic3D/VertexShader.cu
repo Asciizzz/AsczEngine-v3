@@ -148,7 +148,7 @@ __global__ void cameraProjectionKernel(
 
     Vec4f screen = mvp * Vec4f(wx[vIdx], wy[vIdx], wz[vIdx], 1);
 
-    sx[vIdx] = -screen.x;
+    sx[vIdx] = screen.x;
     sy[vIdx] = screen.y;
     sz[vIdx] = screen.z;
     sw[vIdx] = screen.w;

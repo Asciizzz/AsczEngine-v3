@@ -9,7 +9,6 @@
 # .heavy/Town/Town.obj
 
 
-
 #assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 0 0
 #assets/Models/Shapes/Cube/Cube2.obj 1 0 0 0 0 3 0
 #assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 6 0
