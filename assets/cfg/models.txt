@@ -8,8 +8,6 @@
 # .heavy/Room.obj
 # .heavy/Town/Town.obj
 #.heavy/Fnaf/Fnaf1.obj 1 0 0 0 0 0 0
-#assets/Models/BlueArchive/Shiroko/Shiroko.obj 20 0 0 0 -2 -28.5 -237
-
 
 #assets/Models/Skybox/Dream/Skybox.obj 10 0 0 0 0 0 0
 
@@ -41,6 +39,7 @@
 # assets/Models/Weapon/M4A1.obj .5 0 90 45 0 0 .3
 # assets/Models/Weapon/Ak47.obj .5 0 90 45 0 0 -.6
 
+assets/Models/BlueArchive/Shiroko/Shiroko.obj 1.5 0 110 0 8.4 -23.86 -7.4
 assets/Models/Structure/Stronghold/Stronghold.obj .1
 # assets/Models/Structure/Medieval.obj 1 0 0 0 0 6 0
 # assets/Models/Structure/City.obj 1 -90 0 0 0 0 0
