@@ -51,20 +51,6 @@ void Mesh::push(Mesh &mesh) {
         nz.push_back(mesh.nz[i]);
     }
 
-    // Increment face indices
-    for (ULLInt i = 0; i < mesh.fw.size(); i++) {
-        fw.push_back(mesh.fw[i] + wx.size());
-
-        if (mesh.ft[i] < 0) ft.push_back(-1);
-        else ft.push_back(mesh.ft[i] + tu.size());
-
-        if (mesh.fn[i] < 0) fn.push_back(-1);
-        else fn.push_back(mesh.fn[i] + nx.size());
-
-        if (mesh.fm[i] < 0) fm.push_back(-1);
-        else fm.push_back(mesh.fm[i] + kar.size());
-    }
-
     // Material data
     for (ULLInt i = 0; i < mesh.kdr.size(); i++) {
         kar.push_back(mesh.kar[i]);
@@ -78,6 +64,32 @@ void Mesh::push(Mesh &mesh) {
         ksr.push_back(mesh.ksr[i]);
         ksg.push_back(mesh.ksg[i]);
         ksb.push_back(mesh.ksb[i]);
+    }
+
+    // Texture data + increment texture offset
+    for (ULLInt i = 0; i < mesh.txw.size(); i++) {
+        txw.push_back(mesh.txw[i]);
+        txh.push_back(mesh.txh[i]);
+        txof.push_back(mesh.txof[i] + txr.size());
+    }
+    for (ULLInt i = 0; i < mesh.txr.size(); i++) {
+        txr.push_back(mesh.txr[i]);
+        txg.push_back(mesh.txg[i]);
+        txb.push_back(mesh.txb[i]);
+    }
+
+    // Increment face indices
+    for (ULLInt i = 0; i < mesh.fw.size(); i++) {
+        fw.push_back(mesh.fw[i] + wx.size());
+
+        if (mesh.ft[i] < 0) ft.push_back(-1);
+        else ft.push_back(mesh.ft[i] + tu.size());
+
+        if (mesh.fn[i] < 0) fn.push_back(-1);
+        else fn.push_back(mesh.fn[i] + nx.size());
+
+        if (mesh.fm[i] < 0) fm.push_back(-1);
+        else fm.push_back(mesh.fm[i] + kar.size());
     }
 }
 

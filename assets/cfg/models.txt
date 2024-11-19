@@ -9,7 +9,7 @@
 # .heavy/Town/Town.obj
 
 
-assets/Models/Skybox/Skybox.obj 200 0 0 0 0 6 0
+assets/Models/Skybox/Skybox.obj 100 0 0 0 0 6 0
 
 ~
 

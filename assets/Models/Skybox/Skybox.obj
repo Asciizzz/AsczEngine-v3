@@ -3,14 +3,14 @@
 mtllib Skybox.mtl
 
 # Vertices (8 corners of the cube)
-v -1 -1 -1
-v 1 -1 -1
-v 1 1 -1
-v -1 1 -1
-v -1 -1 1
-v 1 -1 1
-v 1 1 1
-v -1 1 1
+v -1 -.8 -1
+v 1 -.8 -1
+v 1 .8 -1
+v -1 .8 -1
+v -1 -.8 1
+v 1 -.8 1
+v 1 .8 1
+v -1 .8 1
 
 # Texture coordinates (mapped to a 0-1 range on each face)
 
