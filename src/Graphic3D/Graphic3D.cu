@@ -51,7 +51,6 @@ void Graphic3D::free() {
     freeRuntimeFaces();
     destroyRuntimeStreams();
 
-    freeTexture();
     freeShadowMap();
 }
 
@@ -91,37 +90,6 @@ void Graphic3D::destroyRuntimeStreams() {
 // =========================================================================
 // ============================= BETAs SECTION =============================
 // =========================================================================
-
-// BETA: Texture mapping
-void Graphic3D::createTexture(const std::string &path) {
-    sf::Image textureImage;
-    if (!textureImage.loadFromFile(path)) {
-        throw std::runtime_error("Failed to load texture image.");
-    }
-
-    textureWidth = textureImage.getSize().x;
-    textureHeight = textureImage.getSize().y;
-
-    std::vector<Vec3f> texture(textureWidth * textureHeight);
-
-    for (int y = 0; y < textureHeight; y++) {
-        for (int x = 0; x < textureWidth; x++) {
-            sf::Color color = textureImage.getPixel(x, y);
-            int idx = x + y * textureWidth;
-            texture[idx] = {float(color.r), float(color.g), float(color.b)};
-        }
-    }
-
-    if (textureSet) freeTexture();
-    else textureSet = true;
-
-    cudaMalloc(&d_texture, sizeof(Vec3f) * texture.size());
-    cudaMemcpy(d_texture, texture.data(), sizeof(Vec3f) * texture.size(), cudaMemcpyHostToDevice);
-}
-
-void Graphic3D::freeTexture() {
-    if (d_texture) cudaFree(d_texture);
-}
 
 // Beta: Shadow mapping
 void Graphic3D::createShadowMap(int w, int h, int tw, int th) {

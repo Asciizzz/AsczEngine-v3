@@ -6,8 +6,11 @@
 # .heavy/Ivy.obj .2 0 0 180 
 # .heavy/City.obj
 # .heavy/Room.obj
+# .heavy/Town/Town.obj
 
-#  assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 0 0
+
+
+#assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 0 0
 #assets/Models/Shapes/Cube/Cube2.obj 1 0 0 0 0 3 0
 #assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 6 0
 
@@ -51,6 +54,7 @@ assets/Models/Shapes/Wall.obj 320 90 0 0 0 -165 0
 #assets/Models/Anime/Arisu/Arisu.obj 1 -90 270 0 120 0 -120
 
 assets/Models/Anime/Shiroko/Shiroko.obj 420 0 0 0 0 0 0
+#assets/Models/Anime/Shiroko/Shiroko.obj 10 0 0 0 0 10 0
 
 #assets/Models/Anime/Yuuka.obj 20
 

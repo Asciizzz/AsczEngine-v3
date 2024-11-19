@@ -52,10 +52,6 @@ int main() {
 
     GRAPHIC.mallocRuntimeFaces();
 
-    std::string texturePath = "";
-    std::ifstream("assets/cfg/texture.txt") >> texturePath;
-    GRAPHIC.createTexture(texturePath);
-
     int shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY;
     std::ifstream("assets/cfg/shadow.txt") >> shdwWidth >> shdwHeight >> shdwTileSizeX >> shdwTileSizeY;
     GRAPHIC.createShadowMap(shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY);
@@ -102,13 +98,6 @@ int main() {
                     sf::Mouse::setPosition(sf::Vector2i(
                         GRAPHIC.res_half.x, GRAPHIC.res_half.y
                     ), window);
-                }
-                
-                // Press f2 to read texture.txt file and set its prop
-                if (event.key.code == sf::Keyboard::F2) {
-                    std::string texturePath = "";
-                    std::ifstream("assets/cfg/texture.txt") >> texturePath;
-                    GRAPHIC.createTexture(texturePath);
                 }
 
                 // Press 1 to toggle texture mode

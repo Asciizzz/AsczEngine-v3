@@ -82,13 +82,6 @@ public:
 
     // ========== BETAs SECTION ==========
 
-    // BETA: Texture mapping
-    int textureWidth, textureHeight;
-    Vec3f *d_texture; // Device texture
-    bool textureSet = false;
-    void createTexture(const std::string &path);
-    void freeTexture();
-
     // BETA: Lighting
     LightSrc light;
 
