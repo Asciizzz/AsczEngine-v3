@@ -9,6 +9,7 @@
 # .heavy/Town/Town.obj
 
 
+
 #assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 0 0
 #assets/Models/Shapes/Cube/Cube2.obj 1 0 0 0 0 3 0
 #assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 6 0
@@ -40,23 +41,22 @@
 # assets/Models/Structure/Street.obj 1 0 0 0 0 4.2 0
 # assets/Models/Structure/Fnaf.obj .01 0 0 0 0 3.9 0
 
-# assets/Models/Anime/Goku.obj 1 0 0 0 0 0 0
-# assets/Models/Anime/Sukuna.obj 3 0 0 0 0 0 0
-# assets/Models/Anime/Miyu.obj 20 -90 180 0
-# assets/Models/Anime/MalevolentShrine.obj 1
+# assets/Models/Character/Goku.obj 1 0 0 0 0 0 0
+# assets/Models/Character/Sukuna.obj 3 0 0 0 0 0 0
+# assets/Models/Character/Miyu.obj 20 -90 180 0
+# assets/Models/Character/MalevolentShrine.obj 1
 
 assets/Models/Shapes/Wall.obj 320 90 0 0 0 -165 0
 
-#assets/Models/Anime/Arisu/Arisu.obj 1 -90 0 0 -120 0 -120
-#assets/Models/Anime/Arisu/Arisu.obj 1 -90 90 0 -120 0 120
-#assets/Models/Anime/Arisu/Arisu.obj 1 -90 180 0 120 0 120
-#assets/Models/Anime/Arisu/Arisu.obj 1 -90 270 0 120 0 -120
+#assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 0 0 -120 0 -120
+#assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 90 0 -120 0 120
+#assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 180 0 120 0 120
+#assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 270 0 120 0 -120
 
-assets/Models/Anime/Shiroko/Shiroko.obj 420 0 0 0 0 0 0
-#assets/Models/Anime/Shiroko/Shiroko.obj 10 0 0 0 0 10 0
+#assets/Models/BlueArchive/Shiroko/Shiroko.obj 420 0 0 0 0 0 0
+#assets/Models/BlueArchive/Shiroko/Shiroko.obj 10 0 0 0 0 10 0
 
-#assets/Models/Anime/Yuuka.obj 20
-
+assets/Models/BlueArchive/CherinoR8/CherinoR8.obj 10 0 0 0 0 10 0
 
 ~
 
