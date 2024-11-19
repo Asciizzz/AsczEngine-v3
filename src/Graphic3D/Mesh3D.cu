@@ -15,7 +15,10 @@ Mesh::Mesh(
     VectF kar, VectF kag, VectF kab,
     VectF kdr, VectF kdg, VectF kdb,
     VectF ksr, VectF ksg, VectF ksb,
-    VectLLI mkd
+    VectLLI mkd,
+    // Texture data
+    VectF txr, VectF txg, VectF txb,
+    VectI txw, VectI txh, VectLLI txof
 ) : wx(wx), wy(wy), wz(wz),
     tu(tu), tv(tv),
     nx(nx), ny(ny), nz(nz),
@@ -25,7 +28,10 @@ Mesh::Mesh(
     kar(kar), kag(kag), kab(kab),
     kdr(kdr), kdg(kdg), kdb(kdb),
     ksr(ksr), ksg(ksg), ksb(ksb),
-    mkd(mkd)
+    mkd(mkd),
+
+    txr(txr), txg(txg), txb(txb),
+    txw(txw), txh(txh), txof(txof)
 {}
 
 void Mesh::push(Mesh &mesh) {
@@ -194,7 +200,12 @@ void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
 
 // ======================= Vertex_ptr =======================
 
-
+void Vertex_ptr::malloc(ULLInt ws, ULLInt ts, ULLInt ns) {
+    s.malloc(ws);
+    w.malloc(ws);
+    t.malloc(ts);
+    n.malloc(ns);
+}
 void Vertex_ptr::free() {
     s.free();
     w.free();
@@ -278,6 +289,31 @@ void Material_ptr::operator+=(Material_ptr &material) {
     mkd += material.mkd;
 }
 
+// ======================= Texture_ptr =======================
+
+void Texture_ptr::malloc(ULLInt tsize, ULLInt tcount) {
+    tx.malloc(tsize);
+    wh.malloc(tcount);
+    of.malloc(tcount);
+    size = tsize;
+    count = tcount;
+}
+void Texture_ptr::free() {
+    tx.free();
+    wh.free();
+    of.free();
+    size = 0;
+    count = 0;
+}
+void Texture_ptr::operator+=(Texture_ptr &texture) {
+    size += texture.size;
+    count += texture.count;
+    tx += texture.tx;
+    wh += texture.wh;
+    of += texture.of;
+}
+
+
 
 // ======================= Mesh3D =======================
 
@@ -330,6 +366,30 @@ void Mesh3D::push(Mesh &mesh) {
     v.s.free();
     v.s.malloc(v.w.size);
 
+    // =============== Texture data ===============
+
+    ULLInt offsetTxs = t.size;
+    ULLInt offsetTxc = t.count;
+
+    Texture_ptr newTx;
+    ULLInt txSize = mesh.txr.size();
+    ULLInt txCount = mesh.txw.size();
+    newTx.malloc(txSize, txCount);
+
+    cudaMemcpyAsync(newTx.tx.x, mesh.txr.data(), txSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newTx.tx.y, mesh.txg.data(), txSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newTx.tx.z, mesh.txb.data(), txSize * sizeof(float), cudaMemcpyHostToDevice, stream);
+
+    cudaMemcpyAsync(newTx.wh.x, mesh.txw.data(), txCount * sizeof(int), cudaMemcpyHostToDevice, stream);
+    cudaMemcpyAsync(newTx.wh.y, mesh.txh.data(), txCount * sizeof(int), cudaMemcpyHostToDevice, stream);
+
+    cudaMemcpyAsync(newTx.of.x, mesh.txof.data(), txCount * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
+
+    // Increment texture offset
+    incLLIntKernel<<<1, 1>>>(newTx.of.x, offsetTxs, txCount);
+
+    t += newTx;
+
     // =============== Material data ===============
 
     ULLInt offsetM = m.size;
@@ -341,7 +401,7 @@ void Mesh3D::push(Mesh &mesh) {
     cudaMemcpyAsync(newM.ka.x, mesh.kar.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newM.ka.y, mesh.kag.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newM.ka.z, mesh.kab.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    
+
     cudaMemcpyAsync(newM.kd.x, mesh.kdr.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newM.kd.y, mesh.kdg.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newM.kd.z, mesh.kdb.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
@@ -352,8 +412,8 @@ void Mesh3D::push(Mesh &mesh) {
 
     cudaMemcpyAsync(newM.mkd.x, mesh.mkd.data(), mSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
-    // Increment texture indices (will do later)
-    // ...
+    // Increment texture indices
+    incLLIntKernel<<<1, 1>>>(newM.mkd.x, offsetTxc, mSize);
     m += newM;
 
     // =============== Face data ================
@@ -369,10 +429,10 @@ void Mesh3D::push(Mesh &mesh) {
 
     // Increment face indices
     ULLInt gridSize = (fSize + 255) / 256;
-    incFaceIdxKernel1<<<gridSize, 256>>>(newF.v, offsetV, fSize);
-    incFaceIdxKernel2<<<gridSize, 256>>>(newF.t, offsetT, fSize);
-    incFaceIdxKernel2<<<gridSize, 256>>>(newF.n, offsetN, fSize);
-    incFaceIdxKernel2<<<gridSize, 256>>>(newF.m, offsetM, fSize);
+    incULLIntKernel<<<gridSize, 256>>>(newF.v, offsetV, fSize);
+    incLLIntKernel<<<gridSize, 256>>>(newF.t, offsetT, fSize);
+    incLLIntKernel<<<gridSize, 256>>>(newF.n, offsetN, fSize);
+    incLLIntKernel<<<gridSize, 256>>>(newF.m, offsetM, fSize);
     f += newF;
 
     // Destroy the stream
@@ -383,11 +443,11 @@ void Mesh3D::push(std::vector<Mesh> &meshes) {
 }
 
 // Kernel for incrementing face indices
-__global__ void incFaceIdxKernel1(ULLInt *f, ULLInt offset, ULLInt numFs) {
+__global__ void incULLIntKernel(ULLInt *f, ULLInt offset, ULLInt numFs) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numFs) f[idx] += offset;
 }
-__global__ void incFaceIdxKernel2(LLInt *f, ULLInt offset, ULLInt numFs) {
+__global__ void incLLIntKernel(LLInt *f, ULLInt offset, ULLInt numFs) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx < numFs && f[idx] >= 0) f[idx] += offset;
 }

@@ -47,8 +47,8 @@ int main() {
     GRAPHIC.mesh.push(dotObjs.objs);
 
     SolarSystem solarSystem;
-    solarSystem.setStars(4, 400, 6000, 8000, 6);
-    GRAPHIC.mesh.push(solarSystem.stars);
+    // solarSystem.setStars(4, 400, 6000, 8000, 6);
+    // GRAPHIC.mesh.push(solarSystem.stars);
 
     GRAPHIC.mallocRuntimeFaces();
 
@@ -268,16 +268,16 @@ int main() {
         GRAPHIC.light.dir = CAMERA.pos;
 
         // Rotate stars
-        std::vector<Mesh> &stars = solarSystem.stars;
-        stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
-        stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
-        stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
-        stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
+        // std::vector<Mesh> &stars = solarSystem.stars;
+        // stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
+        // stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
+        // stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
+        // stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
 
-        stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
-        stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
-        stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
-        stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
+        // stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
+        // stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
+        // stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
+        // stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
 
         // ========== Render Pipeline ==========
 
@@ -288,10 +288,7 @@ int main() {
         VertexShader::rasterization();
 
         // Fragment Shader (bunch of beta features)
-        if (materialMode) {
-            FragmentShader::applyMaterial();
-            FragmentShader::applyTexture();
-        }
+        if (materialMode) FragmentShader::applyMaterial();
         if (shadowMode) {
             FragmentShader::resetShadowMap();
             FragmentShader::createShadowMap();

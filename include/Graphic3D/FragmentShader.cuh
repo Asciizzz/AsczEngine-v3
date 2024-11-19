@@ -6,7 +6,6 @@
 class FragmentShader {
 public:
     static void applyMaterial(); // Beta
-    static void applyTexture(); // Beta
     static void phongShading();
 
     // Adding shadow mapping (Extremely experimental)
@@ -19,18 +18,18 @@ public:
 
 __global__ void applyMaterialKernel( // Beta
     // Mesh material
+    float *kar, float *kag, float *kab,
     float *kdr, float *kdg, float *kdb,
+    float *ksr, float *ksg, float *ksb,
+    LLInt *mkd,
+    // Mesh texture
+    float *txr, float *txg, float *txb,
+    int *txw, int *txh, LLInt *txof,
     // Buffer
     bool *bActive, LLInt *bMat,
     float *bCr, float *bCg, float *bCb, float *bCa,
+    float *bTu, float *bTv,
     int bWidth, int bHeight
-);
-
-__global__ void applyTextureKernel( // Beta
-    bool *bActive, float *bTu, float *bTv,
-    float *bCr, float *bCg, float *bCb, float *bCa,
-    int bWidth, int bHeight,
-    Vec3f *texture, int textureWidth, int textureHeight
 );
 
 __global__ void phongShadingKernel(

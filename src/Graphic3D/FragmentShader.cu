@@ -8,25 +8,19 @@ void FragmentShader::applyMaterial() { // Beta
     Mesh3D &mesh = grphic.mesh;
 
     applyMaterialKernel<<<buff.blockNum, buff.blockSize>>>(
+        // Mesh material
+        mesh.m.ka.x, mesh.m.ka.y, mesh.m.ka.z,
         mesh.m.kd.x, mesh.m.kd.y, mesh.m.kd.z,
+        mesh.m.ks.x, mesh.m.ks.y, mesh.m.ks.z,
+        mesh.m.mkd.x,
+        // Mesh texture
+        mesh.t.tx.x, mesh.t.tx.y, mesh.t.tx.z,
+        mesh.t.wh.x, mesh.t.wh.y, mesh.t.of.x,
+        // Buffer
         buff.active, buff.matID,
         buff.color.x, buff.color.y, buff.color.z, buff.color.w,
-        buff.width, buff.height
-    );
-    cudaDeviceSynchronize();
-}
-
-void FragmentShader::applyTexture() { // Beta
-    Graphic3D &grphic = Graphic3D::instance();
-    Buffer3D &buff = grphic.buffer;
-
-    applyTextureKernel<<<buff.blockNum, buff.blockSize>>>(
-        buff.active,
         buff.texture.x, buff.texture.y,
-        buff.color.x, buff.color.y, buff.color.z, buff.color.w,
-        buff.width, buff.height,
-
-        grphic.d_texture, grphic.textureWidth, grphic.textureHeight
+        buff.width, buff.height
     );
     cudaDeviceSynchronize();
 }
@@ -113,10 +107,17 @@ void FragmentShader::customShader() {
 
 __global__ void applyMaterialKernel( // Beta
     // Mesh material
+    float *kar, float *kag, float *kab,
     float *kdr, float *kdg, float *kdb,
+    float *ksr, float *ksg, float *ksb,
+    LLInt *mkd,
+    // Mesh texture
+    float *txr, float *txg, float *txb,
+    int *txw, int *txh, LLInt *txof,
     // Buffer
     bool *bActive, LLInt *bMat,
     float *bCr, float *bCg, float *bCb, float *bCa,
+    float *bTu, float *bTv,
     int bWidth, int bHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -136,33 +137,22 @@ __global__ void applyMaterialKernel( // Beta
     bCg[i] = kdg[matIdx] * 255;
     bCb[i] = kdb[matIdx] * 255;
     bCa[i] = 255;
-}
 
-__global__ void applyTextureKernel( // Beta
-    bool *buffActive, float *buffTu, float *buffTv,
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
-    int buffWidth, int buffHeight,
-    Vec3f *texture, int textureWidth, int textureHeight
-) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+    LLInt texIdx = mkd[matIdx];
+    if (texIdx >= 0) {
+        int x = bTu[i] * txw[texIdx];
+        int y = bTv[i] * txh[texIdx];
+        int tIdx = x + y * txw[texIdx];
 
-    return;
+        if (tIdx >= txw[texIdx] * txh[texIdx] ||
+            tIdx < 0) return;
 
-    // Lack of texture => Ignore
-    if (buffTu[i] < 0 || buffTu[i] > 1 ||
-        buffTv[i] < 0 || buffTv[i] > 1) return;
+        tIdx += txof[texIdx];
 
-    int x = buffTu[i] * textureWidth;
-    int y = buffTv[i] * textureHeight;
-    int tIdx = x + y * textureWidth;
-
-    if (tIdx >= textureWidth * textureHeight ||
-        tIdx < 0) return;
-
-    buffCr[i] = texture[tIdx].x;
-    buffCg[i] = texture[tIdx].y;
-    buffCb[i] = texture[tIdx].z;
+        bCr[i] = txr[tIdx];
+        bCg[i] = txg[tIdx];
+        bCb[i] = txb[tIdx];
+    }
 }
 
 __global__ void phongShadingKernel(
@@ -178,13 +168,13 @@ __global__ void phongShadingKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= buffWidth * buffHeight || !buffActive[i]) return;
 
-    buffCr[i] *= light.color.x;
-    buffCg[i] *= light.color.y;
-    buffCb[i] *= light.color.z;
-
     if (buffNx[i] == 0 &&
         buffNy[i] == 0 &&
         buffNz[i] == 0) return;
+
+    buffCr[i] *= light.color.x;
+    buffCg[i] *= light.color.y;
+    buffCb[i] *= light.color.z;
 
     // Find the light direction
     // Vec3f lightDir = light.dir * -1;

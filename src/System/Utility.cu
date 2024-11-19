@@ -1,5 +1,7 @@
 #include <Utility.cuh>
 
+#include <SFML/Graphics.hpp>
+
 Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool rainbow) {
     std::ifstream file(path);
     if (!file.is_open()) return Mesh();
@@ -13,28 +15,32 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectULLI fw;
     VectLLI ft, fn, fm;
 
+    std::unordered_map<std::string, int> mtlMap;
+    int matIdx = -1;
+    int matSize = 0;
     VectF kar, kag, kab;
     VectF ksr, ksg, ksb;
     VectF kdr, kdg, kdb;
     VectLLI mkd;
 
-    int matIdx = -1;
-
-    std::unordered_map<std::string, MTL> mtlMap;
-    std::vector<MTL> mtlList;
+    ULLInt txSize = 0;
+    int txCount = 0;
+    VectF txr, txg, txb; // Color
+    VectI txw, txh; // Size
+    VectLLI txof; // Offset
 
     // We will use these value to shift the mesh to the origin
     float minX = INFINITY, minY = INFINITY, minZ = INFINITY;
     float maxX = -INFINITY, maxY = -INFINITY, maxZ = -INFINITY;
 
+    // Extract the lines from the file
     std::vector<std::string> lines;
-
     while (std::getline(file, line)) {
         if (line.size() == 0 || line[0] == '#') continue;
         lines.push_back(line);
     }
 
-    bool off = false;
+    bool off = false; // Mostly for debugging purposes
 
     #pragma omp parallel for collapse(2)
     for (size_t i = 0; i < lines.size(); i++) {
@@ -67,10 +73,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                     std::string mtlName;
                     mtlSS >> mtlName;
 
-                    MTL mtl(mtlList.size());
-
-                    mtlMap[mtlName] = mtl;
-                    mtlList.push_back(mtl);
+                    mtlMap[mtlName] = matSize++;
 
                     kar.push_back(1); kag.push_back(1); kab.push_back(1);
                     kdr.push_back(1); kdg.push_back(1); kdb.push_back(1);
@@ -79,30 +82,42 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                 }
 
                 if (mtlType == "Ka") {
-                    float r, g, b;
-                    mtlSS >> r >> g >> b;
-
-                    MTL &mtl = mtlList.back();
-                    mtl.kar = r; mtl.kag = g; mtl.kab = b;
+                    float r, g, b; mtlSS >> r >> g >> b;
                     kar.back() = r; kag.back() = g; kab.back() = b;
                 } else if (mtlType == "Kd") {
-                    float r, g, b;
-                    mtlSS >> r >> g >> b;
-
-                    MTL &mtl = mtlList.back();
-                    mtl.kdr = r; mtl.kdg = g; mtl.kdb = b;
+                    float r, g, b; mtlSS >> r >> g >> b;
                     kdr.back() = r; kdg.back() = g; kdb.back() = b;
                 } else if (mtlType == "Ks") {
-                    float r, g, b;
-                    mtlSS >> r >> g >> b;
-
-                    MTL &mtl = mtlList.back();
-                    mtl.ksr = r; mtl.ksg = g; mtl.ksb = b;
+                    float r, g, b; mtlSS >> r >> g >> b;
                     ksr.back() = r; ksg.back() = g; ksb.back() = b;
                 } else if (mtlType == "map_Kd") {
-                    MTL &mtl = mtlList.back();
-                    mtl.mkd = 0;
-                    mkd.back() = 0;
+                    std::string txPath; mtlSS >> txPath;
+
+                    // Get the texture data using SFML
+                    sf::Image txImage;
+                    if (!txImage.loadFromFile(mtlDir + txPath)) continue;
+
+                    mkd.back() = txCount++;
+
+                    int tw = txImage.getSize().x;
+                    int th = txImage.getSize().y;
+
+                    txw.push_back(tw); txh.push_back(th);
+                    txof.push_back(txSize);
+
+                    txSize += tw * th;
+
+                    for (int y = 0; y < th; y++) {
+                        for (int x = 0; x < tw; x++) {
+                            int ix = x;
+                            int iy = th - y - 1; // Flip the y-axis
+                            sf::Color color = txImage.getPixel(ix, iy);
+
+                            txr.push_back(float(color.r));
+                            txg.push_back(float(color.g));
+                            txb.push_back(float(color.b));
+                        }
+                    }
                 }
             }
         }
@@ -116,7 +131,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                 matIdx = -1;
             } else {
             // Get the idx of the material based on the mtlMap
-                matIdx = mtlMap[mtlName].idx;
+                matIdx = mtlMap[mtlName];
             }
         }
 
@@ -231,7 +246,9 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         kar, kag, kab,
         kdr, kdg, kdb,
         ksr, ksg, ksb,
-        mkd
+        mkd,
+        txr, txg, txb,
+        txw, txh, txof
     };
 
     return mesh;

@@ -21,6 +21,8 @@ We will have 4 arrays for vertex data:
 #define Meshs3D std::vector<Mesh3D>
 
 #define VectF std::vector<float>
+
+#define VectI std::vector<int>
 #define VectLLI std::vector<LLInt>
 #define VectULLI std::vector<ULLInt>
 
@@ -54,6 +56,10 @@ struct Mesh {
     VectF ksr, ksg, ksb;
     VectLLI mkd;
 
+    // Texture data
+    VectF txr, txg, txb;
+    VectI txw, txh; VectLLI txof;
+
     // Section 2: runtime, note: i = [a, b)
     Vec2ulli w_range, n_range, t_range, c_range;
 
@@ -69,7 +75,10 @@ struct Mesh {
         VectF kar, VectF kag, VectF kab,
         VectF kdr, VectF kdg, VectF kdb,
         VectF ksr, VectF ksg, VectF ksb,
-        VectLLI mkd
+        VectLLI mkd,
+        // Texture data
+        VectF txr, VectF txg, VectF txb,
+        VectI txw, VectI txh, VectLLI txof
     );
 
     void push(Mesh &mesh);
@@ -104,6 +113,7 @@ struct Vertex_ptr {
     Vec2f_ptr t;
     Vec3f_ptr n;
 
+    void malloc(ULLInt ws, ULLInt ts, ULLInt ns);
     void free();
     void operator+=(Vertex_ptr &vertex);
 };
@@ -114,7 +124,7 @@ struct Face_ptr {
     LLInt *t;
     LLInt *n;
     LLInt *m; // -1 by default for no material
-    ULLInt size;
+    ULLInt size = 0;
 
     void malloc(ULLInt size);
     void free();
@@ -127,7 +137,7 @@ struct Material_ptr {
     Vec3f_ptr kd;
     Vec3f_ptr ks;
     Vec1lli_ptr mkd;
-    ULLInt size;
+    ULLInt size = 0;
 
     void malloc(ULLInt size);
     void free();
@@ -151,13 +161,14 @@ struct Texture_ptr {
     
     */
 
-    float *t;
-    int *w;
-    int *h;
-    LLInt *offset;
-    ULLInt count;
+    Vec3f_ptr tx; // Color rgb
+    Vec2i_ptr wh; // Width and height
+    Vec1lli_ptr of; // Offset
 
-    void malloc(ULLInt count);
+    ULLInt size = 0; // Size of t
+    ULLInt count = 0; // Number of textures
+
+    void malloc(ULLInt tsize, ULLInt tcount);
     void free();
     void operator+=(Texture_ptr &texture);
 };
@@ -168,8 +179,9 @@ public:
     Vertex_ptr v; // s w t n c
     Face_ptr f; // v t n m
     Material_ptr m; // ka kd ks map_Kd ns
+    Texture_ptr t; // tx wh of
 
-    // Free
+    // Free everything
     void free();
     // Resize + Append
     void push(Mesh &mesh);
@@ -177,8 +189,8 @@ public:
 };
 
 // Kernel for preparing faces
-__global__ void incFaceIdxKernel1(ULLInt *f, ULLInt offset, ULLInt numFs);
-__global__ void incFaceIdxKernel2(LLInt *f, ULLInt offset, ULLInt numFs);
+__global__ void incULLIntKernel(ULLInt *f, ULLInt offset, ULLInt numFs);
+__global__ void incLLIntKernel(LLInt *f, ULLInt offset, ULLInt numFs);
 
 // Kernel for transformations
 // Note: rotation and scaling also affects normals

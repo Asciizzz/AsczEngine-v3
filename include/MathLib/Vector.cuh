@@ -101,7 +101,7 @@ struct Vec2ulli {
 
 struct Vec1f_ptr {
     float *x;
-    ULLInt size;
+    ULLInt size = 0;
 
     void malloc(ULLInt size);
     void free();
@@ -110,7 +110,7 @@ struct Vec1f_ptr {
 };
 struct Vec2f_ptr {
     float *x, *y;
-    ULLInt size;
+    ULLInt size = 0;
 
     void malloc(ULLInt size);
     void free();
@@ -119,7 +119,7 @@ struct Vec2f_ptr {
 };
 struct Vec3f_ptr {
     float *x, *y, *z;
-    ULLInt size;
+    ULLInt size = 0;
 
     void malloc(ULLInt size);
     void free();
@@ -128,7 +128,7 @@ struct Vec3f_ptr {
 };
 struct Vec4f_ptr {
     float *x, *y, *z, *w;
-    ULLInt size;
+    ULLInt size = 0;
 
     void malloc(ULLInt size);
     void free();
@@ -136,13 +136,22 @@ struct Vec4f_ptr {
     void setAll(float val);
 };
 
+// Specific purposes Vecs
 struct Vec1lli_ptr {
     LLInt *x;
-    ULLInt size;
+    ULLInt size = 0;
 
     void malloc(ULLInt size);
     void free();
     void operator+=(Vec1lli_ptr &vec);
+};
+struct Vec2i_ptr {
+    int *x, *y;
+    ULLInt size = 0;
+
+    void malloc(ULLInt size);
+    void free();
+    void operator+=(Vec2i_ptr &vec);
 };
 
 // Atomic functions for float

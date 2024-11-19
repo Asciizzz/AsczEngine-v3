@@ -356,9 +356,34 @@ void Vec1lli_ptr::operator+=(Vec1lli_ptr& vec) {
 
     free();
     vec.free();
-
     *this = newVec;
 }
+
+void Vec2i_ptr::malloc(ULLInt size) {
+    this->size = size;
+    cudaMalloc(&x, size * sizeof(int));
+    cudaMalloc(&y, size * sizeof(int));
+}
+void Vec2i_ptr::free() {
+    this->size = 0;
+    cudaFree(x);
+    cudaFree(y);
+}
+void Vec2i_ptr::operator+=(Vec2i_ptr& vec) {
+    Vec2i_ptr newVec;
+    newVec.malloc(size + vec.size);
+
+    cudaMemcpy(newVec.x, x, size * sizeof(int), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.y, y, size * sizeof(int), cudaMemcpyDeviceToDevice);
+
+    cudaMemcpy(newVec.x + size, vec.x, vec.size * sizeof(int), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newVec.y + size, vec.y, vec.size * sizeof(int), cudaMemcpyDeviceToDevice);
+
+    free();
+    vec.free();
+    *this = newVec;
+}
+
 
 // Atomics
 __device__ bool atomicMinFloat(float* addr, float value) {
