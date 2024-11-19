@@ -9,7 +9,7 @@
 # .heavy/Town/Town.obj
 
 
-#assets/Models/Skybox/Skybox.obj 80 0 0 0 0 6 0
+assets/Models/Skybox/Dream/Skybox.obj 10 0 0 0 0 0 0
 
 
 #assets/Models/Shapes/Cube/Cube1.obj 1 0 0 0 0 0 0
