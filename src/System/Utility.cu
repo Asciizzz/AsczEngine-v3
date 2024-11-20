@@ -290,15 +290,6 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         }
     }
 
-    // #pragma omp parallel for
-    // // Print the obj map
-    // for (auto &o : obj) {
-    //     std::cout << o.first << "\n";
-    //     std::cout << "| " << o.second.w1 << " - " << o.second.w2 << "\n";
-    //     std::cout << "| " << o.second.t1 << " - " << o.second.t2 << "\n";
-    //     std::cout << "| " << o.second.n1 << " - " << o.second.n2 << "\n";
-    // }
-
     Mesh mesh = {
         wx, wy, wz,
         tu, tv,

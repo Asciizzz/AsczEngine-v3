@@ -173,69 +173,70 @@ void Mesh::scaleIni(Vec3f origin, Vec3f scl, bool sclNormal) {
     }
 }
 
-// void Mesh::translateRuntime(Vec3f t) {
-//     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
+void Mesh::translateRuntime(std::string mapkey, Vec3f t) {
+    if (objmapRT.find(mapkey) == objmapRT.end()) return;
+    if (!allocated) return;
 
-//     ULLInt start = w_range.x, end = w_range.y;
+    Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
 
-//     ULLInt numWs = end - start;
-//     ULLInt gridSize = (numWs + 255) / 256;
+    ULLInt start = objmapRT[mapkey].w1;
+    ULLInt end = objmapRT[mapkey].w2;
 
-//     translateMeshKernel<<<gridSize, 256>>>(
-//         w.x + start, w.y + start, w.z + start,
-//         t.x, t.y, t.z, numWs
-//     );
-//     cudaDeviceSynchronize();
-// }
-// void Mesh::rotateRuntime(Vec3f origin, float r, short axis) {
-//     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
-//     Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
+    ULLInt numWs = end - start;
+    ULLInt gridSize = (numWs + 255) / 256;
 
-//     ULLInt startW = w_range.x, endW = w_range.y;
-//     ULLInt startN = n_range.x, endN = n_range.y;
+    translateMeshKernel<<<gridSize, 256>>>(
+        w.x + start, w.y + start, w.z + start,
+        t.x, t.y, t.z, numWs
+    );
+    cudaDeviceSynchronize();
+}
+void Mesh::rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis) {
+    if (objmapRT.find(mapkey) == objmapRT.end()) return;
+    if (!allocated) return;
 
-//     ULLInt numWs = endW - startW;
-//     ULLInt numNs = endN - startN;
+    Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
+    Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
 
-//     ULLInt num = max(numWs, numNs);
-//     ULLInt gridSize = (num + 255) / 256;    
+    ULLInt startW = objmapRT[mapkey].w1;
+    ULLInt endW = objmapRT[mapkey].w2;
+    ULLInt startN = objmapRT[mapkey].n1;
+    ULLInt endN = objmapRT[mapkey].n2;
 
-//     rotateMeshKernel<<<gridSize, 256>>>(
-//         w.x + startW, w.y + startW, w.z + startW, numWs,
-//         n.x + startN, n.y + startN, n.z + startN, numNs,
-//         origin.x, origin.y, origin.z, r, axis
-//     );
-//     cudaDeviceSynchronize();
-// }
-// void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
-//     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
-//     Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
+    ULLInt numWs = endW - startW;
+    ULLInt numNs = endN - startN;
 
-//     ULLInt startW = w_range.x, endW = w_range.y;
-//     ULLInt startN = n_range.x, endN = n_range.y;
+    ULLInt num = max(numWs, numNs);
+    ULLInt gridSize = (num + 255) / 256;    
 
-//     ULLInt numWs = endW - startW;
-//     ULLInt numNs = endN - startN;
+    rotateMeshKernel<<<gridSize, 256>>>(
+        w.x + startW, w.y + startW, w.z + startW, numWs,
+        n.x + startN, n.y + startN, n.z + startN, numNs,
+        origin.x, origin.y, origin.z, r, axis
+    );
+    cudaDeviceSynchronize();
+}
+void Mesh::scaleRuntime(std::string mapkey, Vec3f origin, float scl) {
+    if (objmapRT.find(mapkey) == objmapRT.end()) return;
+    if (!allocated) return;
 
-//     ULLInt num = max(numWs, numNs);
-//     ULLInt gridSize = (num + 255) / 256;
+    Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
 
-//     scaleMeshKernel<<<gridSize, 256>>>(
-//         w.x + startW, w.y + startW, w.z + startW, numWs,
-//         n.x + startN, n.y + startN, n.z + startN, numNs,
-//         origin.x, origin.y, origin.z, scl.x, scl.y, scl.z
-//     );
-//     cudaDeviceSynchronize();
-// }
+    ULLInt startW = objmapRT[mapkey].w1;
+    ULLInt endW = objmapRT[mapkey].w2;
+
+    ULLInt numWs = endW - startW;
+    ULLInt gridSize = (numWs + 255) / 256;
+
+    scaleMeshKernel<<<gridSize, 256>>>(
+        w.x + startW, w.y + startW, w.z + startW, numWs,
+        origin.x, origin.y, origin.z, scl
+    );
+    cudaDeviceSynchronize();
+}
 
 void Mesh::printRtMap() {
     std::cout << name << ":\n";
-    // for (auto kv : objmapRT) {
-    //     std::cout << "| -" << kv.first << "- | " <<
-    //         kv.second.w1 << " - " << kv.second.w2 << " | " <<
-    //         kv.second.t1 << " - " << kv.second.t2 << " | " <<
-    //         kv.second.n1 << " - " << kv.second.n2 << "\n";
-    // }
     for (std::string key : objmapKs) {
         std::cout << "| -" << key << "- | " <<
             objmapRT[key].w1 << " - " << objmapRT[key].w2 << " | " <<
@@ -381,10 +382,11 @@ void Mesh3D::push(Mesh &mesh, bool print) {
         kv.second.offsetT(offsetT);
         kv.second.offsetN(offsetN);
     }
-    // Set the metadata (later)
-    // ...
     // Print runtime map
     if (print) mesh.printRtMap();
+    // Set the metadata
+    mesh.allocated = true;
+        // ... more later
 
     // Stream for async memory copy
     cudaStream_t stream;
@@ -560,30 +562,13 @@ __global__ void rotateMeshKernel(
 
 __global__ void scaleMeshKernel(
     float *wx, float *wy, float *wz, ULLInt numWs,
-    float *nx, float *ny, float *nz, ULLInt numNs,
-    float ox, float oy, float oz,
-    float sx, float sy, float sz
+    float ox, float oy, float oz, float scl
 ) {
     ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (idx < numWs) {
-        wx[idx] = (wx[idx] - ox) * sx + ox;
-        wy[idx] = (wy[idx] - oy) * sy + oy;
-        wz[idx] = (wz[idx] - oz) * sz + oz;
-    }
-
-    if (idx < numNs) {
-        nx[idx] *= sx;
-        ny[idx] *= sy;
-        nz[idx] *= sz;
-        // Normalize
-        float mag = sqrt(
-            nx[idx] * nx[idx] +
-            ny[idx] * ny[idx] +
-            nz[idx] * nz[idx]
-        );
-        nx[idx] /= mag;
-        ny[idx] /= mag;
-        nz[idx] /= mag;
+        wx[idx] = (wx[idx] - ox) * scl + ox;
+        wy[idx] = (wy[idx] - oy) * scl + oy;
+        wz[idx] = (wz[idx] - oz) * scl + oz;
     }
 }

@@ -105,9 +105,9 @@ struct Mesh {
     void scaleIni(Vec3f origin, Vec3f scl, bool sclNormal=true);
 
     // Runtime transformations (uses device memory)
-    // void translateRuntime(std::string obj, Vec3f t);
-    // void rotateRuntime(std::string obj, Vec3f origin, float r, short axis);
-    // void scaleRuntime(std::string obj, Vec3f origin, Vec3f scl, bool sclNormal=true);
+    void translateRuntime(std::string mapkey, Vec3f t);
+    void rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis);
+    void scaleRuntime(std::string mapkey, Vec3f origin, float scl);
 
     void printRtMap();
 };
@@ -221,9 +221,7 @@ __global__ void rotateMeshKernel(
 
 __global__ void scaleMeshKernel(
     float *wx, float *wy, float *wz, ULLInt numWs,
-    float *nx, float *ny, float *nz, ULLInt numNs,
-    float ox, float oy, float oz,
-    float sx, float sy, float sz
+    float ox, float oy, float oz, float scl
 );
 
 #endif
