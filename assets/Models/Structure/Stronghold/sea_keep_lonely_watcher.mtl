@@ -54,6 +54,7 @@ Ni 1.0
 d 1
 illum 2
 map_Kd material_4_baseColor.jpg
+#map_Kd Skybox.jpg
 
 newmtl mat5
 Ns 250
