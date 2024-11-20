@@ -8,13 +8,17 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
 
     std::string line;
 
+    MeshMap objmap;
+    VectStr objmapKeys; // To ensure the order of the objects
+    std::string curObj;
+
     VectF wx, wy, wz;
     VectF tu, tv;
     VectF nx, ny, nz;
     VectULLI fw;
     VectLLI ft, fn, fm;
 
-    std::unordered_map<std::string, int> mtlMap;
+    std::map<std::string, int> mtlMap;
     int matIdx = -1;
     int matSize = 0;
     VectF kar, kag, kab;
@@ -22,7 +26,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     VectF kdr, kdg, kdb;
     VectLLI mkd;
 
-    std::unordered_map<std::string, int> txMap;
+    std::map<std::string, int> txMap;
     ULLInt txSize = 0;
     int txCount = 0;
     VectF txr, txg, txb; // Color
@@ -34,7 +38,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     float maxX = -INFINITY, maxY = -INFINITY, maxZ = -INFINITY;
 
     // Extract the lines from the file
-    std::vector<std::string> lines;
+    VectStr lines;
     while (std::getline(file, line)) {
         if (line.size() == 0 || line[0] == '#') continue;
         lines.push_back(line);
@@ -128,6 +132,34 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                         }
                     }
                 }
+            }
+        }
+
+        if (type == "o") {
+            std::string name;
+            ss >> name;
+
+            // Append the key
+            objmapKeys.push_back(name);
+
+            if (curObj == "") {
+                curObj = name;
+
+                objmap[curObj].w1 = 0;
+                objmap[curObj].t1 = 0;
+                objmap[curObj].n1 = 0;
+            }
+
+            if (curObj != name) {
+                objmap[curObj].w2 = wx.size();
+                objmap[curObj].t2 = tu.size();
+                objmap[curObj].n2 = nx.size();
+
+                curObj = name;
+
+                objmap[curObj].w1 = wx.size();
+                objmap[curObj].t1 = tu.size();
+                objmap[curObj].n1 = nx.size();
             }
         }
 
@@ -231,6 +263,17 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             }
         }
     }
+    // If there's no object, set default "obj"
+    if (objmap.size() == 0) {
+        objmap["obj"].w1 = 0; objmap["obj"].w2 = wx.size();
+        objmap["obj"].t1 = 0; objmap["obj"].t2 = tu.size();
+        objmap["obj"].n1 = 0; objmap["obj"].n2 = nx.size();
+    } else {
+        // Set the end of the last object
+        objmap[curObj].w2 = wx.size();
+        objmap[curObj].t2 = tu.size();
+        objmap[curObj].n2 = nx.size();
+    }
 
     #pragma omp parallel for
     for (size_t i = 0; i < wx.size(); i++) {
@@ -247,6 +290,15 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         }
     }
 
+    // #pragma omp parallel for
+    // // Print the obj map
+    // for (auto &o : obj) {
+    //     std::cout << o.first << "\n";
+    //     std::cout << "| " << o.second.w1 << " - " << o.second.w2 << "\n";
+    //     std::cout << "| " << o.second.t1 << " - " << o.second.t2 << "\n";
+    //     std::cout << "| " << o.second.n1 << " - " << o.second.n2 << "\n";
+    // }
+
     Mesh mesh = {
         wx, wy, wz,
         tu, tv,
@@ -257,7 +309,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         ksr, ksg, ksb,
         mkd,
         txr, txg, txb,
-        txw, txh, txof
+        txw, txh, txof,
+        objmap, objmapKeys
     };
 
     return mesh;
@@ -283,33 +336,33 @@ void Utils::applyTransformation(std::vector<Mesh> objs) {
 
         if (idx >= objs.size()) continue;
 
-        if (type == "t") {
-            Vec3f t; ss >> t.x >> t.y >> t.z;
+        // if (type == "t") {
+        //     Vec3f t; ss >> t.x >> t.y >> t.z;
 
-            objs[idx].translateRuntime(t);
-        } else if (type == "rx") {
-            Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-            float r; ss >> r;
-            r = r * M_PI / 180;
+        //     objs[idx].translateRuntime(t);
+        // } else if (type == "rx") {
+        //     Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
+        //     float r; ss >> r;
+        //     r = r * M_PI / 180;
 
-            objs[idx].rotateRuntime(origin, r, 0);
-        } else if (type == "ry") {
-            Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-            float r; ss >> r;
-            r = r * M_PI / 180;
+        //     objs[idx].rotateRuntime(origin, r, 0);
+        // } else if (type == "ry") {
+        //     Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
+        //     float r; ss >> r;
+        //     r = r * M_PI / 180;
 
-            objs[idx].rotateRuntime(origin, r, 1);
-        } else if (type == "rz") {
-            Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-            float r; ss >> r;
-            r = r * M_PI / 180;
+        //     objs[idx].rotateRuntime(origin, r, 1);
+        // } else if (type == "rz") {
+        //     Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
+        //     float r; ss >> r;
+        //     r = r * M_PI / 180;
 
-            objs[idx].rotateRuntime(origin, r, 2);
-        } else if (type == "s") {
-            Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-            Vec3f scl; ss >> scl.x >> scl.y >> scl.z;
+        //     objs[idx].rotateRuntime(origin, r, 2);
+        // } else if (type == "s") {
+        //     Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
+        //     Vec3f scl; ss >> scl.x >> scl.y >> scl.z;
 
-            objs[idx].scaleRuntime(origin, scl);
-        }
+        //     objs[idx].scaleRuntime(origin, scl);
+        // }
     }
 }

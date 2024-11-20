@@ -1,6 +1,18 @@
 #include <Mesh3D.cuh>
 #include <Graphic3D.cuh> // For the Graphic.mesh object
 
+// ======================= Mesh range =======================
+
+void MeshRange::operator=(MeshRange &range) {
+    w1 = range.w1; w2 = range.w2;
+    t1 = range.t1; t2 = range.t2;
+    n1 = range.n1; n2 = range.n2;
+}
+
+void MeshRange::offsetW(ULLInt offset) { w1 += offset; w2 += offset; }
+void MeshRange::offsetT(ULLInt offset) { t1 += offset; t2 += offset; }
+void MeshRange::offsetN(ULLInt offset) { n1 += offset; n2 += offset; }
+
 // ======================= Mesh object =======================
 
 Mesh::Mesh() {}
@@ -18,7 +30,9 @@ Mesh::Mesh(
     VectLLI mkd,
     // Texture data
     VectF txr, VectF txg, VectF txb,
-    VectI txw, VectI txh, VectLLI txof
+    VectI txw, VectI txh, VectLLI txof,
+    // Object data
+    MeshMap objmap, VectStr objmapKs
 ) : wx(wx), wy(wy), wz(wz),
     tu(tu), tv(tv),
     nx(nx), ny(ny), nz(nz),
@@ -31,7 +45,11 @@ Mesh::Mesh(
     mkd(mkd),
 
     txr(txr), txg(txg), txb(txb),
-    txw(txw), txh(txh), txof(txof)
+    txw(txw), txh(txh), txof(txof),
+
+    objmapST(objmap),
+    objmapRT(objmap),
+    objmapKs(objmapKs)
 {}
 
 void Mesh::push(Mesh &mesh) {
@@ -155,59 +173,76 @@ void Mesh::scaleIni(Vec3f origin, Vec3f scl, bool sclNormal) {
     }
 }
 
-void Mesh::translateRuntime(Vec3f t) {
-    Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
+// void Mesh::translateRuntime(Vec3f t) {
+//     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
 
-    ULLInt start = w_range.x, end = w_range.y;
+//     ULLInt start = w_range.x, end = w_range.y;
 
-    ULLInt numWs = end - start;
-    ULLInt gridSize = (numWs + 255) / 256;
+//     ULLInt numWs = end - start;
+//     ULLInt gridSize = (numWs + 255) / 256;
 
-    translateMeshKernel<<<gridSize, 256>>>(
-        w.x + start, w.y + start, w.z + start,
-        t.x, t.y, t.z, numWs
-    );
-    cudaDeviceSynchronize();
-}
-void Mesh::rotateRuntime(Vec3f origin, float r, short axis) {
-    Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
-    Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
+//     translateMeshKernel<<<gridSize, 256>>>(
+//         w.x + start, w.y + start, w.z + start,
+//         t.x, t.y, t.z, numWs
+//     );
+//     cudaDeviceSynchronize();
+// }
+// void Mesh::rotateRuntime(Vec3f origin, float r, short axis) {
+//     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
+//     Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
 
-    ULLInt startW = w_range.x, endW = w_range.y;
-    ULLInt startN = n_range.x, endN = n_range.y;
+//     ULLInt startW = w_range.x, endW = w_range.y;
+//     ULLInt startN = n_range.x, endN = n_range.y;
 
-    ULLInt numWs = endW - startW;
-    ULLInt numNs = endN - startN;
+//     ULLInt numWs = endW - startW;
+//     ULLInt numNs = endN - startN;
 
-    ULLInt num = max(numWs, numNs);
-    ULLInt gridSize = (num + 255) / 256;    
+//     ULLInt num = max(numWs, numNs);
+//     ULLInt gridSize = (num + 255) / 256;    
 
-    rotateMeshKernel<<<gridSize, 256>>>(
-        w.x + startW, w.y + startW, w.z + startW, numWs,
-        n.x + startN, n.y + startN, n.z + startN, numNs,
-        origin.x, origin.y, origin.z, r, axis
-    );
-    cudaDeviceSynchronize();
-}
-void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
-    Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
-    Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
+//     rotateMeshKernel<<<gridSize, 256>>>(
+//         w.x + startW, w.y + startW, w.z + startW, numWs,
+//         n.x + startN, n.y + startN, n.z + startN, numNs,
+//         origin.x, origin.y, origin.z, r, axis
+//     );
+//     cudaDeviceSynchronize();
+// }
+// void Mesh::scaleRuntime(Vec3f origin, Vec3f scl) {
+//     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
+//     Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
 
-    ULLInt startW = w_range.x, endW = w_range.y;
-    ULLInt startN = n_range.x, endN = n_range.y;
+//     ULLInt startW = w_range.x, endW = w_range.y;
+//     ULLInt startN = n_range.x, endN = n_range.y;
 
-    ULLInt numWs = endW - startW;
-    ULLInt numNs = endN - startN;
+//     ULLInt numWs = endW - startW;
+//     ULLInt numNs = endN - startN;
 
-    ULLInt num = max(numWs, numNs);
-    ULLInt gridSize = (num + 255) / 256;
+//     ULLInt num = max(numWs, numNs);
+//     ULLInt gridSize = (num + 255) / 256;
 
-    scaleMeshKernel<<<gridSize, 256>>>(
-        w.x + startW, w.y + startW, w.z + startW, numWs,
-        n.x + startN, n.y + startN, n.z + startN, numNs,
-        origin.x, origin.y, origin.z, scl.x, scl.y, scl.z
-    );
-    cudaDeviceSynchronize();
+//     scaleMeshKernel<<<gridSize, 256>>>(
+//         w.x + startW, w.y + startW, w.z + startW, numWs,
+//         n.x + startN, n.y + startN, n.z + startN, numNs,
+//         origin.x, origin.y, origin.z, scl.x, scl.y, scl.z
+//     );
+//     cudaDeviceSynchronize();
+// }
+
+void Mesh::printRtMap() {
+    std::cout << name << ":\n";
+    // for (auto kv : objmapRT) {
+    //     std::cout << "| -" << kv.first << "- | " <<
+    //         kv.second.w1 << " - " << kv.second.w2 << " | " <<
+    //         kv.second.t1 << " - " << kv.second.t2 << " | " <<
+    //         kv.second.n1 << " - " << kv.second.n2 << "\n";
+    // }
+    for (std::string key : objmapKs) {
+        std::cout << "| -" << key << "- | " <<
+            objmapRT[key].w1 << " - " << objmapRT[key].w2 << " | " <<
+            objmapRT[key].t1 << " - " << objmapRT[key].t2 << " | " <<
+            objmapRT[key].n1 << " - " << objmapRT[key].n2 << "\n";
+    }
+    std::cout << "\n";
 }
 
 // ======================= Vertex_ptr =======================
@@ -335,15 +370,21 @@ void Mesh3D::free() {
 }
 
 // Push
-void Mesh3D::push(Mesh &mesh) {
-    ULLInt offsetV = v.w.size;
+void Mesh3D::push(Mesh &mesh, bool print) {
+    ULLInt offsetW = v.w.size;
     ULLInt offsetT = v.t.size;
     ULLInt offsetN = v.n.size;
 
-    // Set the range of stuff
-    mesh.w_range = {offsetV, offsetV + mesh.wx.size()};
-    mesh.t_range = {offsetT, offsetT + mesh.tu.size()};
-    mesh.n_range = {offsetN, offsetN + mesh.nx.size()};
+    // Set the runtime values
+    for (auto &kv : mesh.objmapRT) {
+        kv.second.offsetW(offsetW);
+        kv.second.offsetT(offsetT);
+        kv.second.offsetN(offsetN);
+    }
+    // Set the metadata (later)
+    // ...
+    // Print runtime map
+    if (print) mesh.printRtMap();
 
     // Stream for async memory copy
     cudaStream_t stream;
@@ -440,7 +481,7 @@ void Mesh3D::push(Mesh &mesh) {
 
     // Increment face indices
     gridSize = (fSize + 255) / 256;
-    incULLIntKernel<<<gridSize, 256>>>(newF.v, offsetV, fSize);
+    incULLIntKernel<<<gridSize, 256>>>(newF.v, offsetW, fSize);
     incLLIntKernel<<<gridSize, 256>>>(newF.t, offsetT, fSize);
     incLLIntKernel<<<gridSize, 256>>>(newF.n, offsetN, fSize);
     incLLIntKernel<<<gridSize, 256>>>(newF.m, offsetM, fSize);
@@ -449,8 +490,8 @@ void Mesh3D::push(Mesh &mesh) {
     // Destroy the stream
     cudaStreamSynchronize(stream);
 }
-void Mesh3D::push(std::vector<Mesh> &meshes) {
-    for (Mesh &mesh : meshes) push(mesh);
+void Mesh3D::push(std::vector<Mesh> &meshes, bool print) {
+    for (Mesh &mesh : meshes) push(mesh, print);
 }
 
 // Kernel for incrementing face indices

@@ -44,7 +44,7 @@ int main() {
     // Each model in models.txt will contain:
     // src scl rotX rotY rotZ transX transY transZ
     DotObj dotObjs("assets/cfg/models.txt");
-    GRAPHIC.mesh.push(dotObjs.objs);
+    GRAPHIC.mesh.push(dotObjs.objs, true);
 
     SolarSystem solarSystem;
     // solarSystem.setStars(4, 400, 6000, 8000, 6);

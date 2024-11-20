@@ -3,6 +3,7 @@
 
 #include <Vector.cuh>
 #include <cuda_runtime.h>
+#include <map>
 
 /* HYBRID AOS-SOA MEMORY LAYOUT
 
@@ -18,6 +19,7 @@ We will have 4 arrays for vertex data:
 - obj Id (id)
 */
 
+#define MeshMap std::map<std::string, MeshRange>
 #define Meshs3D std::vector<Mesh3D>
 
 #define VectF std::vector<float>
@@ -26,21 +28,22 @@ We will have 4 arrays for vertex data:
 #define VectLLI std::vector<LLInt>
 #define VectULLI std::vector<ULLInt>
 
-struct Mesh {
-    /* VERY IMPORTANT NOTE:
+#define VectStr std::vector<std::string>
 
-    Section 1 is only used for initialization
-    Once the global Mesh3D object append it
-    it will become practically useless
-
-    When we want to perform transformations
-    we will use the range values in section 2
-    to apply directly to the device memory
-    of the global Mesh3D object
-    */
-
-    // Section 1: initialization
+struct MeshRange {
+    ULLInt w1, w2;
+    ULLInt t1, t2;
+    ULLInt n1, n2;
     
+    void operator=(MeshRange &range);
+
+    void offsetW(ULLInt offset);
+    void offsetT(ULLInt offset);
+    void offsetN(ULLInt offset);
+};
+struct Mesh {
+    // Initialization data (Will be obsolete after push to Mesh3D)
+
     // Vertex data
     VectF wx, wy, wz;
     VectF tu, tv;
@@ -60,8 +63,14 @@ struct Mesh {
     VectF txr, txg, txb;
     VectI txw, txh; VectLLI txof;
 
-    // Section 2: runtime, note: i = [a, b)
-    Vec2ulli w_range, n_range, t_range, c_range;
+    // Object data
+    MeshMap objmapST; // Static object (when created)
+    MeshMap objmapRT; // Runtime object (in device memory)
+    VectStr objmapKs; // Keys to ensure order
+
+    // Metadata
+    bool allocated = false;
+    std::string name = "default";
 
     Mesh();
     Mesh(
@@ -78,7 +87,9 @@ struct Mesh {
         VectLLI mkd,
         // Texture data
         VectF txr, VectF txg, VectF txb,
-        VectI txw, VectI txh, VectLLI txof
+        VectI txw, VectI txh, VectLLI txof,
+        // Object data
+        MeshMap objmap, VectStr objmapKs
     );
 
     void push(Mesh &mesh);
@@ -88,15 +99,17 @@ struct Mesh {
     Vec2f t2f(ULLInt i);
     Vec3f n3f(ULLInt i);
 
-    // Section 1 transformations
+    // Initialize transformations
     void translateIni(Vec3f t);
     void rotateIni(Vec3f origin, float r, short axis); // 0: x, 1: y, 2: z
     void scaleIni(Vec3f origin, Vec3f scl, bool sclNormal=true);
 
-    // Section 2 transformations
-    void translateRuntime(Vec3f t);
-    void rotateRuntime(Vec3f origin, float r, short axis);
-    void scaleRuntime(Vec3f origin, Vec3f scl);
+    // Runtime transformations (uses device memory)
+    // void translateRuntime(std::string obj, Vec3f t);
+    // void rotateRuntime(std::string obj, Vec3f origin, float r, short axis);
+    // void scaleRuntime(std::string obj, Vec3f origin, Vec3f scl, bool sclNormal=true);
+
+    void printRtMap();
 };
 
 /* Note:
@@ -184,8 +197,8 @@ public:
     // Free everything
     void free();
     // Resize + Append
-    void push(Mesh &mesh);
-    void push(std::vector<Mesh> &meshs);
+    void push(Mesh &mesh, bool print=false);
+    void push(std::vector<Mesh> &meshs, bool print=false);
 };
 
 // Kernel for preparing faces
