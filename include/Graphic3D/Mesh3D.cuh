@@ -174,15 +174,14 @@ struct Texture_ptr {
     t will be a 1D array of size 100*100 + 200*200
     w and h is straightforward
     offset will be {0, 100*100} for the above example
-        offset_n = offset_n-1 + w_n * h_n
-    
+        offset_n = offset_n-1 + current_t_size
     */
 
     Vec3f_ptr tx; // Color rgb
     Vec2i_ptr wh; // Width and height
     Vec1lli_ptr of; // Offset
 
-    ULLInt size = 0; // Size of t
+    ULLInt size = 0; // Size of textures
     ULLInt count = 0; // Number of textures
 
     void malloc(ULLInt tsize, ULLInt tcount);
