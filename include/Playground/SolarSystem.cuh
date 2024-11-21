@@ -56,6 +56,7 @@ public:
                 fw.push_back(star.fw[j] + wx.size());
                 ft.push_back(-1);
                 fn.push_back(star.fn[j] + nx.size());
+                fm.push_back(-1);
             }
             for (int j = 0; j < star.wx.size(); j++) {
                 wx.push_back(star.wx[j]);
@@ -100,6 +101,7 @@ public:
             // Mesh map data
             mrmap, mrmapKs
         );
+        stars.name = "stars"; // Set mesh name
     }
 };
 

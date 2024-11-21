@@ -265,16 +265,16 @@ int main() {
         GRAPHIC.light.dir = CAMERA.pos;
 
         // Rotate stars
-        // std::vector<Mesh> &stars = solarSystem.stars;
-        // stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
-        // stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
-        // stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
-        // stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
+        Mesh &stars = GRAPHIC.mesh.meshmap["stars"];
+        stars.rotateRuntime("star0", Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
+        stars.rotateRuntime("star1", Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
+        stars.rotateRuntime("star2", Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
+        stars.rotateRuntime("star3", Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
 
-        // stars[0].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
-        // stars[1].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
-        // stars[2].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
-        // stars[3].rotateRuntime(Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
+        stars.rotateRuntime("star0", Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
+        stars.rotateRuntime("star1", Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
+        stars.rotateRuntime("star2", Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
+        stars.rotateRuntime("star3", Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
 
         // ========== Render Pipeline ==========
 
