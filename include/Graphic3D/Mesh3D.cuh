@@ -74,7 +74,7 @@ struct Mesh {
     ObjRangeMap objmapRT; // Runtime object (in device memory)
     VectStr objmapKs; // Keys to ensure order
 
-    // Metadata
+    // Other data
     bool allocated = false;
     std::string name = "default";
 
@@ -205,7 +205,19 @@ public:
 
     // Free everything
     void free();
-    // Resize + Append
+    /* Important note:
+
+    Push is generally a pretty bad operation as it perform frequent memory allocation
+
+    In the future, we will implement a pre-allocated memory pool for Mesh3D
+
+    Pushing also comes with the downside of unreusable components
+
+    For example if you were to push 10 meshes with the same texture
+    the texture will be duplicated 10 times
+
+    This will be fixed in the future
+    */
     void push(Mesh &mesh, bool correction=true);
     void push(std::vector<Mesh> &meshs, bool correction=true);
     
