@@ -360,17 +360,12 @@ int main() {
                 "| Custom: " + std::to_string(customMode),
                 sf::Color(customMode ? 255 : 100, 50, customMode ? 255 : 100)
             );
-
-            LOG.addLog(
-                "vx: " + std::to_string(CAMERA.vel.x) +
-                " vy: " + std::to_string(CAMERA.vel.y) +
-                " vz: " + std::to_string(CAMERA.vel.z),
-                sf::Color(255, 255, 255)
-            );
+            break;
 
         case 1:
-            LOG.addLog("Mesh Map", sf::Color(255, 100, 100));
+            LOG.addLog("[Mesh Map]", sf::Color(255, 100, 100), 1);
             LOG.addLog(GRAPHIC.mesh.meshmapstr, sf::Color(255, 255, 255));
+            break;
         }
 
         // Displays
