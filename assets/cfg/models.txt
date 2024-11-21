@@ -3,7 +3,7 @@
 ## For very heavy models
 # Mount .heavy/Mountain/Mountain.obj 5 0 0 0 0 0 0
 # Ikaros .heavy/Ikaros.obj 1
-# Island .heavy/Island.obj .2
+Island .heavy/Island.obj .2
 # Ivy .heavy/Ivy.obj .2 0 0 180 
 # City .heavy/City.obj
 # Room .heavy/Room.obj
@@ -15,14 +15,14 @@
 # PeachsCastle1F assets/Models/Structure/PeachsCastle1F/PeachsCastle1F.obj 1
 # PeachsCastle assets/Models/Structure/PeachsCastle/PeachsCastle.obj 1
 
-Skybox assets/Models/Skybox/Dream/Skybox.obj 10 0 0 0 0 0 0
+Skybox assets/Models/Skybox/Dream/Skybox.obj 10 0 45 0 0 0 0
 #The_LITERAL_FUCKING_SUN assets/Models/Skybox/Sun/Sun.obj .01 0 0 0 0 0 0
 
-PeachsCastle assets/Models/Structure/PeachsCastle/PeachsCastle.obj 1
+#PeachsCastle assets/Models/Structure/PeachsCastle/PeachsCastle.obj 1
+
+#LivingRoom assets/Models/Structure/LivingRoom/InteriorTest.obj 1 0 0 0 0 0 0
 
 ~
-
-# LivingRoom assets/Models/Structure/LivingRoom/InteriorTest.obj 1 0 0 0 0 0 0
 
 # Octo assets/Models/Shapes/Octo.obj 4 0 0 0 0 0 0
 # Hollow assets/Models/Shapes/Hollow.obj 200 0 0 0 0 200 0

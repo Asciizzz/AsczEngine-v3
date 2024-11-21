@@ -82,6 +82,8 @@ public:
 
     // ========== BETAs SECTION ==========
 
+    // BETA: Texure mapping (completed: 20 - Nov - 2024)
+
     // BETA: Lighting
     LightSrc light;
 
