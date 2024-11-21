@@ -19,8 +19,8 @@ We will have 4 arrays for vertex data:
 - obj Id (id)
 */
 
-#define MeshMap std::map<std::string, MeshRange>
-#define Meshs3D std::vector<Mesh3D>
+#define MeshMap std::map<std::string, Mesh>
+#define MeshRangeMap std::map<std::string, MeshRange>
 
 #define VectF std::vector<float>
 
@@ -64,9 +64,9 @@ struct Mesh {
     VectI txw, txh; VectLLI txof;
 
     // Object data
-    MeshMap objmapST; // Static object (when created)
-    MeshMap objmapRT; // Runtime object (in device memory)
-    VectStr objmapKs; // Keys to ensure order
+    MeshRangeMap mrmapST; // Static object (when created)
+    MeshRangeMap mrmapRT; // Runtime object (in device memory)
+    VectStr mrmapKs; // Keys to ensure order
 
     // Metadata
     bool allocated = false;
@@ -89,7 +89,7 @@ struct Mesh {
         VectF txr, VectF txg, VectF txb,
         VectI txw, VectI txh, VectLLI txof,
         // Object data
-        MeshMap objmap, VectStr objmapKs
+        MeshRangeMap mrmap, VectStr mrmapKs
     );
 
     void push(Mesh &mesh);
@@ -109,7 +109,7 @@ struct Mesh {
     void rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis);
     void scaleRuntime(std::string mapkey, Vec3f origin, float scl);
 
-    void printRtMap();
+    std::string printRtMap();
 };
 
 /* Note:
@@ -188,17 +188,23 @@ struct Texture_ptr {
 
 // Device mesh (SoA for coalesced memory access)
 class Mesh3D {
+private:
+    std::map<std::string, int> repeatname; // Repetition counter
 public:
     Vertex_ptr v; // s w t n c
     Face_ptr f; // v t n m
     Material_ptr m; // ka kd ks map_Kd ns
     Texture_ptr t; // tx wh of
 
+    MeshMap meshmap;
+
     // Free everything
     void free();
     // Resize + Append
     void push(Mesh &mesh, bool print=false);
     void push(std::vector<Mesh> &meshs, bool print=false);
+    // Print meshmap
+    void printMeshMap();
 };
 
 // Kernel for preparing faces

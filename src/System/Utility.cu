@@ -8,8 +8,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
 
     std::string line;
 
-    MeshMap objmap;
-    VectStr objmapKeys; // To ensure the order of the objects
+    MeshRangeMap mrmap;
+    VectStr mrmapKs; // To ensure the order of the objects
     std::string curObj;
 
     VectF wx, wy, wz;
@@ -140,26 +140,26 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             ss >> name;
 
             // Append the key
-            objmapKeys.push_back(name);
+            mrmapKs.push_back(name);
 
             if (curObj == "") {
                 curObj = name;
 
-                objmap[curObj].w1 = 0;
-                objmap[curObj].t1 = 0;
-                objmap[curObj].n1 = 0;
+                mrmap[curObj].w1 = 0;
+                mrmap[curObj].t1 = 0;
+                mrmap[curObj].n1 = 0;
             }
 
             if (curObj != name) {
-                objmap[curObj].w2 = wx.size();
-                objmap[curObj].t2 = tu.size();
-                objmap[curObj].n2 = nx.size();
+                mrmap[curObj].w2 = wx.size();
+                mrmap[curObj].t2 = tu.size();
+                mrmap[curObj].n2 = nx.size();
 
                 curObj = name;
 
-                objmap[curObj].w1 = wx.size();
-                objmap[curObj].t1 = tu.size();
-                objmap[curObj].n1 = nx.size();
+                mrmap[curObj].w1 = wx.size();
+                mrmap[curObj].t1 = tu.size();
+                mrmap[curObj].n1 = nx.size();
             }
         }
 
@@ -263,16 +263,17 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             }
         }
     }
-    // If there's no object, set default "obj"
-    if (objmap.size() == 0) {
-        objmap["obj"].w1 = 0; objmap["obj"].w2 = wx.size();
-        objmap["obj"].t1 = 0; objmap["obj"].t2 = tu.size();
-        objmap["obj"].n1 = 0; objmap["obj"].n2 = nx.size();
+    // If there's no object, set default "def"
+    if (mrmap.size() == 0) {
+        mrmapKs.push_back("def");
+        mrmap["def"].w1 = 0; mrmap["def"].w2 = wx.size();
+        mrmap["def"].t1 = 0; mrmap["def"].t2 = tu.size();
+        mrmap["def"].n1 = 0; mrmap["def"].n2 = nx.size();
     } else {
         // Set the end of the last object
-        objmap[curObj].w2 = wx.size();
-        objmap[curObj].t2 = tu.size();
-        objmap[curObj].n2 = nx.size();
+        mrmap[curObj].w2 = wx.size();
+        mrmap[curObj].t2 = tu.size();
+        mrmap[curObj].n2 = nx.size();
     }
 
     #pragma omp parallel for
@@ -301,7 +302,7 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         mkd,
         txr, txg, txb,
         txw, txh, txof,
-        objmap, objmapKeys
+        mrmap, mrmapKs
     };
 
     return mesh;

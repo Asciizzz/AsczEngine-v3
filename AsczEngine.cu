@@ -50,6 +50,7 @@ int main() {
     // solarSystem.setStars(4, 400, 6000, 8000, 6);
     // GRAPHIC.mesh.push(solarSystem.stars);
 
+    GRAPHIC.mesh.printMeshMap();
     GRAPHIC.mallocRuntimeFaces();
 
     int shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY;

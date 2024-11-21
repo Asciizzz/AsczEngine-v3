@@ -1,5 +1,6 @@
-#include <Mesh3D.cuh>
 #include <Graphic3D.cuh> // For the Graphic.mesh object
+
+#include <fstream> // For file I/O
 
 // ======================= Mesh range =======================
 
@@ -32,7 +33,7 @@ Mesh::Mesh(
     VectF txr, VectF txg, VectF txb,
     VectI txw, VectI txh, VectLLI txof,
     // Object data
-    MeshMap objmap, VectStr objmapKs
+    MeshRangeMap mrmap, VectStr mrmapKs
 ) : wx(wx), wy(wy), wz(wz),
     tu(tu), tv(tv),
     nx(nx), ny(ny), nz(nz),
@@ -47,9 +48,9 @@ Mesh::Mesh(
     txr(txr), txg(txg), txb(txb),
     txw(txw), txh(txh), txof(txof),
 
-    objmapST(objmap),
-    objmapRT(objmap),
-    objmapKs(objmapKs)
+    mrmapST(mrmap),
+    mrmapRT(mrmap),
+    mrmapKs(mrmapKs)
 {}
 
 void Mesh::push(Mesh &mesh) {
@@ -174,13 +175,13 @@ void Mesh::scaleIni(Vec3f origin, Vec3f scl, bool sclNormal) {
 }
 
 void Mesh::translateRuntime(std::string mapkey, Vec3f t) {
-    if (objmapRT.find(mapkey) == objmapRT.end()) return;
+    if (mrmapRT.find(mapkey) == mrmapRT.end()) return;
     if (!allocated) return;
 
     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
 
-    ULLInt start = objmapRT[mapkey].w1;
-    ULLInt end = objmapRT[mapkey].w2;
+    ULLInt start = mrmapRT[mapkey].w1;
+    ULLInt end = mrmapRT[mapkey].w2;
 
     ULLInt numWs = end - start;
     ULLInt gridSize = (numWs + 255) / 256;
@@ -192,16 +193,16 @@ void Mesh::translateRuntime(std::string mapkey, Vec3f t) {
     cudaDeviceSynchronize();
 }
 void Mesh::rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis) {
-    if (objmapRT.find(mapkey) == objmapRT.end()) return;
+    if (mrmapRT.find(mapkey) == mrmapRT.end()) return;
     if (!allocated) return;
 
     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
     Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
 
-    ULLInt startW = objmapRT[mapkey].w1;
-    ULLInt endW = objmapRT[mapkey].w2;
-    ULLInt startN = objmapRT[mapkey].n1;
-    ULLInt endN = objmapRT[mapkey].n2;
+    ULLInt startW = mrmapRT[mapkey].w1;
+    ULLInt endW = mrmapRT[mapkey].w2;
+    ULLInt startN = mrmapRT[mapkey].n1;
+    ULLInt endN = mrmapRT[mapkey].n2;
 
     ULLInt numWs = endW - startW;
     ULLInt numNs = endN - startN;
@@ -217,13 +218,13 @@ void Mesh::rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis) 
     cudaDeviceSynchronize();
 }
 void Mesh::scaleRuntime(std::string mapkey, Vec3f origin, float scl) {
-    if (objmapRT.find(mapkey) == objmapRT.end()) return;
+    if (mrmapRT.find(mapkey) == mrmapRT.end()) return;
     if (!allocated) return;
 
     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
 
-    ULLInt startW = objmapRT[mapkey].w1;
-    ULLInt endW = objmapRT[mapkey].w2;
+    ULLInt startW = mrmapRT[mapkey].w1;
+    ULLInt endW = mrmapRT[mapkey].w2;
 
     ULLInt numWs = endW - startW;
     ULLInt gridSize = (numWs + 255) / 256;
@@ -235,15 +236,15 @@ void Mesh::scaleRuntime(std::string mapkey, Vec3f origin, float scl) {
     cudaDeviceSynchronize();
 }
 
-void Mesh::printRtMap() {
-    std::cout << name << ":\n";
-    for (std::string key : objmapKs) {
-        std::cout << "| -" << key << "- | " <<
-            objmapRT[key].w1 << " - " << objmapRT[key].w2 << " | " <<
-            objmapRT[key].t1 << " - " << objmapRT[key].t2 << " | " <<
-            objmapRT[key].n1 << " - " << objmapRT[key].n2 << "\n";
+std::string Mesh::printRtMap() {
+    std::string rt = "";
+    for (std::string key : mrmapKs) {
+        rt += "| -" + key + "- | " +
+            std::to_string(mrmapRT[key].w1) + " - " + std::to_string(mrmapRT[key].w2) + " | " +
+            std::to_string(mrmapRT[key].t1) + " - " + std::to_string(mrmapRT[key].t2) + " | " +
+            std::to_string(mrmapRT[key].n1) + " - " + std::to_string(mrmapRT[key].n2) + "\n";
     }
-    std::cout << "\n";
+    return rt;
 }
 
 // ======================= Vertex_ptr =======================
@@ -377,16 +378,30 @@ void Mesh3D::push(Mesh &mesh, bool print) {
     ULLInt offsetN = v.n.size;
 
     // Set the runtime values
-    for (auto &kv : mesh.objmapRT) {
+    for (auto &kv : mesh.mrmapRT) {
         kv.second.offsetW(offsetW);
         kv.second.offsetT(offsetT);
         kv.second.offsetN(offsetN);
     }
-    // Print runtime map
-    if (print) mesh.printRtMap();
     // Set the metadata
     mesh.allocated = true;
         // ... more later
+    
+    /*
+    Push to the meshmap
+    If name already exists, increment the repeatname counter
+    And set new name: <name>_<counter>
+
+    Example: ball -> ball_1 -> ball_2 -> ...
+    */
+    if (meshmap.find(mesh.name) != meshmap.end()) {
+        repeatname[mesh.name]++;
+        mesh.name = mesh.name + "_" + std::to_string(repeatname[mesh.name]);
+        meshmap[mesh.name] = mesh;
+    } else {
+        repeatname[mesh.name] = 0;
+        meshmap[mesh.name] = mesh;
+    }
 
     // Stream for async memory copy
     cudaStream_t stream;
@@ -494,6 +509,19 @@ void Mesh3D::push(Mesh &mesh, bool print) {
 }
 void Mesh3D::push(std::vector<Mesh> &meshes, bool print) {
     for (Mesh &mesh : meshes) push(mesh, print);
+}
+
+void Mesh3D::printMeshMap() {
+    std::string str = "";
+
+    for (auto &kv : meshmap) {
+        str += kv.first + "\n";
+        str += kv.second.printRtMap() + "\n";
+    }
+
+    // Write to meshmap.txt
+    std::ofstream file("meshmap.txt");
+    file << str;
 }
 
 // Kernel for incrementing face indices
