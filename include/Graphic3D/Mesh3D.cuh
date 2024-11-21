@@ -202,8 +202,8 @@ public:
     // Free everything
     void free();
     // Resize + Append
-    void push(Mesh &mesh, bool print=false);
-    void push(std::vector<Mesh> &meshs, bool print=false);
+    void push(Mesh &mesh, bool correction=true);
+    void push(std::vector<Mesh> &meshs, bool correction=true);
     // Print meshmap
     void printMeshMap();
 };

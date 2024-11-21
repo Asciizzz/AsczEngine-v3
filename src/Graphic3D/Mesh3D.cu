@@ -372,17 +372,18 @@ void Mesh3D::free() {
 }
 
 // Push
-void Mesh3D::push(Mesh &mesh, bool print) {
+void Mesh3D::push(Mesh &mesh, bool correction) {
     ULLInt offsetW = v.w.size;
     ULLInt offsetT = v.t.size;
     ULLInt offsetN = v.n.size;
 
     // Set the runtime values
-    for (auto &kv : mesh.mrmapRT) {
-        kv.second.offsetW(offsetW);
-        kv.second.offsetT(offsetT);
-        kv.second.offsetN(offsetN);
-    }
+    if (correction)
+        for (auto &kv : mesh.mrmapRT) {
+            kv.second.offsetW(offsetW);
+            kv.second.offsetT(offsetT);
+            kv.second.offsetN(offsetN);
+        }
     // Set the metadata
     mesh.allocated = true;
         // ... more later
@@ -454,8 +455,11 @@ void Mesh3D::push(Mesh &mesh, bool print) {
     cudaMemcpyAsync(newTx.of.x, mesh.txof.data(), txCount * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment texture offset
-    ULLInt gridSize = (txCount + 255) / 256;
-    incLLIntKernel<<<gridSize, 256>>>(newTx.of.x, offsetTxs, txCount);
+    ULLInt gridSize;
+    if (correction) {
+        gridSize = (txCount + 255) / 256;
+        incLLIntKernel<<<gridSize, 256>>>(newTx.of.x, offsetTxs, txCount);
+    }
     t += newTx;
 
     // =============== Material data ===============
@@ -481,8 +485,10 @@ void Mesh3D::push(Mesh &mesh, bool print) {
     cudaMemcpyAsync(newM.mkd.x, mesh.mkd.data(), mSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment texture indices
-    gridSize = (mSize + 255) / 256;
-    incLLIntKernel<<<gridSize, 256>>>(newM.mkd.x, offsetTxc, mSize);
+    if (correction) {
+        gridSize = (mSize + 255) / 256;
+        incLLIntKernel<<<gridSize, 256>>>(newM.mkd.x, offsetTxc, mSize);
+    }
     m += newM;
 
     // =============== Face data ================
@@ -497,18 +503,20 @@ void Mesh3D::push(Mesh &mesh, bool print) {
     cudaMemcpyAsync(newF.m, mesh.fm.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment face indices
-    gridSize = (fSize + 255) / 256;
-    incULLIntKernel<<<gridSize, 256>>>(newF.v, offsetW, fSize);
-    incLLIntKernel<<<gridSize, 256>>>(newF.t, offsetT, fSize);
-    incLLIntKernel<<<gridSize, 256>>>(newF.n, offsetN, fSize);
-    incLLIntKernel<<<gridSize, 256>>>(newF.m, offsetM, fSize);
+    if (correction) {
+        gridSize = (fSize + 255) / 256;
+        incULLIntKernel<<<gridSize, 256>>>(newF.v, offsetW, fSize);
+        incLLIntKernel<<<gridSize, 256>>>(newF.t, offsetT, fSize);
+        incLLIntKernel<<<gridSize, 256>>>(newF.n, offsetN, fSize);
+        incLLIntKernel<<<gridSize, 256>>>(newF.m, offsetM, fSize);
+    }
     f += newF;
 
     // Destroy the stream
     cudaStreamSynchronize(stream);
 }
-void Mesh3D::push(std::vector<Mesh> &meshes, bool print) {
-    for (Mesh &mesh : meshes) push(mesh, print);
+void Mesh3D::push(std::vector<Mesh> &meshes, bool correction) {
+    for (Mesh &mesh : meshes) push(mesh, correction);
 }
 
 void Mesh3D::printMeshMap() {
