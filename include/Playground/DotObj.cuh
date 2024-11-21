@@ -18,6 +18,7 @@ public:
             // If line start with ~, it's the end of the file
             if (line[0] == '~') break;
 
+            std::string objName = "default";
             std::string objPath = "";
             float scale = 1;
             Vec3f translate;
@@ -25,12 +26,12 @@ public:
 
             std::stringstream ss(line);
 
-            ss >> objPath >> scale;
+            ss >> objName >> objPath >> scale;
             ss >> rotate.x >> rotate.y >> rotate.z;
             ss >> translate.x >> translate.y >> translate.z;
             rotate *= M_PI / 180;
 
-            Mesh obj = Utils::readObjFile(objPath, 1, 1, false);
+            Mesh obj = Utils::readObjFile(objName, objPath, 1, 1);
             obj.scaleIni(Vec3f(), Vec3f(scale));
             obj.rotateIni(Vec3f(), rotate.x, 0);
             obj.rotateIni(Vec3f(), rotate.y, 1);

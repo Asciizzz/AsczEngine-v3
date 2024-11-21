@@ -50,9 +50,13 @@ int main() {
     solarSystem.setStars(4, 400, 6000, 8000, 6);
     GRAPHIC.mesh.push(solarSystem.stars);
 
-    GRAPHIC.mesh.printMeshMap();
+
     GRAPHIC.mallocRuntimeFaces();
 
+    // Debug purposes
+    GRAPHIC.mesh.logMeshMap(24);
+
+    // Beta: shadow mapping
     int shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY;
     std::ifstream("assets/cfg/shadow.txt") >> shdwWidth >> shdwHeight >> shdwTileSizeX >> shdwTileSizeY;
     GRAPHIC.createShadowMap(shdwWidth, shdwHeight, shdwTileSizeX, shdwTileSizeY);
@@ -74,8 +78,6 @@ int main() {
     bool moveMode = true;
 
     // Other miscellaneus stuff
-    bool k_t_hold = false;
-
     short logmode = 0;
 
     // =====================================================
@@ -85,6 +87,22 @@ int main() {
     while (window.isOpen()) {
         // Frame start
         FPS.startFrame();
+
+        // Setting input activities
+        bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
+        bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
+        bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
+        bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
+
+        bool k_w = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
+        bool k_a = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
+        bool k_s = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+        bool k_d = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
+        bool k_space = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+
+        bool k_q = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
+        bool k_e = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
+        bool k_t = sf::Keyboard::isKeyPressed(sf::Keyboard::T);
 
         sf::Event event;
         while (window.pollEvent(event)) {
@@ -116,10 +134,25 @@ int main() {
                 if (event.key.code == sf::Keyboard::Num4)
                     customMode = !customMode;
 
-                // Press tab to switch log mode
-                if (event.key.code == sf::Keyboard::Tab) {
+                // Press tab (without ctrl and shift) to toggle log mode
+                if (event.key.code == sf::Keyboard::Tab &&
+                    !k_ctrl && !k_shift) {
                     logmode++;
                     if (logmode > 1) logmode = 0;
+                }
+
+                
+                if (event.key.code == sf::Keyboard::Tab && logmode == 1) {
+                    int &curlogpart = GRAPHIC.mesh.curlogpart;
+                    int &maxlogpart = GRAPHIC.mesh.maxlogpart;
+
+                    // Hold ctrl to go to next page
+                    if (k_ctrl) curlogpart ++;
+                    // Hold shift to go to previous page
+                    if (k_shift) curlogpart --;
+
+                    // Wrap around
+                    curlogpart = (curlogpart + maxlogpart) % maxlogpart;
                 }
 
                 // Press Z to toggle move mode
@@ -148,21 +181,6 @@ int main() {
                 CAMERA.fov = fovRad;
             }
         }
-
-        bool m_left = sf::Mouse::isButtonPressed(sf::Mouse::Left);
-        bool m_right = sf::Mouse::isButtonPressed(sf::Mouse::Right);
-        bool k_ctrl = sf::Keyboard::isKeyPressed(sf::Keyboard::LControl);
-        bool k_shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift);
-
-        bool k_w = sf::Keyboard::isKeyPressed(sf::Keyboard::W);
-        bool k_a = sf::Keyboard::isKeyPressed(sf::Keyboard::A);
-        bool k_s = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
-        bool k_d = sf::Keyboard::isKeyPressed(sf::Keyboard::D);
-        bool k_space = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
-
-        bool k_q = sf::Keyboard::isKeyPressed(sf::Keyboard::Q);
-        bool k_e = sf::Keyboard::isKeyPressed(sf::Keyboard::E);
-        bool k_t = sf::Keyboard::isKeyPressed(sf::Keyboard::T);
 
         // Mouse movement => Look around
         if (CAMERA.focus) {
@@ -250,31 +268,26 @@ int main() {
             CAMERA.pos += CAMERA.vel * .1;
         }
 
-        // Press T to read an transform.txt file and apply it
-        // Note: hold ctrl to switch keyT from hold to tap
-        if (k_t && (!k_t_hold || !k_ctrl)) {
-            k_t_hold = true;
-
-            Utils::applyTransformation(dotObjs.objs);
-        }
-        if (!k_t) k_t_hold = false;
-
         // ========== Playgrounds ==============
 
         // Set light position to camera position
         GRAPHIC.light.dir = CAMERA.pos;
 
         // Rotate stars
-        Mesh &stars = GRAPHIC.mesh.meshmap["stars"];
-        stars.rotateRuntime("star0", Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
-        stars.rotateRuntime("star1", Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
-        stars.rotateRuntime("star2", Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
-        stars.rotateRuntime("star3", Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
+        if (GRAPHIC.mesh.meshmap.find("SolarSystem_Stars") !=
+            GRAPHIC.mesh.meshmap.end()) {
+            Mesh &stars = GRAPHIC.mesh.meshmap["SolarSystem_Stars"];
 
-        stars.rotateRuntime("star0", Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
-        stars.rotateRuntime("star1", Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
-        stars.rotateRuntime("star2", Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
-        stars.rotateRuntime("star3", Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
+            stars.rotateRuntime("star0", Vec3f(), M_PI_2 * FPS.dTimeSec / 190, 1);
+            stars.rotateRuntime("star1", Vec3f(), M_PI_2 * FPS.dTimeSec / 210, 1);
+            stars.rotateRuntime("star2", Vec3f(), M_PI_2 * FPS.dTimeSec / 230, 1);
+            stars.rotateRuntime("star3", Vec3f(), M_PI_2 * FPS.dTimeSec / 340, 1);
+
+            stars.rotateRuntime("star0", Vec3f(), M_PI_2 * FPS.dTimeSec / 990, 0);
+            stars.rotateRuntime("star1", Vec3f(), M_PI_2 * FPS.dTimeSec / 810, 0);
+            stars.rotateRuntime("star2", Vec3f(), M_PI_2 * FPS.dTimeSec / 1030, 0);
+            stars.rotateRuntime("star3", Vec3f(), M_PI_2 * FPS.dTimeSec / 740, 0);
+        }
 
         // ========== Render Pipeline ==========
 
@@ -363,8 +376,22 @@ int main() {
             break;
 
         case 1:
-            LOG.addLog("[Mesh Map]", sf::Color(255, 100, 100), 1);
-            LOG.addLog(GRAPHIC.mesh.meshmapstr, sf::Color(255, 255, 255));
+            // Also debug purposes
+            int curlogpart = GRAPHIC.mesh.curlogpart;
+            int maxlogpart = GRAPHIC.mesh.maxlogpart;
+
+            LOG.addLog(
+                "[Mesh Map Page " +
+                std::to_string(curlogpart + 1) + " / " +
+                std::to_string(maxlogpart) + "]" +
+                "(ctrl/shift + tab to navigate)",
+                sf::Color(255, 100, 100), 1
+            );
+
+            if (curlogpart != 0) LOG.addLog("  . . .", sf::Color(255, 255, 255), 1);
+            LOG.addLog(GRAPHIC.mesh.getMeshMapLog(), sf::Color(255, 255, 255));
+            if (curlogpart != maxlogpart - 1) LOG.addLog("  . . .", sf::Color(255, 255, 255), 1);
+            
             break;
         }
 

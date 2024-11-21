@@ -1,22 +1,20 @@
 #include <Graphic3D.cuh> // For the Graphic.mesh object
 
-#include <fstream> // For file I/O
-
 // ======================= Mesh range =======================
 
-MeshRange::MeshRange(
+ObjRange::ObjRange(
     ULLInt w1, ULLInt w2, ULLInt t1, ULLInt t2, ULLInt n1, ULLInt n2
 ) : w1(w1), w2(w2), t1(t1), t2(t2), n1(n1), n2(n2) {}
 
-void MeshRange::operator=(MeshRange &range) {
+void ObjRange::operator=(ObjRange &range) {
     w1 = range.w1; w2 = range.w2;
     t1 = range.t1; t2 = range.t2;
     n1 = range.n1; n2 = range.n2;
 }
 
-void MeshRange::offsetW(ULLInt offset) { w1 += offset; w2 += offset; }
-void MeshRange::offsetT(ULLInt offset) { t1 += offset; t2 += offset; }
-void MeshRange::offsetN(ULLInt offset) { n1 += offset; n2 += offset; }
+void ObjRange::offsetW(ULLInt offset) { w1 += offset; w2 += offset; }
+void ObjRange::offsetT(ULLInt offset) { t1 += offset; t2 += offset; }
+void ObjRange::offsetN(ULLInt offset) { n1 += offset; n2 += offset; }
 
 // ======================= Mesh object =======================
 
@@ -37,7 +35,7 @@ Mesh::Mesh(
     VectF txr, VectF txg, VectF txb,
     VectI txw, VectI txh, VectLLI txof,
     // Object data
-    MeshRangeMap mrmap, VectStr mrmapKs
+    ObjRangeMap objmap, VectStr objmapKs
 ) : wx(wx), wy(wy), wz(wz),
     tu(tu), tv(tv),
     nx(nx), ny(ny), nz(nz),
@@ -52,69 +50,10 @@ Mesh::Mesh(
     txr(txr), txg(txg), txb(txb),
     txw(txw), txh(txh), txof(txof),
 
-    mrmapST(mrmap),
-    mrmapRT(mrmap),
-    mrmapKs(mrmapKs)
+    objmapST(objmap),
+    objmapRT(objmap),
+    objmapKs(objmapKs)
 {}
-
-void Mesh::push(Mesh &mesh) {
-    // Vertex data
-    for (ULLInt i = 0; i < mesh.wx.size(); i++) {
-        wx.push_back(mesh.wx[i]);
-        wy.push_back(mesh.wy[i]);
-        wz.push_back(mesh.wz[i]);
-    }
-    for (ULLInt i = 0; i < mesh.tu.size(); i++) {
-        tu.push_back(mesh.tu[i]);
-        tv.push_back(mesh.tv[i]);
-    }
-    for (ULLInt i = 0; i < mesh.nx.size(); i++) {
-        nx.push_back(mesh.nx[i]);
-        ny.push_back(mesh.ny[i]);
-        nz.push_back(mesh.nz[i]);
-    }
-
-    // Material data
-    for (ULLInt i = 0; i < mesh.kdr.size(); i++) {
-        kar.push_back(mesh.kar[i]);
-        kag.push_back(mesh.kag[i]);
-        kab.push_back(mesh.kab[i]);
-
-        kdr.push_back(mesh.kdr[i]);
-        kdg.push_back(mesh.kdg[i]);
-        kdb.push_back(mesh.kdb[i]);
-
-        ksr.push_back(mesh.ksr[i]);
-        ksg.push_back(mesh.ksg[i]);
-        ksb.push_back(mesh.ksb[i]);
-    }
-
-    // Texture data + increment texture offset
-    for (ULLInt i = 0; i < mesh.txw.size(); i++) {
-        txw.push_back(mesh.txw[i]);
-        txh.push_back(mesh.txh[i]);
-        txof.push_back(mesh.txof[i] + txr.size());
-    }
-    for (ULLInt i = 0; i < mesh.txr.size(); i++) {
-        txr.push_back(mesh.txr[i]);
-        txg.push_back(mesh.txg[i]);
-        txb.push_back(mesh.txb[i]);
-    }
-
-    // Increment face indices
-    for (ULLInt i = 0; i < mesh.fw.size(); i++) {
-        fw.push_back(mesh.fw[i] + wx.size());
-
-        if (mesh.ft[i] < 0) ft.push_back(-1);
-        else ft.push_back(mesh.ft[i] + tu.size());
-
-        if (mesh.fn[i] < 0) fn.push_back(-1);
-        else fn.push_back(mesh.fn[i] + nx.size());
-
-        if (mesh.fm[i] < 0) fm.push_back(-1);
-        else fm.push_back(mesh.fm[i] + kar.size());
-    }
-}
 
 Vec3f Mesh::w3f(ULLInt i) { return Vec3f(wx[i], wy[i], wz[i]); }
 Vec2f Mesh::t2f(ULLInt i) { return Vec2f(tu[i], tv[i]); }
@@ -144,7 +83,7 @@ void Mesh::rotateIni(Vec3f origin, float r, short axis) {
     #pragma omp parallel for
     for (ULLInt i = 0; i < nx.size(); i++) {
         Vec3f n = Vec3f(nx[i], ny[i], nz[i]);
-        
+
         switch (axis) {
             case 0: n.rotateX(Vec3f(), r); break;
             case 1: n.rotateY(Vec3f(), r); break;
@@ -179,13 +118,13 @@ void Mesh::scaleIni(Vec3f origin, Vec3f scl, bool sclNormal) {
 }
 
 void Mesh::translateRuntime(std::string mapkey, Vec3f t) {
-    if (mrmapRT.find(mapkey) == mrmapRT.end()) return;
+    if (objmapRT.find(mapkey) == objmapRT.end()) return;
     if (!allocated) return;
 
     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
 
-    ULLInt start = mrmapRT[mapkey].w1;
-    ULLInt end = mrmapRT[mapkey].w2;
+    ULLInt start = objmapRT[mapkey].w1;
+    ULLInt end = objmapRT[mapkey].w2;
 
     ULLInt numWs = end - start;
     ULLInt gridSize = (numWs + 255) / 256;
@@ -197,16 +136,16 @@ void Mesh::translateRuntime(std::string mapkey, Vec3f t) {
     cudaDeviceSynchronize();
 }
 void Mesh::rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis) {
-    if (mrmapRT.find(mapkey) == mrmapRT.end()) return;
+    if (objmapRT.find(mapkey) == objmapRT.end()) return;
     if (!allocated) return;
 
     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
     Vec3f_ptr &n = Graphic3D::instance().mesh.v.n;
 
-    ULLInt startW = mrmapRT[mapkey].w1;
-    ULLInt endW = mrmapRT[mapkey].w2;
-    ULLInt startN = mrmapRT[mapkey].n1;
-    ULLInt endN = mrmapRT[mapkey].n2;
+    ULLInt startW = objmapRT[mapkey].w1;
+    ULLInt endW = objmapRT[mapkey].w2;
+    ULLInt startN = objmapRT[mapkey].n1;
+    ULLInt endN = objmapRT[mapkey].n2;
 
     ULLInt numWs = endW - startW;
     ULLInt numNs = endN - startN;
@@ -222,13 +161,13 @@ void Mesh::rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis) 
     cudaDeviceSynchronize();
 }
 void Mesh::scaleRuntime(std::string mapkey, Vec3f origin, float scl) {
-    if (mrmapRT.find(mapkey) == mrmapRT.end()) return;
+    if (objmapRT.find(mapkey) == objmapRT.end()) return;
     if (!allocated) return;
 
     Vec3f_ptr &w = Graphic3D::instance().mesh.v.w;
 
-    ULLInt startW = mrmapRT[mapkey].w1;
-    ULLInt endW = mrmapRT[mapkey].w2;
+    ULLInt startW = objmapRT[mapkey].w1;
+    ULLInt endW = objmapRT[mapkey].w2;
 
     ULLInt numWs = endW - startW;
     ULLInt gridSize = (numWs + 255) / 256;
@@ -240,13 +179,13 @@ void Mesh::scaleRuntime(std::string mapkey, Vec3f origin, float scl) {
     cudaDeviceSynchronize();
 }
 
-std::string Mesh::printRtMap() {
+std::string Mesh::getObjRtMapLog() {
     std::string rt = "";
-    for (std::string key : mrmapKs) {
+    for (std::string key : objmapKs) {
         rt += "| -" + key + "- | " +
-            std::to_string(mrmapRT[key].w1) + " - " + std::to_string(mrmapRT[key].w2) + " | " +
-            std::to_string(mrmapRT[key].t1) + " - " + std::to_string(mrmapRT[key].t2) + " | " +
-            std::to_string(mrmapRT[key].n1) + " - " + std::to_string(mrmapRT[key].n2) + "\n";
+            std::to_string(objmapRT[key].w1) + " - " + std::to_string(objmapRT[key].w2) + " | " +
+            std::to_string(objmapRT[key].t1) + " - " + std::to_string(objmapRT[key].t2) + " | " +
+            std::to_string(objmapRT[key].n1) + " - " + std::to_string(objmapRT[key].n2) + "\n";
     }
     return rt;
 }
@@ -383,7 +322,7 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
 
     // Set the runtime values
     if (correction)
-        for (auto &kv : mesh.mrmapRT) {
+        for (auto &kv : mesh.objmapRT) {
             kv.second.offsetW(offsetW);
             kv.second.offsetT(offsetT);
             kv.second.offsetN(offsetN);
@@ -523,16 +462,36 @@ void Mesh3D::push(std::vector<Mesh> &meshes, bool correction) {
     for (Mesh &mesh : meshes) push(mesh, correction);
 }
 
-void Mesh3D::printMeshMap() {
-    meshmapstr = "";
+void Mesh3D::logMeshMap(int linePerPart) {
+    meshmapLog.clear();
+    meshmapLog.push_back("");
+
+    int lineCount = 0;
+
     for (auto &kv : meshmap) {
-        meshmapstr += kv.first + "\n";
-        meshmapstr += kv.second.printRtMap();
+        meshmapLog.back() += kv.first + "\n";
+        lineCount++;
+
+        for (std::string key : kv.second.objmapKs) {
+            ObjRangeMap &omRT = kv.second.objmapRT;
+
+            meshmapLog.back() += "| -" + key + "- | " +
+                std::to_string(omRT[key].w1) + " - " + std::to_string(omRT[key].w2) + " | " +
+                std::to_string(omRT[key].t1) + " - " + std::to_string(omRT[key].t2) + " | " +
+                std::to_string(omRT[key].n1) + " - " + std::to_string(omRT[key].n2) + "\n";
+
+            lineCount++;
+            if (lineCount >= linePerPart) {
+                meshmapLog.push_back("");
+                lineCount = 0;
+            }
+        }
     }
 
-    // Write to meshmap.txt
-    std::ofstream file("meshmap.txt");
-    file << meshmapstr;
+    maxlogpart = meshmapLog.size();
+}
+std::string Mesh3D::getMeshMapLog() {
+    return meshmapLog[curlogpart];
 }
 
 // Kernel for incrementing face indices

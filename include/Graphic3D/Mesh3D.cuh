@@ -20,7 +20,7 @@ We will have 4 arrays for vertex data:
 */
 
 #define MeshMap std::map<std::string, Mesh>
-#define MeshRangeMap std::map<std::string, MeshRange>
+#define ObjRangeMap std::map<std::string, ObjRange>
 
 #define VectF std::vector<float>
 
@@ -30,18 +30,18 @@ We will have 4 arrays for vertex data:
 
 #define VectStr std::vector<std::string>
 
-struct MeshRange {
+struct ObjRange {
     ULLInt w1, w2;
     ULLInt t1, t2;
     ULLInt n1, n2;
 
-    MeshRange(
+    ObjRange(
         ULLInt w1=0, ULLInt w2=0,
         ULLInt t1=0, ULLInt t2=0,
         ULLInt n1=0, ULLInt n2=0
     );
     
-    void operator=(MeshRange &range);
+    void operator=(ObjRange &range);
 
     void offsetW(ULLInt offset);
     void offsetT(ULLInt offset);
@@ -70,9 +70,9 @@ struct Mesh {
     VectI txw, txh; VectLLI txof;
 
     // Object data
-    MeshRangeMap mrmapST; // Static object (when created)
-    MeshRangeMap mrmapRT; // Runtime object (in device memory)
-    VectStr mrmapKs; // Keys to ensure order
+    ObjRangeMap objmapST; // Static object (when created)
+    ObjRangeMap objmapRT; // Runtime object (in device memory)
+    VectStr objmapKs; // Keys to ensure order
 
     // Metadata
     bool allocated = false;
@@ -95,10 +95,8 @@ struct Mesh {
         VectF txr, VectF txg, VectF txb,
         VectI txw, VectI txh, VectLLI txof,
         // Object data
-        MeshRangeMap mrmap, VectStr mrmapKs
+        ObjRangeMap objmap, VectStr objmapKs
     );
-
-    void push(Mesh &mesh);
 
     // Return vertex data
     Vec3f w3f(ULLInt i);
@@ -115,7 +113,7 @@ struct Mesh {
     void rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis);
     void scaleRuntime(std::string mapkey, Vec3f origin, float scl);
 
-    std::string printRtMap();
+    std::string getObjRtMapLog();
 };
 
 /* Note:
@@ -196,6 +194,7 @@ struct Texture_ptr {
 class Mesh3D {
 private:
     std::map<std::string, int> repeatname; // Repetition counter
+
 public:
     Vertex_ptr v; // s w t n c
     Face_ptr f; // v t n m
@@ -203,15 +202,19 @@ public:
     Texture_ptr t; // tx wh of
 
     MeshMap meshmap;
-    std::string meshmapstr;
 
     // Free everything
     void free();
     // Resize + Append
     void push(Mesh &mesh, bool correction=true);
     void push(std::vector<Mesh> &meshs, bool correction=true);
-    // Print meshmap
-    void printMeshMap();
+    
+    // ========== ENTIRELY For debugging ==========
+    int curlogpart = 0;
+    int maxlogpart = 0;
+    VectStr meshmapLog;
+    void logMeshMap(int linePerPart=20);
+    std::string getMeshMapLog();
 };
 
 // Kernel for preparing faces

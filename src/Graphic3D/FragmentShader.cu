@@ -140,8 +140,14 @@ __global__ void applyMaterialKernel( // Beta
 
     LLInt texIdx = mkd[matIdx];
     if (texIdx >= 0) {
-        int x = bTu[i] * txw[texIdx];
-        int y = bTv[i] * txh[texIdx];
+        // Warp the texture modulo 1
+        float warpx = bTu[i] - floorf(bTu[i]);
+        float warpy = bTv[i] - floorf(bTv[i]);
+
+        int x = warpx * txw[texIdx];
+        int y = warpy * txh[texIdx];
+        // int x = tu * txw[texIdx];
+        // int y = tv * txh[texIdx];
         int tIdx = x + y * txw[texIdx];
 
         if (tIdx >= txw[texIdx] * txh[texIdx] ||

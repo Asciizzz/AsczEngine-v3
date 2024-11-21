@@ -7,9 +7,7 @@
 
 class Utils {
 public:
-    static Mesh readObjFile(std::string path, short fIdxBased=1, short placement=0, bool rainbow=false);
-
-    static void applyTransformation(std::vector<Mesh> objs);
+    static Mesh readObjFile(std::string name, std::string path, short fIdxBased=1, short placement=0);
 };
 
 #endif

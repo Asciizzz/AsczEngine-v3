@@ -178,11 +178,6 @@ __global__ void frustumCullingKernel(
     rtActive[fIdx * 4 + 1] = false;
     rtActive[fIdx * 4 + 2] = false;
     rtActive[fIdx * 4 + 3] = false;
-    // Reset Material
-    rtMat[fIdx * 4] = -1;
-    rtMat[fIdx * 4 + 1] = -1;
-    rtMat[fIdx * 4 + 2] = -1;
-    rtMat[fIdx * 4 + 3] = -1;
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = idx0 + 1;
@@ -561,8 +556,6 @@ __global__ void createDepthMapKernel(
     fIdx += faceOffset;
 
     ULLInt rtIdx = rtIndex[fIdx];
-
-    if (!rtActive[rtIdx]) return;
 
     ULLInt idx0 = rtIdx * 3;
     ULLInt idx1 = rtIdx * 3 + 1;

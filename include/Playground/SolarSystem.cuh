@@ -5,8 +5,7 @@
 
 class SolarSystem {
 public:
-    // std::vector<Mesh> stars;
-    Mesh stars;
+    Mesh stars; // Stars decoration
 
     void setStars(int batch, int perBatch, float rIn, float rOut, float scl) {
         // Constructing the stars mesh using the new technique
@@ -30,7 +29,7 @@ public:
             We only need to apply offset to the face data
             
             */
-            Mesh star = Utils::readObjFile(starPath, 1, 1, false);
+            Mesh star = Utils::readObjFile("", starPath, 1, 1);
 
             star.scaleIni(Vec3f(), Vec3f(scl));
 
@@ -69,21 +68,21 @@ public:
         }
 
         // Default mesh range map
-        MeshRangeMap mrmap;
-        VectStr mrmapKs;
+        ObjRangeMap objmap;
+        VectStr objmapKs;
         for (int b = 0; b < batch; b++) {
             std::string key = "star" + std::to_string(b);
 
             ULLInt wxperbatch = wx.size() / batch;
             ULLInt nxperbatch = nx.size() / batch;
 
-            mrmap[key] = MeshRange(
+            objmap[key] = ObjRange(
                 wxperbatch * b, wxperbatch * (b + 1),
                 0, 0, // No texture data
                 nxperbatch * b, nxperbatch * (b + 1)
             );
 
-            mrmapKs.push_back(key);
+            objmapKs.push_back(key);
         }
 
         stars = Mesh(
@@ -99,9 +98,9 @@ public:
             VectF(), VectF(), VectF(),
             VectI(), VectI(), VectLLI(),
             // Mesh map data
-            mrmap, mrmapKs
+            objmap, objmapKs
         );
-        stars.name = "stars"; // Set mesh name
+        stars.name = "SolarSystem_Stars";
     }
 };
 

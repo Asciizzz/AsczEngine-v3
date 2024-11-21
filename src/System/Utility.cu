@@ -2,14 +2,14 @@
 
 #include <SFML/Graphics.hpp>
 
-Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool rainbow) {
+Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, short placement) {
     std::ifstream file(path);
     if (!file.is_open()) return Mesh();
 
     std::string line;
 
-    MeshRangeMap mrmap;
-    VectStr mrmapKs; // To ensure the order of the objects
+    ObjRangeMap objmap;
+    VectStr objmapKs; // To ensure the order of the objects
     std::string curObj;
 
     VectF wx, wy, wz;
@@ -101,10 +101,10 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
                     if (txMap.find(txPath) != txMap.end()) {
                         mkd.back() = txMap[txPath];
                         continue;
-                    } else {
-                    // If not, add it to the map
-                        txMap[txPath] = txCount;
                     }
+
+                    // If not, add it to the map
+                    txMap[txPath] = txCount;
 
                     // Get the texture data using SFML
                     sf::Image txImage;
@@ -140,26 +140,26 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             ss >> name;
 
             // Append the key
-            mrmapKs.push_back(name);
+            objmapKs.push_back(name);
 
             if (curObj == "") {
                 curObj = name;
 
-                mrmap[curObj].w1 = 0;
-                mrmap[curObj].t1 = 0;
-                mrmap[curObj].n1 = 0;
+                objmap[curObj].w1 = 0;
+                objmap[curObj].t1 = 0;
+                objmap[curObj].n1 = 0;
             }
 
             if (curObj != name) {
-                mrmap[curObj].w2 = wx.size();
-                mrmap[curObj].t2 = tu.size();
-                mrmap[curObj].n2 = nx.size();
+                objmap[curObj].w2 = wx.size();
+                objmap[curObj].t2 = tu.size();
+                objmap[curObj].n2 = nx.size();
 
                 curObj = name;
 
-                mrmap[curObj].w1 = wx.size();
-                mrmap[curObj].t1 = tu.size();
-                mrmap[curObj].n1 = nx.size();
+                objmap[curObj].w1 = wx.size();
+                objmap[curObj].t1 = tu.size();
+                objmap[curObj].n1 = nx.size();
             }
         }
 
@@ -167,13 +167,10 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
             std::string mtlName;
             ss >> mtlName;
 
-            // If not in the map, set it to -1
-            if (mtlMap.find(mtlName) == mtlMap.end()) {
-                matIdx = -1;
-            } else {
-            // Get the idx of the material based on the mtlMap
-                matIdx = mtlMap[mtlName];
-            }
+            bool inMap = mtlMap.find(mtlName) != mtlMap.end();
+
+            if (!inMap) matIdx = -1;
+            else matIdx = mtlMap[mtlName];
         }
 
         if (type == "v") {
@@ -264,16 +261,16 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         }
     }
     // If there's no object, set default "def"
-    if (mrmap.size() == 0) {
-        mrmapKs.push_back("def");
-        mrmap["def"].w1 = 0; mrmap["def"].w2 = wx.size();
-        mrmap["def"].t1 = 0; mrmap["def"].t2 = tu.size();
-        mrmap["def"].n1 = 0; mrmap["def"].n2 = nx.size();
+    if (objmap.size() == 0) {
+        objmapKs.push_back("def");
+        objmap["def"].w1 = 0; objmap["def"].w2 = wx.size();
+        objmap["def"].t1 = 0; objmap["def"].t2 = tu.size();
+        objmap["def"].n1 = 0; objmap["def"].n2 = nx.size();
     } else {
         // Set the end of the last object
-        mrmap[curObj].w2 = wx.size();
-        mrmap[curObj].t2 = tu.size();
-        mrmap[curObj].n2 = nx.size();
+        objmap[curObj].w2 = wx.size();
+        objmap[curObj].t2 = tu.size();
+        objmap[curObj].n2 = nx.size();
     }
 
     #pragma omp parallel for
@@ -302,59 +299,9 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
         mkd,
         txr, txg, txb,
         txw, txh, txof,
-        mrmap, mrmapKs
+        objmap, objmapKs
     };
+    mesh.name = name;
 
     return mesh;
-}
-
-void Utils::applyTransformation(std::vector<Mesh> objs) {
-    // Read an transform.txt file and apply it
-    /* Format:
-        <idx> t <x> <y> <z>
-        <idx> r <ox> <oy> <oz> <x> <y> <z>
-        <idx> s <ox> <oy> <oz> <x> <y> <z>
-    */
-    std::ifstream file("assets/cfg/transform.txt");
-    if (!file.is_open()) return;
-
-    std::string line;
-    while (std::getline(file, line)) {
-        if (line.size() == 0 || line[0] == '#') continue;
-
-        std::stringstream ss(line);
-        ULLInt idx; std::string type;
-        ss >> idx >> type;
-
-        if (idx >= objs.size()) continue;
-
-        // if (type == "t") {
-        //     Vec3f t; ss >> t.x >> t.y >> t.z;
-
-        //     objs[idx].translateRuntime(t);
-        // } else if (type == "rx") {
-        //     Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-        //     float r; ss >> r;
-        //     r = r * M_PI / 180;
-
-        //     objs[idx].rotateRuntime(origin, r, 0);
-        // } else if (type == "ry") {
-        //     Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-        //     float r; ss >> r;
-        //     r = r * M_PI / 180;
-
-        //     objs[idx].rotateRuntime(origin, r, 1);
-        // } else if (type == "rz") {
-        //     Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-        //     float r; ss >> r;
-        //     r = r * M_PI / 180;
-
-        //     objs[idx].rotateRuntime(origin, r, 2);
-        // } else if (type == "s") {
-        //     Vec3f origin; ss >> origin.x >> origin.y >> origin.z;
-        //     Vec3f scl; ss >> scl.x >> scl.y >> scl.z;
-
-        //     objs[idx].scaleRuntime(origin, scl);
-        // }
-    }
 }
