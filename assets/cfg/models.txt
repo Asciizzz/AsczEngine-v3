@@ -9,7 +9,12 @@
 # .heavy/Town/Town.obj
 # .heavy/Fnaf/Fnaf1.obj 1 0 0 0 0 0 0
 
+#assets/Models/Shapes/Wall.obj 4 0 0 0 0 0 4
+
 #assets/Models/Skybox/Dream/Skybox.obj 10 0 0 0 0 0 0
+assets/Models/Skybox/Sun/Sun.obj .01 0 0 0 0 0 0
+
+~
 
 #assets/Models/Structure/LivingRoom/InteriorTest.obj 1 0 0 0 0 0 0
 
