@@ -76,6 +76,8 @@ int main() {
     // Other miscellaneus stuff
     bool k_t_hold = false;
 
+    short logmode = 0;
+
     // =====================================================
     // ===================== MAIN LOOP =====================
     // =====================================================
@@ -113,6 +115,12 @@ int main() {
                 // Press 4 to toggle custom mode
                 if (event.key.code == sf::Keyboard::Num4)
                     customMode = !customMode;
+
+                // Press tab to switch log mode
+                if (event.key.code == sf::Keyboard::Tab) {
+                    logmode++;
+                    if (logmode > 1) logmode = 0;
+                }
 
                 // Press Z to toggle move mode
                 if (event.key.code == sf::Keyboard::Z)
@@ -166,7 +174,6 @@ int main() {
             // Move from center
             int dMx = mousepos.x - GRAPHIC.res_half.x;
             int dMy = mousepos.y - GRAPHIC.res_half.y;
-
 
             // Camera look around
             CAMERA.rot.x -= dMy * CAMERA.mSens * FPS.dTimeSec;
@@ -322,42 +329,49 @@ int main() {
         // Log all the data
         LOG.addLog("Welcome to AsczEngine 3.0", rainbowColor, 1);
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
-        LOG.addLog(
-            "Screen:\n| Res: " + std::to_string(width) +
-            " x " + std::to_string(height) + "\n" +
-            "| Pixel Size: " + std::to_string(pixelSize) + "\n" +
-            "| RTFace1: " + std::to_string(GRAPHIC.rtCount1) + " / "
-            + std::to_string(GRAPHIC.mesh.f.size / 3) + "\n" +
-            "| RTFace2: " + std::to_string(GRAPHIC.rtCount2) + " / "
-            + std::to_string(GRAPHIC.mesh.f.size / 3),
-            sf::Color(255, 160, 160)
-        );
-        LOG.addLog(CAMERA.data(), sf::Color(160, 255, 160));
-        LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 160, 255));
-        LOG.addLog("Shader (BETA)", sf::Color(255, 255, 255), 1);
-        LOG.addLog(
-            "| Material: " + std::to_string(materialMode),
-            sf::Color(materialMode ? 255 : 100, 50, 50)
-        );
-        LOG.addLog(
-            "| Shadow: " + std::to_string(shadowMode),
-            sf::Color(50, shadowMode ? 255 : 100, 50)
-        );
-        LOG.addLog(
-            "| Shade: " + std::to_string(shadeMode),
-            sf::Color(50, 50, shadeMode ? 255 : 100)
-        );
-        LOG.addLog(
-            "| Custom: " + std::to_string(customMode),
-            sf::Color(customMode ? 255 : 100, 50, customMode ? 255 : 100)
-        );
+        switch (logmode) {
+        case 0:
+            LOG.addLog(
+                "Screen:\n| Res: " + std::to_string(width) +
+                " x " + std::to_string(height) + "\n" +
+                "| Pixel Size: " + std::to_string(pixelSize) + "\n" +
+                "| RTFace1: " + std::to_string(GRAPHIC.rtCount1) + " / "
+                + std::to_string(GRAPHIC.mesh.f.size / 3) + "\n" +
+                "| RTFace2: " + std::to_string(GRAPHIC.rtCount2) + " / "
+                + std::to_string(GRAPHIC.mesh.f.size / 3),
+                sf::Color(255, 160, 160)
+            );
+            LOG.addLog(CAMERA.data(), sf::Color(160, 255, 160));
+            LOG.addLog(GRAPHIC.light.data(), sf::Color(160, 160, 255));
+            LOG.addLog("Shader (BETA)", sf::Color(255, 255, 255), 1);
+            LOG.addLog(
+                "| Material: " + std::to_string(materialMode),
+                sf::Color(materialMode ? 255 : 100, 50, 50)
+            );
+            LOG.addLog(
+                "| Shadow: " + std::to_string(shadowMode),
+                sf::Color(50, shadowMode ? 255 : 100, 50)
+            );
+            LOG.addLog(
+                "| Shade: " + std::to_string(shadeMode),
+                sf::Color(50, 50, shadeMode ? 255 : 100)
+            );
+            LOG.addLog(
+                "| Custom: " + std::to_string(customMode),
+                sf::Color(customMode ? 255 : 100, 50, customMode ? 255 : 100)
+            );
 
-        LOG.addLog(
-            "vx: " + std::to_string(CAMERA.vel.x) +
-            " vy: " + std::to_string(CAMERA.vel.y) +
-            " vz: " + std::to_string(CAMERA.vel.z),
-            sf::Color(255, 255, 255)
-        );
+            LOG.addLog(
+                "vx: " + std::to_string(CAMERA.vel.x) +
+                " vy: " + std::to_string(CAMERA.vel.y) +
+                " vz: " + std::to_string(CAMERA.vel.z),
+                sf::Color(255, 255, 255)
+            );
+
+        case 1:
+            LOG.addLog("Mesh Map", sf::Color(255, 100, 100));
+            LOG.addLog(GRAPHIC.mesh.meshmapstr, sf::Color(255, 255, 255));
+        }
 
         // Displays
         window.clear(sf::Color(0, 0, 0));

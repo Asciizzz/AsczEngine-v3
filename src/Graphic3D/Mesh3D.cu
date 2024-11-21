@@ -512,16 +512,15 @@ void Mesh3D::push(std::vector<Mesh> &meshes, bool print) {
 }
 
 void Mesh3D::printMeshMap() {
-    std::string str = "";
-
+    meshmapstr = "";
     for (auto &kv : meshmap) {
-        str += kv.first + "\n";
-        str += kv.second.printRtMap() + "\n";
+        meshmapstr += kv.first + "\n";
+        meshmapstr += kv.second.printRtMap();
     }
 
     // Write to meshmap.txt
     std::ofstream file("meshmap.txt");
-    file << str;
+    file << meshmapstr;
 }
 
 // Kernel for incrementing face indices

@@ -197,6 +197,7 @@ public:
     Texture_ptr t; // tx wh of
 
     MeshMap meshmap;
+    std::string meshmapstr;
 
     // Free everything
     void free();
