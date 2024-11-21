@@ -22,8 +22,8 @@ Mesh Utils::readObjFile(std::string path, short fIdxBased, short placement, bool
     int matIdx = -1;
     int matSize = 0;
     VectF kar, kag, kab;
-    VectF ksr, ksg, ksb;
     VectF kdr, kdg, kdb;
+    VectF ksr, ksg, ksb;
     VectLLI mkd;
 
     std::map<std::string, int> txMap;

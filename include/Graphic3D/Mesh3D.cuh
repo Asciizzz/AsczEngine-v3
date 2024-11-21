@@ -34,6 +34,12 @@ struct MeshRange {
     ULLInt w1, w2;
     ULLInt t1, t2;
     ULLInt n1, n2;
+
+    MeshRange(
+        ULLInt w1=0, ULLInt w2=0,
+        ULLInt t1=0, ULLInt t2=0,
+        ULLInt n1=0, ULLInt n2=0
+    );
     
     void operator=(MeshRange &range);
 

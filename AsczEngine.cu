@@ -47,8 +47,8 @@ int main() {
     GRAPHIC.mesh.push(dotObjs.objs);
 
     SolarSystem solarSystem;
-    // solarSystem.setStars(4, 400, 6000, 8000, 6);
-    // GRAPHIC.mesh.push(solarSystem.stars);
+    solarSystem.setStars(4, 400, 6000, 8000, 6);
+    GRAPHIC.mesh.push(solarSystem.stars);
 
     GRAPHIC.mesh.printMeshMap();
     GRAPHIC.mallocRuntimeFaces();

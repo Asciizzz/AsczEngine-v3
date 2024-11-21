@@ -4,6 +4,10 @@
 
 // ======================= Mesh range =======================
 
+MeshRange::MeshRange(
+    ULLInt w1, ULLInt w2, ULLInt t1, ULLInt t2, ULLInt n1, ULLInt n2
+) : w1(w1), w2(w2), t1(t1), t2(t2), n1(n1), n2(n2) {}
+
 void MeshRange::operator=(MeshRange &range) {
     w1 = range.w1; w2 = range.w2;
     t1 = range.t1; t2 = range.t2;
