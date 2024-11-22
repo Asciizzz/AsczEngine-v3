@@ -226,15 +226,16 @@ void Face_ptr::malloc(ULLInt fcount) {
     cudaMalloc(&m, size * sizeof(LLInt));
 }
 void Face_ptr::free() {
+    size = 0;
+    count = 0;
     if (v) cudaFree(v);
     if (t) cudaFree(t);
     if (n) cudaFree(n);
     if (m) cudaFree(m);
-    size = 0;
-    count = 0;
 }
 void Face_ptr::operator+=(Face_ptr &face) {
-    ULLInt size = this->size + face.size;
+    ULLInt count = this->count + face.count;
+    ULLInt size = count * 3;
 
     ULLInt *newV;
     LLInt *newT;
@@ -263,7 +264,7 @@ void Face_ptr::operator+=(Face_ptr &face) {
     m = newM;
 
     this->size = size;
-    count = size / 3;
+    this->count = count;
 }
 
 // ======================= Material_ptr =======================
