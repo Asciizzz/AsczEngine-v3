@@ -140,10 +140,14 @@ struct Vertex_ptr {
 
 // Face Ptr
 struct Face_ptr {
-    ULLInt *v;
-    LLInt *t;
-    LLInt *n;
-    LLInt *m; // -1 by default for no material
+    // Data x3
+    ULLInt *v; // Vertex index
+    LLInt *t; // Texture index
+    LLInt *n; // Normal index
+
+    // Data x1
+    LLInt *m; // Material index
+
     ULLInt size = 0; // size = 3 * count
     ULLInt count = 0; // count = size / 3
 

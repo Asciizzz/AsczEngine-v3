@@ -223,7 +223,8 @@ void Face_ptr::malloc(ULLInt fcount) {
     cudaMalloc(&v, size * sizeof(ULLInt));
     cudaMalloc(&t, size * sizeof(LLInt));
     cudaMalloc(&n, size * sizeof(LLInt));
-    cudaMalloc(&m, size * sizeof(LLInt));
+
+    cudaMalloc(&m, count * sizeof(LLInt));
 }
 void Face_ptr::free() {
     size = 0;
@@ -234,27 +235,29 @@ void Face_ptr::free() {
     if (m) cudaFree(m);
 }
 void Face_ptr::operator+=(Face_ptr &face) {
-    ULLInt newcount = this->count + face.count;
+    // Data x3
     ULLInt newsize = this->size + face.size;
-
     ULLInt *newV;
     LLInt *newT;
     LLInt *newN;
-    LLInt *newM;
     cudaMalloc(&newV, newsize * sizeof(ULLInt));
     cudaMalloc(&newT, newsize * sizeof(LLInt));
     cudaMalloc(&newN, newsize * sizeof(LLInt));
-    cudaMalloc(&newM, newsize * sizeof(LLInt));
 
     cudaMemcpy(newV, v, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newT, t, size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newN, n, size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newM, m, size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
 
     cudaMemcpy(newV + size, face.v, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newT + size, face.t, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
     cudaMemcpy(newN + size, face.n, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newM + size, face.m, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+
+    // Data x1
+    ULLInt newcount = this->count + face.count;
+    LLInt *newM;
+    cudaMalloc(&newM, newcount * sizeof(LLInt));
+    cudaMemcpy(newM, m, count * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newM + count, face.m, face.count * sizeof(LLInt), cudaMemcpyDeviceToDevice);
 
     free();
 
@@ -328,7 +331,7 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
     ULLInt offsetW = v.w.size;
     ULLInt offsetT = v.t.size;
     ULLInt offsetN = v.n.size;
-    ULLInt offsetF = f.size;
+    ULLInt offsetF = f.count;
 
     // Set the runtime values
     if (correction)
@@ -431,7 +434,7 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
     cudaMemcpyAsync(newM.kd.x, mesh.kdr.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newM.kd.y, mesh.kdg.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newM.kd.z, mesh.kdb.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
-    
+
     cudaMemcpyAsync(newM.ks.x, mesh.ksr.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newM.ks.y, mesh.ksg.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newM.ks.z, mesh.ksb.data(), mSize * sizeof(float), cudaMemcpyHostToDevice, stream);
@@ -449,21 +452,27 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
 
     Face_ptr newF;
     ULLInt fSize = mesh.fw.size();
-    ULLInt fCount = fSize / 3;
+    ULLInt fCount = mesh.fm.size();
+
+    std::cout << "fSize: " << fSize << " fCount: " << fCount << std::endl;
+
     newF.malloc(fCount);
 
     cudaMemcpyAsync(newF.v, mesh.fw.data(), fSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newF.t, mesh.ft.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newF.n, mesh.fn.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
-    cudaMemcpyAsync(newF.m, mesh.fm.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
+
+    cudaMemcpyAsync(newF.m, mesh.fm.data(), fCount * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
     // Increment face indices
     if (correction) {
-        gridSize = (fSize + 255) / 256;
-        incULLIntKernel<<<gridSize, 256>>>(newF.v, offsetW, fSize);
-        incLLIntKernel<<<gridSize, 256>>>(newF.t, offsetT, fSize);
-        incLLIntKernel<<<gridSize, 256>>>(newF.n, offsetN, fSize);
-        incLLIntKernel<<<gridSize, 256>>>(newF.m, offsetM, fSize);
+        ULLInt gridSize_x3 = (fSize + 255) / 256;
+        incULLIntKernel<<<gridSize_x3, 256>>>(newF.v, offsetW, fSize);
+        incLLIntKernel<<<gridSize_x3, 256>>>(newF.t, offsetT, fSize);
+        incLLIntKernel<<<gridSize_x3, 256>>>(newF.n, offsetN, fSize);
+
+        ULLInt gridSize_x1 = (fCount + 255) / 256;
+        incLLIntKernel<<<gridSize_x1, 256>>>(newF.m, offsetM, fCount);
     }
     f += newF;
 

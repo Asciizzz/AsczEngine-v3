@@ -52,10 +52,15 @@ public:
             star.translateIni(pos);
 
             for (int j = 0; j < star.fw.size(); j++) {
+                // Data x3
                 fw.push_back(star.fw[j] + wx.size());
                 ft.push_back(-1);
                 fn.push_back(star.fn[j] + nx.size());
-                fm.push_back(-1);
+
+                // Data x1
+                if (j % 3 == 0) {
+                    fm.push_back(-1);
+                }
             }
             for (int j = 0; j < star.wx.size(); j++) {
                 wx.push_back(star.wx[j]);

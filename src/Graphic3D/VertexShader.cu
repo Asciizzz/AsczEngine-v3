@@ -186,7 +186,7 @@ __global__ void frustumCullingKernel(
     ULLInt fw[3] = {fWs[idx0], fWs[idx1], fWs[idx2]};
     LLInt ft[3] = {fTs[idx0], fTs[idx1], fTs[idx2]};
     LLInt fn[3] = {fNs[idx0], fNs[idx1], fNs[idx2]};
-    LLInt fm = fMs[idx0];
+    LLInt fm = fMs[fIdx];
 
     // Early culling (for outside the frustum)
     Vec4f rtSs[3] = {

@@ -259,7 +259,7 @@ Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, sho
                 fw.push_back(vs[0]); fw.push_back(vs[i]); fw.push_back(vs[i + 1]);
                 ft.push_back(ts[0]); ft.push_back(ts[i]); ft.push_back(ts[i + 1]);
                 fn.push_back(ns[0]); fn.push_back(ns[i]); fn.push_back(ns[i + 1]);
-                fm.push_back(matIdx); fm.push_back(matIdx); fm.push_back(matIdx);
+                fm.push_back(matIdx);
             }
         }
     }
