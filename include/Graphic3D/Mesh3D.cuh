@@ -144,7 +144,8 @@ struct Face_ptr {
     LLInt *t;
     LLInt *n;
     LLInt *m; // -1 by default for no material
-    ULLInt size = 0;
+    ULLInt size = 0; // size = 3 * count
+    ULLInt count = 0; // count = size / 3
 
     void malloc(ULLInt size);
     void free();

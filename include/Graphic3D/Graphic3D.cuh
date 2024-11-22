@@ -24,16 +24,17 @@ struct LightSrc {
 
 struct Face3D {
     // x3
-    float *sx, *sy, *sz, *sw;
-    float *wx, *wy, *wz;
-    float *nx, *ny, *nz;
-    float *tu, *tv;
+    Vec4f_ptr s;
+    Vec3f_ptr w;
+    Vec2f_ptr t;
+    Vec3f_ptr n;
     // x1
     bool *active;
     LLInt *mat;
     float *area;
 
-    ULInt size = 0;
+    ULLInt size = 0; // size = 3 * count
+    ULLInt count = 0; // count = size / 3
 
     void malloc(ULLInt size);
     void free();

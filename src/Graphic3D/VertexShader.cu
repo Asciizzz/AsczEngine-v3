@@ -27,19 +27,19 @@ void VertexShader::frustumCulling() {
     Mesh3D &mesh = grph.mesh;
     Face3D &face = grph.rtFaces;
 
-    ULLInt gridSize = (mesh.f.size / 3 + 255) / 256;
+    ULLInt gridSize = (mesh.f.count + 255) / 256;
     frustumCullingKernel<<<gridSize, 256>>>(
         mesh.v.s.x, mesh.v.s.y, mesh.v.s.z, mesh.v.s.w,
         mesh.v.w.x, mesh.v.w.y, mesh.v.w.z,
         mesh.v.t.x, mesh.v.t.y,
         mesh.v.n.x, mesh.v.n.y, mesh.v.n.z,
         mesh.f.v, mesh.f.t, mesh.f.n, mesh.f.m,
-        mesh.f.size / 3,
+        mesh.f.count,
 
-        face.sx, face.sy, face.sz, face.sw,
-        face.wx, face.wy, face.wz,
-        face.tu, face.tv,
-        face.nx, face.ny, face.nz,
+        face.s.x, face.s.y, face.s.z, face.s.w,
+        face.w.x, face.w.y, face.w.z,
+        face.t.x, face.t.y,
+        face.n.x, face.n.y, face.n.z,
         face.active, face.mat, face.area
     );
     cudaDeviceSynchronize();
@@ -47,9 +47,9 @@ void VertexShader::frustumCulling() {
     cudaMemset(grph.d_rtCount1, 0, sizeof(ULLInt));
     cudaMemset(grph.d_rtCount2, 0, sizeof(ULLInt));
 
-    gridSize = (face.size / 3 + 255) / 256;
+    gridSize = (face.count + 255) / 256;
     runtimeIndexingKernel<<<gridSize, 256>>>(
-        face.active, face.area, face.size / 3,
+        face.active, face.area, face.count,
         grph.rtIndex1, grph.d_rtCount1,
         grph.rtIndex2, grph.d_rtCount2
     );
@@ -99,7 +99,7 @@ void VertexShader::createDepthMap() {
 
         createDepthMapKernel<<<blockNum, blockSize, 0, streams[i]>>>(
             rtIndex[i],
-            face.active, face.sx, face.sy, face.sz, face.sw,
+            face.active, face.s.x, face.s.y, face.s.z, face.s.w,
             rtCount[i], 0,
 
             buff.active, buff.depth, buff.faceID,
@@ -120,10 +120,10 @@ void VertexShader::rasterization() {
     Face3D &face = grph.rtFaces;
 
     rasterizationKernel<<<buff.blockNum, buff.blockSize>>>(
-        face.sw, face.mat,
-        face.wx, face.wy, face.wz,
-        face.tu, face.tv,
-        face.nx, face.ny, face.nz,
+        face.s.w, face.mat,
+        face.w.x, face.w.y, face.w.z,
+        face.t.x, face.t.y,
+        face.n.x, face.n.y, face.n.z,
 
         buff.active, buff.faceID, buff.matID,
         buff.bary.x, buff.bary.y, buff.bary.z,
