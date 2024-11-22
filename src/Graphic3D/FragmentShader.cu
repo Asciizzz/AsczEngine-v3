@@ -146,8 +146,6 @@ __global__ void applyMaterialKernel( // Beta
 
         int x = warpx * txw[texIdx];
         int y = warpy * txh[texIdx];
-        // int x = tu * txw[texIdx];
-        // int y = tv * txh[texIdx];
         int tIdx = x + y * txw[texIdx];
 
         if (tIdx >= txw[texIdx] * txh[texIdx] ||
@@ -191,7 +189,7 @@ __global__ void phongShadingKernel(
     float dot = n * lightDir;
 
     float cosA = dot / (n.mag() * lightDir.mag());
-    if (cosA < 0) cosA = 0;
+    if (cosA < 0) cosA = -cosA;
 
     float diff = light.ambient * (1 - cosA) + light.specular * cosA;
 

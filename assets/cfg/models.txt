@@ -9,8 +9,8 @@
 # Room .heavy/Room.obj
 # Town .heavy/Town/Town.object_1
 
-Ceiling assets/Models/Shapes/Wall.obj 1000 90 0 0 0 30 0 
-Fnaf .heavy/Fnaf/Fnaf1.obj 1
+# Ceiling assets/Models/Shapes/Wall.obj 1000 90 0 0 0 30 0 
+# Fnaf .heavy/Fnaf/Fnaf1.obj 1
 
 # Skybox assets/Models/Skybox/Dream/Skybox.obj 10 0 45 0 0 0 0
 # The_LITERAL_FUCKING_SUN assets/Models/Skybox/Sun/Sun.obj .01 0 0 0 0 0 0
