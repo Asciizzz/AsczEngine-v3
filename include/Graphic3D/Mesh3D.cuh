@@ -147,7 +147,7 @@ struct Face_ptr {
     ULLInt size = 0; // size = 3 * count
     ULLInt count = 0; // count = size / 3
 
-    void malloc(ULLInt size);
+    void malloc(ULLInt fcount);
     void free();
     void operator+=(Face_ptr &face);
 };

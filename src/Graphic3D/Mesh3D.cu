@@ -216,13 +216,14 @@ void Vertex_ptr::operator+=(Vertex_ptr &vertex) {
 // ======================= Face_ptr =======================
 
 
-void Face_ptr::malloc(ULLInt size) {
+void Face_ptr::malloc(ULLInt fcount) {
+    count = fcount;
+    size = count * 3;
+
     cudaMalloc(&v, size * sizeof(ULLInt));
     cudaMalloc(&t, size * sizeof(LLInt));
     cudaMalloc(&n, size * sizeof(LLInt));
     cudaMalloc(&m, size * sizeof(LLInt));
-    this->size = size;
-    count = size / 3;
 }
 void Face_ptr::free() {
     if (v) cudaFree(v);
@@ -260,6 +261,7 @@ void Face_ptr::operator+=(Face_ptr &face) {
     t = newT;
     n = newN;
     m = newM;
+
     this->size = size;
     count = size / 3;
 }
@@ -446,7 +448,8 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
 
     Face_ptr newF;
     ULLInt fSize = mesh.fw.size();
-    newF.malloc(fSize);
+    ULLInt fCount = fSize / 3;
+    newF.malloc(fCount);
 
     cudaMemcpyAsync(newF.v, mesh.fw.data(), fSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
     cudaMemcpyAsync(newF.t, mesh.ft.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
