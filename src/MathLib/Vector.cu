@@ -102,6 +102,7 @@ Vec3f Vec3f::rotate(Vec3f &v, const Vec3f &o, const Vec3f &n, const float w) {
 
     float cosW = cos(w), sinW = sin(w);
 
+    // The Rodrigues formula
     Vec3f p = dlt*cosW + (n & v)*sinW + n*(n * v)*(1 - cosW);
     p += o;
 

@@ -88,7 +88,7 @@ __global__ void defaultColorKernel(
 
     // Sky up rgb(4 99 180) -> down rgb(4 135 227)
     cr[i] = 2;
-    cg[i] = 10 + 16 * ratioY;
-    cb[i] = 15 + 55 * ratioY;
+    cg[i] = 1 + 6 * ratioY;
+    cb[i] = 1 + 5 * ratioY;
     ca[i] = 255;
 }
