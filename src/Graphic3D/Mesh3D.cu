@@ -186,13 +186,16 @@ void Mesh::setActiveStatus(std::string mapkey, bool status) {
 
     Face_ptr &f = Graphic3D::instance().mesh.f;
 
+
     ULLInt start = objmapRT[mapkey].f1;
     ULLInt end = objmapRT[mapkey].f2;
 
     ULLInt numFs = end - start;
     ULLInt gridSize = (numFs + 255) / 256;
 
-    setActiveStatusKernel<<<gridSize, 256>>>(f.a + start, status, numFs);
+    // Set the active status
+    objmapRT[mapkey].fa = status;
+    setActiveStatusKernel<<<gridSize, 256>>>(f.a + start, numFs, status);
 }
 
 std::string Mesh::getObjRtMapLog() {
@@ -520,7 +523,9 @@ void Mesh3D::logMeshMap(int linePerPart) {
         for (std::string key : kv.second.objmapKs) {
             ObjRangeMap &omRT = kv.second.objmapRT;
 
-            meshmapLog.back() += "| -" + key + "- | " +
+            if (!omRT[key].fa) meshmapLog.back() += " [OFF";
+            else meshmapLog.back() += " [   ";
+            meshmapLog.back() += "] -" + key + "- | " +
                 std::to_string(omRT[key].w1) + " - " + std::to_string(omRT[key].w2) + " | " +
                 std::to_string(omRT[key].t1) + " - " + std::to_string(omRT[key].t2) + " | " +
                 std::to_string(omRT[key].n1) + " - " + std::to_string(omRT[key].n2) + " | " +

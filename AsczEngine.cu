@@ -194,6 +194,9 @@ int main() {
                     GRAPHIC.mesh.meshmap[mesh].setActiveStatus(obj, active);
 
                     std::cout << "Active status set" << std::endl;
+
+                    // Relog the meshmap
+                    GRAPHIC.mesh.logMeshMap(24);
                 }
             }
 

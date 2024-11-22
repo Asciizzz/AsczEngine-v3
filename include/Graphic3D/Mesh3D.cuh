@@ -37,6 +37,7 @@ struct ObjRange {
     ULLInt t1, t2;
     ULLInt n1, n2;
     ULLInt f1, f2; // Note: f x1 instead of x3
+    bool fa = true; // Active status
 
     ObjRange(
         ULLInt w1=0, ULLInt w2=0,
