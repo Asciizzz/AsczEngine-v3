@@ -163,52 +163,15 @@ int main() {
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
                 }
 
-                // Press ~ to enter active status setting mode
-                if (event.key.code == sf::Keyboard::Tilde && !k_ctrl) {
+                // Press ~ to set active status of an obj
+                if (event.key.code == sf::Keyboard::Tilde) {
                     MeshMap &meshmap = GRAPHIC.mesh.meshmap;
 
                     std::string mesh;
                     std::string obj;
                     bool active;
 
-                    std::cout << "\nGet mesh: ";
-                    std::cin >> mesh; 
-                    if (meshmap.find(mesh) == meshmap.end()) {
-                        std::cout << "Mesh not found\n";
-                        continue;
-                    }
-
-                    std::cout << GRAPHIC.mesh.meshmap[mesh].getObjRtMapLog();
-                    
-                    std::cout << "Get obj: ";
-                    std::cin >> obj;
-                    if (GRAPHIC.mesh.meshmap[mesh].objmapRT.find(obj) ==
-                        GRAPHIC.mesh.meshmap[mesh].objmapRT.end()) {
-                        std::cout << "Obj not found\n";
-                        continue;
-                    }
-
-                    std::cout << "Set active status (0/1): ";
-                    std::cin >> active;
-
-                    GRAPHIC.mesh.meshmap[mesh].setActiveStatus(obj, active);
-
-                    std::string activeStr = active ? "[active]" : "[inactive]";
-                    std::cout << "obj["<<obj<<"] in mesh["<<mesh<<"] is "<<activeStr<<"\n";
-
-                    // Relog the meshmap
-                    GRAPHIC.mesh.logMeshMap(24);
-                }
-
-                // Press ctrl + ~ to do the same thing but faster
-                if (event.key.code == sf::Keyboard::Tilde && k_ctrl) {
-                    MeshMap &meshmap = GRAPHIC.mesh.meshmap;
-
-                    std::string mesh;
-                    std::string obj;
-                    bool active;
-
-                    std::cout << "\nFast status setting:\n";
+                    std::cout << "\nMesh's Objects status setting:\n";
                     std::cout << "Mesh: "; std::cin >> mesh;
                     if (meshmap.find(mesh) == meshmap.end()) {
                         std::cout << "Mesh not found\n";

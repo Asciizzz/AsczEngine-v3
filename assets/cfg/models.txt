@@ -7,15 +7,17 @@
 # Ivy .heavy/Ivy.obj .2 0 0 180 
 # City .heavy/City.obj
 # Room .heavy/Room.obj
-# Town .heavy/Town/Town.object_1
+# Town .heavy/Town/Town.obj
 
-# Ceiling assets/Models/Shapes/Wall.obj 1000 90 0 0 0 30 0 
+
+
+# Ceiling assets/Models/Shapes/Wall.obj 336 90 0 0 0 30 0 
 # Fnaf .heavy/Fnaf/Fnaf1.obj 1
 
-# Skybox assets/Models/Skybox/Dream/Skybox.obj 10 0 45 0 0 0 0
+Skybox assets/Models/Skybox/Dream/Skybox.obj 10 0 45 0 0 0 0
 # The_LITERAL_FUCKING_SUN assets/Models/Skybox/Sun/Sun.obj .01 0 0 0 0 0 0
 
-# PeachsCastle assets/Models/Structure/PeachsCastle/PeachsCastle.obj 1
+PeachsCastle assets/Models/Structure/PeachsCastle/PeachsCastle.obj 1
 # PeachsCastle1F assets/Models/Structure/PeachsCastle1F/PeachsCastle1F.obj 1
 
 
@@ -40,13 +42,15 @@
 
 # Huge_Wall assets/Models/Shapes/Wall.obj 320 90 0 0 0 -165 0
 
-Arisu_1 assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 0 0 -120 0 -120
+# Arisu_1 assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 0 0 -120 0 -120
 # Arisu_2 assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 90 0 -120 0 120
 # Arisu_3 assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 180 0 120 0 120
 # Arisu_4 assets/Models/BlueArchive/Arisu/Arisu.obj 1 -90 270 0 120 0 -120
 
 # Shiroko_Platform assets/Models/Shapes/Wall.obj .5 90 0 0 0 -.4 0
 # Shiroko_Plush assets/Models/BlueArchive/Shiroko/Shiroko.obj 1 0 0 0 0 0 0
+
+Navia assets/Models/Genshin/Navia/Navia.obj .2 0 0 0 0 -2.15 0
 
 ~
 
