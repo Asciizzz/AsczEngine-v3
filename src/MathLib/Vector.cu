@@ -31,22 +31,22 @@ Vec4f Vec3f::toVec4f() {
     return Vec4f(x, y, z, 1);
 }
 
-Vec3f Vec3f::operator+(const Vec3f& v) {
+Vec3f Vec3f::operator+(const Vec3f& v) const {
     return Vec3f(x + v.x, y + v.y, z + v.z);
 }
-Vec3f Vec3f::operator+(const float t) {
+Vec3f Vec3f::operator+(const float t) const {
     return Vec3f(x + t, y + t, z + t);
 }
-Vec3f Vec3f::operator-(const Vec3f& v) {
+Vec3f Vec3f::operator-(const Vec3f& v) const {
     return Vec3f(x - v.x, y - v.y, z - v.z);
 }
-Vec3f Vec3f::operator-(const float t) {
+Vec3f Vec3f::operator-(const float t) const {
     return Vec3f(x - t, y - t, z - t);
 }
-Vec3f Vec3f::operator*(const float scl) {
+Vec3f Vec3f::operator*(const float scl) const {
     return Vec3f(x * scl, y * scl, z * scl);
 }
-Vec3f Vec3f::operator/(const float scl) {
+Vec3f Vec3f::operator/(const float scl) const {
     return Vec3f(x / scl, y / scl, z / scl);
 }
 void Vec3f::operator+=(const Vec3f& v) {
@@ -62,10 +62,10 @@ void Vec3f::operator/=(const float scl) {
     x /= scl; y /= scl; z /= scl;
 }
 
-float Vec3f::operator*(const Vec3f& v) {
+float Vec3f::operator*(const Vec3f& v) const {
     return x * v.x + y * v.y + z * v.z;
 }
-Vec3f Vec3f::operator&(const Vec3f& v) {
+Vec3f Vec3f::operator&(const Vec3f& v) const {
     return Vec3f(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x);
 }
 float Vec3f::mag() {
@@ -90,13 +90,25 @@ void Vec3f::limit(float min, float max) {
 }
 
 // Transformations
-Vec3f Vec3f::translate(Vec3f& vec, const Vec3f& t) {
-    return vec + t;
+Vec3f Vec3f::translate(Vec3f& v, const Vec3f& t) {
+    return v + t;
 }
 
-Vec3f Vec3f::rotateX(Vec3f &vec, const Vec3f &origin, const float rx) {
-    Vec3f diff = vec - origin;
-    Vec4f diff4 = diff.toVec4f();
+Vec3f Vec3f::rotate(Vec3f &v, const Vec3f &o, const Vec3f &n, const float w) {
+    Vec3f dlt = v - o;
+    Vec4f dlt4 = dlt.toVec4f();
+
+    float cosW = cos(w), sinW = sin(w);
+
+    Vec3f p = dlt*cosW + (n & v)*sinW + n*(n * v)*(1 - cosW);
+    p += o;
+
+    return p;
+}
+
+Vec3f Vec3f::rotateX(Vec3f &v, const Vec3f &o, const float rx) {
+    Vec3f dlt = v - o;
+    Vec4f dlt4 = dlt.toVec4f();
 
     float cosX = cos(rx), sinX = sin(rx);
     float rX[4][4] = {
@@ -106,15 +118,15 @@ Vec3f Vec3f::rotateX(Vec3f &vec, const Vec3f &origin, const float rx) {
         {0, 0, 0, 1}
     };
 
-    Vec4f rVec4 = Mat4f(rX) * diff4;
+    Vec4f rVec4 = Mat4f(rX) * dlt4;
     Vec3f rVec3 = rVec4.toVec3f();
-    rVec3 += origin;
+    rVec3 += o;
 
     return rVec3;
 }
-Vec3f Vec3f::rotateY(Vec3f &vec, const Vec3f &origin, const float ry) {
-    Vec3f diff = vec - origin;
-    Vec4f diff4 = diff.toVec4f();
+Vec3f Vec3f::rotateY(Vec3f &v, const Vec3f &o, const float ry) {
+    Vec3f dlt = v - o;
+    Vec4f dlt4 = dlt.toVec4f();
 
     float cosY = cos(ry), sinY = sin(ry);
     float rY[4][4] = {
@@ -124,15 +136,15 @@ Vec3f Vec3f::rotateY(Vec3f &vec, const Vec3f &origin, const float ry) {
         {0, 0, 0, 1}
     };
 
-    Vec4f rVec4 = Mat4f(rY) * diff4;
+    Vec4f rVec4 = Mat4f(rY) * dlt4;
     Vec3f rVec3 = rVec4.toVec3f();
-    rVec3 += origin;
+    rVec3 += o;
 
     return rVec3;
 }
-Vec3f Vec3f::rotateZ(Vec3f &vec, const Vec3f &origin, const float rz) {
-    Vec3f diff = vec - origin;
-    Vec4f diff4 = diff.toVec4f();
+Vec3f Vec3f::rotateZ(Vec3f &v, const Vec3f &o, const float rz) {
+    Vec3f dlt = v - o;
+    Vec4f dlt4 = dlt.toVec4f();
 
     float cosZ = cos(rz), sinZ = sin(rz);
     float rZ[4][4] = {
@@ -142,23 +154,23 @@ Vec3f Vec3f::rotateZ(Vec3f &vec, const Vec3f &origin, const float rz) {
         {0, 0, 0, 1}
     };
 
-    Vec4f rVec4 = Mat4f(rZ) * diff4;
+    Vec4f rVec4 = Mat4f(rZ) * dlt4;
     Vec3f rVec3 = rVec4.toVec3f();
-    rVec3 += origin;
+    rVec3 += o;
 
     return rVec3;
 }
 
-Vec3f Vec3f::scale(Vec3f& vec, const Vec3f& origin, const Vec3f& scl) {
-    Vec3f diff = vec - origin;
+Vec3f Vec3f::scale(Vec3f& v, const Vec3f& o, const Vec3f& scl) {
+    Vec3f dlt = v - o;
     return Vec3f(
-        origin.x + diff.x * scl.x,
-        origin.y + diff.y * scl.y,
-        origin.z + diff.z * scl.z
+        o.x + dlt.x * scl.x,
+        o.y + dlt.y * scl.y,
+        o.z + dlt.z * scl.z
     );
 }
-Vec3f Vec3f::scale(Vec3f& vec, const Vec3f& origin, const float scl) {
-    return scale(vec, origin, Vec3f(scl, scl, scl));
+Vec3f Vec3f::scale(Vec3f& v, const Vec3f& o, const float scl) {
+    return scale(v, o, Vec3f(scl));
 }
 
 // Transformations but on self
@@ -166,21 +178,21 @@ void Vec3f::translate(const Vec3f& t) {
     *this += t;
 }
 
-void Vec3f::rotateX(const Vec3f& origin, const float rx) {
-    *this = rotateX(*this, origin, rx);
+void Vec3f::rotateX(const Vec3f& o, const float rx) {
+    *this = rotateX(*this, o, rx);
 }
-void Vec3f::rotateY(const Vec3f& origin, const float ry) {
-    *this = rotateY(*this, origin, ry);
+void Vec3f::rotateY(const Vec3f& o, const float ry) {
+    *this = rotateY(*this, o, ry);
 }
-void Vec3f::rotateZ(const Vec3f& origin, const float rz) {
-    *this = rotateZ(*this, origin, rz);
+void Vec3f::rotateZ(const Vec3f& o, const float rz) {
+    *this = rotateZ(*this, o, rz);
 }
 
-void Vec3f::scale(const Vec3f& origin, const Vec3f& scl) {
-    *this = scale(*this, origin, scl);
+void Vec3f::scale(const Vec3f& o, const Vec3f& scl) {
+    *this = scale(*this, o, scl);
 }
-void Vec3f::scale(const Vec3f& origin, const float scl) {
-    *this = scale(*this, origin, scl);
+void Vec3f::scale(const Vec3f& o, const float scl) {
+    *this = scale(*this, o, scl);
 }
 
 // VEC4
@@ -235,6 +247,9 @@ void Vec1f_ptr::operator+=(Vec1f_ptr& vec) {
     free();
     vec.free();
     *this = newVec;
+}
+void Vec1f_ptr::setAll(float val) {
+    setFloatAllKernel<<<(size + 255) / 256, 256>>>(x, val, size);
 }
 
 void Vec2f_ptr::malloc(ULLInt size) {

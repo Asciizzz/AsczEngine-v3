@@ -42,19 +42,19 @@ struct Vec3f {
     __host__ __device__ Vec4f toVec4f();
 
     // Basic operations
-    __host__ __device__ Vec3f operator+(const Vec3f &vec);
-    __host__ __device__ Vec3f operator+(const float t);
-    __host__ __device__ Vec3f operator-(const Vec3f &vec);
-    __host__ __device__ Vec3f operator-(const float t);
-    __host__ __device__ Vec3f operator*(const float scl);
-    __host__ __device__ Vec3f operator/(const float scl);
-    __host__ __device__ void operator+=(const Vec3f &vec);
-    __host__ __device__ void operator-=(const Vec3f &vec);
+    __host__ __device__ Vec3f operator+(const Vec3f &v) const;
+    __host__ __device__ Vec3f operator+(const float t) const;
+    __host__ __device__ Vec3f operator-(const Vec3f &v) const;
+    __host__ __device__ Vec3f operator-(const float t) const;
+    __host__ __device__ Vec3f operator*(const float scl) const;
+    __host__ __device__ Vec3f operator/(const float scl) const;
+    __host__ __device__ void operator+=(const Vec3f &v);
+    __host__ __device__ void operator-=(const Vec3f &v);
     __host__ __device__ void operator*=(const float scl);
     __host__ __device__ void operator/=(const float scl);
     // Advanced operations
-    __host__ __device__ float operator*(const Vec3f &vec); // Dot product
-    __host__ __device__ Vec3f operator&(const Vec3f &vec); // Cross product
+    __host__ __device__ float operator*(const Vec3f &v) const; // Dot product
+    __host__ __device__ Vec3f operator&(const Vec3f &v) const; // Cross product
     __host__ __device__ float mag(); // Magnitude
     __host__ __device__ void norm(); // Normalize
     // Special operations
@@ -62,19 +62,20 @@ struct Vec3f {
     __host__ __device__ void limit(float min, float max); // Limit the vector
 
     // Transformations
-    __host__ __device__ static Vec3f translate(Vec3f &vec, const Vec3f &t);
-    __host__ __device__ static Vec3f rotateX(Vec3f &vec, const Vec3f &origin, const float rx);
-    __host__ __device__ static Vec3f rotateY(Vec3f &vec, const Vec3f &origin, const float ry);
-    __host__ __device__ static Vec3f rotateZ(Vec3f &vec, const Vec3f &origin, const float rz);
-    __host__ __device__ static Vec3f scale(Vec3f &vec, const Vec3f &origin, const Vec3f &scl);
-    __host__ __device__ static Vec3f scale(Vec3f &vec, const Vec3f &origin, const float scl);
+    __host__ __device__ static Vec3f translate(Vec3f &v, const Vec3f &t);
+    __host__ __device__ static Vec3f rotate(Vec3f &v, const Vec3f &o, const Vec3f &n, const float w);
+    __host__ __device__ static Vec3f rotateX(Vec3f &v, const Vec3f &o, const float rx);
+    __host__ __device__ static Vec3f rotateY(Vec3f &v, const Vec3f &o, const float ry);
+    __host__ __device__ static Vec3f rotateZ(Vec3f &v, const Vec3f &o, const float rz);
+    __host__ __device__ static Vec3f scale(Vec3f &v, const Vec3f &o, const Vec3f &scl);
+    __host__ __device__ static Vec3f scale(Vec3f &v, const Vec3f &o, const float scl);
     // Transformations but on self
     __host__ __device__ void translate(const Vec3f &t);
-    __host__ __device__ void rotateX(const Vec3f &origin, const float rx);
-    __host__ __device__ void rotateY(const Vec3f &origin, const float ry);
-    __host__ __device__ void rotateZ(const Vec3f &origin, const float rz);
-    __host__ __device__ void scale(const Vec3f &origin, const Vec3f &scl);
-    __host__ __device__ void scale(const Vec3f &origin, const float scl);
+    __host__ __device__ void rotateX(const Vec3f &o, const float rx);
+    __host__ __device__ void rotateY(const Vec3f &o, const float ry);
+    __host__ __device__ void rotateZ(const Vec3f &o, const float rz);
+    __host__ __device__ void scale(const Vec3f &o, const Vec3f &scl);
+    __host__ __device__ void scale(const Vec3f &o, const float scl);
 };
 
 struct Vec4f {
@@ -83,9 +84,9 @@ struct Vec4f {
     __host__ __device__ Vec4f(float x, float y, float z, float w);
     __host__ __device__ Vec3f toVec3f(bool norm=true); // From Homogeneous to Cartesian
 
-    __host__ __device__ Vec4f operator+(const Vec4f &vec);
+    __host__ __device__ Vec4f operator+(const Vec4f &v);
     __host__ __device__ Vec4f operator+(const float t);
-    __host__ __device__ Vec4f operator-(const Vec4f &vec);
+    __host__ __device__ Vec4f operator-(const Vec4f &v);
     __host__ __device__ Vec4f operator-(const float t);
     __host__ __device__ Vec4f operator*(const float scl);
     __host__ __device__ Vec4f operator/(const float scl);
