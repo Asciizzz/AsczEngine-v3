@@ -95,6 +95,8 @@ Vec3f Vec3f::translate(Vec3f& v, const Vec3f& t) {
 }
 
 Vec3f Vec3f::rotate(Vec3f &v, const Vec3f &o, const Vec3f &n, const float w) {
+    // Note: rotation is based on the right hand rule
+
     Vec3f dlt = v - o;
     Vec4f dlt4 = dlt.toVec4f();
 
