@@ -137,20 +137,16 @@ int main() {
                 // Press tab (without ctrl and shift) to toggle log mode
                 if (event.key.code == sf::Keyboard::Tab &&
                     !k_ctrl && !k_shift) {
-                    logmode++;
-                    if (logmode > 1) logmode = 0;
+                    logmode = (logmode + 1) % 3;
                 }
 
                 
-                if (event.key.code == sf::Keyboard::Tab && logmode == 1) {
+                if (event.key.code == sf::Keyboard::Tab && logmode == 2) {
                     int &curlogpart = GRAPHIC.mesh.curlogpart;
                     int &maxlogpart = GRAPHIC.mesh.maxlogpart;
 
-                    // Hold ctrl to go to next page
                     if (k_ctrl) curlogpart ++;
-                    // Hold shift to go to previous page
                     if (k_shift) curlogpart --;
-
                     // Wrap around
                     curlogpart = (curlogpart + maxlogpart) % maxlogpart;
                 }
@@ -344,6 +340,10 @@ int main() {
         LOG.addLog("FPS: " + std::to_string(FPS.fps), fpsColor);
         switch (logmode) {
         case 0:
+            LOG.addLog("[Tab] to toggle log", sf::Color(255, 245, 55), 1);
+            break;
+
+        case 1:
             LOG.addLog(
                 "Screen:\n| Res: " + std::to_string(width) +
                 " x " + std::to_string(height) + "\n" +
@@ -375,7 +375,7 @@ int main() {
             );
             break;
 
-        case 1:
+        case 2:
             // Also debug purposes
             int curlogpart = GRAPHIC.mesh.curlogpart;
             int maxlogpart = GRAPHIC.mesh.maxlogpart;

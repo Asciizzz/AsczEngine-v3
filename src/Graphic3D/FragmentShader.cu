@@ -189,9 +189,9 @@ __global__ void phongShadingKernel(
 
     // Calculate the cosine of the angle between the normal and the light direction
     float dot = n * lightDir;
-    
+
     float cosA = dot / (n.mag() * lightDir.mag());
-    if (cosA < 0) cosA = -cosA;
+    if (cosA < 0) cosA = 0;
 
     float diff = light.ambient * (1 - cosA) + light.specular * cosA;
 
