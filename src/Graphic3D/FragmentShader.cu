@@ -146,11 +146,8 @@ __global__ void applyMaterialKernel( // Beta
 
         int x = warpx * txw[texIdx];
         int y = warpy * txh[texIdx];
+
         int tIdx = x + y * txw[texIdx];
-
-        if (tIdx >= txw[texIdx] * txh[texIdx] ||
-            tIdx < 0) return;
-
         tIdx += txof[texIdx];
 
         bCr[i] = txr[tIdx];
