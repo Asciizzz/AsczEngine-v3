@@ -148,18 +148,21 @@ Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, sho
                 objmap[curObj].w1 = 0;
                 objmap[curObj].t1 = 0;
                 objmap[curObj].n1 = 0;
+                objmap[curObj].f1 = 0;
             }
 
             if (curObj != name) {
                 objmap[curObj].w2 = wx.size();
                 objmap[curObj].t2 = tu.size();
                 objmap[curObj].n2 = nx.size();
+                objmap[curObj].f2 = fw.size();
 
                 curObj = name;
 
                 objmap[curObj].w1 = wx.size();
                 objmap[curObj].t1 = tu.size();
                 objmap[curObj].n1 = nx.size();
+                objmap[curObj].f1 = fw.size();
             }
         }
 
@@ -266,11 +269,13 @@ Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, sho
         objmap["def"].w1 = 0; objmap["def"].w2 = wx.size();
         objmap["def"].t1 = 0; objmap["def"].t2 = tu.size();
         objmap["def"].n1 = 0; objmap["def"].n2 = nx.size();
+        objmap["def"].f1 = 0; objmap["def"].f2 = fw.size();
     } else {
         // Set the end of the last object
         objmap[curObj].w2 = wx.size();
         objmap[curObj].t2 = tu.size();
         objmap[curObj].n2 = nx.size();
+        objmap[curObj].f2 = fw.size();
     }
 
     #pragma omp parallel for

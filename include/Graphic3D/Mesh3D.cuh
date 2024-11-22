@@ -34,11 +34,13 @@ struct ObjRange {
     ULLInt w1, w2;
     ULLInt t1, t2;
     ULLInt n1, n2;
+    ULLInt f1, f2;
 
     ObjRange(
         ULLInt w1=0, ULLInt w2=0,
         ULLInt t1=0, ULLInt t2=0,
-        ULLInt n1=0, ULLInt n2=0
+        ULLInt n1=0, ULLInt n2=0,
+        ULLInt f1=0, ULLInt f2=0
     );
     
     void operator=(ObjRange &range);
@@ -46,6 +48,7 @@ struct ObjRange {
     void offsetW(ULLInt offset);
     void offsetT(ULLInt offset);
     void offsetN(ULLInt offset);
+    void offsetF(ULLInt offset);
 };
 struct Mesh {
     // Initialization data (Will be obsolete after push to Mesh3D)

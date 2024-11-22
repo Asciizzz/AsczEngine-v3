@@ -3,18 +3,20 @@
 // ======================= Mesh range =======================
 
 ObjRange::ObjRange(
-    ULLInt w1, ULLInt w2, ULLInt t1, ULLInt t2, ULLInt n1, ULLInt n2
-) : w1(w1), w2(w2), t1(t1), t2(t2), n1(n1), n2(n2) {}
+    ULLInt w1, ULLInt w2, ULLInt t1, ULLInt t2, ULLInt n1, ULLInt n2, ULLInt f1, ULLInt f2
+) : w1(w1), w2(w2), t1(t1), t2(t2), n1(n1), n2(n2), f1(f1), f2(f2) {}
 
 void ObjRange::operator=(ObjRange &range) {
     w1 = range.w1; w2 = range.w2;
     t1 = range.t1; t2 = range.t2;
     n1 = range.n1; n2 = range.n2;
+    f1 = range.f1; f2 = range.f2;
 }
 
 void ObjRange::offsetW(ULLInt offset) { w1 += offset; w2 += offset; }
 void ObjRange::offsetT(ULLInt offset) { t1 += offset; t2 += offset; }
 void ObjRange::offsetN(ULLInt offset) { n1 += offset; n2 += offset; }
+void ObjRange::offsetF(ULLInt offset) { f1 += offset; f2 += offset; }
 
 // ======================= Mesh object =======================
 
@@ -319,6 +321,7 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
     ULLInt offsetW = v.w.size;
     ULLInt offsetT = v.t.size;
     ULLInt offsetN = v.n.size;
+    ULLInt offsetF = f.size;
 
     // Set the runtime values
     if (correction)
@@ -326,6 +329,7 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
             kv.second.offsetW(offsetW);
             kv.second.offsetT(offsetT);
             kv.second.offsetN(offsetN);
+            kv.second.offsetF(offsetF);
         }
     // Set the metadata
     mesh.allocated = true;
@@ -478,7 +482,8 @@ void Mesh3D::logMeshMap(int linePerPart) {
             meshmapLog.back() += "| -" + key + "- | " +
                 std::to_string(omRT[key].w1) + " - " + std::to_string(omRT[key].w2) + " | " +
                 std::to_string(omRT[key].t1) + " - " + std::to_string(omRT[key].t2) + " | " +
-                std::to_string(omRT[key].n1) + " - " + std::to_string(omRT[key].n2) + "\n";
+                std::to_string(omRT[key].n1) + " - " + std::to_string(omRT[key].n2) + " | " +
+                std::to_string(omRT[key].f1) + " - " + std::to_string(omRT[key].f2) + "\n";
 
             lineCount++;
             if (lineCount >= linePerPart) {
