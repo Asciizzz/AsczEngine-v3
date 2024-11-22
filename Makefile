@@ -19,7 +19,6 @@ AsczEngine:
 		\
 		src/MathLib/Vector.cu \
 		src/MathLib/Matrix.cu \
-		src/MathLib/Plane3D.cu \
 		src/Graphic3D/Mesh3D.cu \
 		src/Graphic3D/Camera3D.cu \
 		src/Graphic3D/Buffer3D.cu \

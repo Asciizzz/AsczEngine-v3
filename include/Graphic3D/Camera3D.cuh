@@ -1,10 +1,8 @@
 #ifndef CAMERA3D_CUH
 #define CAMERA3D_CUH
 
-// #include <Matrix.cuh>
+#include <Matrix.cuh>
 #include <string>
-
-#include <Plane3D.cuh>
 
 class Camera3D {
 public:
