@@ -234,27 +234,27 @@ void Face_ptr::free() {
     if (m) cudaFree(m);
 }
 void Face_ptr::operator+=(Face_ptr &face) {
-    ULLInt count = this->count + face.count;
-    ULLInt size = count * 3;
+    ULLInt newcount = this->count + face.count;
+    ULLInt newsize = this->size + face.size;
 
     ULLInt *newV;
     LLInt *newT;
     LLInt *newN;
     LLInt *newM;
-    cudaMalloc(&newV, size * sizeof(ULLInt));
-    cudaMalloc(&newT, size * sizeof(LLInt));
-    cudaMalloc(&newN, size * sizeof(LLInt));
-    cudaMalloc(&newM, size * sizeof(LLInt));
+    cudaMalloc(&newV, newsize * sizeof(ULLInt));
+    cudaMalloc(&newT, newsize * sizeof(LLInt));
+    cudaMalloc(&newN, newsize * sizeof(LLInt));
+    cudaMalloc(&newM, newsize * sizeof(LLInt));
 
-    cudaMemcpy(newV, v, this->size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newT, t, this->size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newN, n, this->size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newM, m, this->size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newV, v, size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newT, t, size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newN, n, size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newM, m, size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
 
-    cudaMemcpy(newV + this->size, face.v, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newT + this->size, face.t, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newN + this->size, face.n, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
-    cudaMemcpy(newM + this->size, face.m, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newV + size, face.v, face.size * sizeof(ULLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newT + size, face.t, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newN + size, face.n, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newM + size, face.m, face.size * sizeof(LLInt), cudaMemcpyDeviceToDevice);
 
     free();
 
@@ -263,8 +263,8 @@ void Face_ptr::operator+=(Face_ptr &face) {
     n = newN;
     m = newM;
 
-    this->size = size;
-    this->count = count;
+    size = newsize;
+    count = newcount;
 }
 
 // ======================= Material_ptr =======================
