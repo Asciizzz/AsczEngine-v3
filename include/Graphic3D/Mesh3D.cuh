@@ -28,13 +28,15 @@ We will have 4 arrays for vertex data:
 #define VectLLI std::vector<LLInt>
 #define VectULLI std::vector<ULLInt>
 
+#define VectBool std::vector<bool>
+
 #define VectStr std::vector<std::string>
 
 struct ObjRange {
     ULLInt w1, w2;
     ULLInt t1, t2;
     ULLInt n1, n2;
-    ULLInt f1, f2;
+    ULLInt f1, f2; // Note: f x1 instead of x3
 
     ObjRange(
         ULLInt w1=0, ULLInt w2=0,
@@ -42,7 +44,7 @@ struct ObjRange {
         ULLInt n1=0, ULLInt n2=0,
         ULLInt f1=0, ULLInt f2=0
     );
-    
+
     void operator=(ObjRange &range);
 
     void offsetW(ULLInt offset);
@@ -58,10 +60,6 @@ struct Mesh {
     VectF tu, tv;
     VectF nx, ny, nz;
 
-    // Face data
-    VectULLI fw;
-    VectLLI ft, fn, fm;
-
     // Material data
     VectF kar, kag, kab;
     VectF kdr, kdg, kdb;
@@ -71,6 +69,10 @@ struct Mesh {
     // Texture data
     VectF txr, txg, txb;
     VectI txw, txh; VectLLI txof;
+
+    // Face data
+    VectULLI fw; VectLLI ft, fn; // x3
+    VectLLI fm;
 
     // Object data
     ObjRangeMap objmapST; // Static object (when created)
@@ -88,7 +90,8 @@ struct Mesh {
         VectF tu, VectF tv,
         VectF nx, VectF ny, VectF nz,
         // Face data
-        VectULLI fw, VectLLI ft, VectLLI fn, VectLLI fm,
+        VectULLI fw, VectLLI ft, VectLLI fn, // x3
+        VectLLI fm, // x1
         // Material data
         VectF kar, VectF kag, VectF kab,
         VectF kdr, VectF kdg, VectF kdb,
@@ -111,10 +114,12 @@ struct Mesh {
     void rotateIni(Vec3f origin, float r, short axis); // 0: x, 1: y, 2: z
     void scaleIni(Vec3f origin, Vec3f scl, bool sclNormal=true);
 
-    // Runtime transformations (uses device memory)
+    // Runtime functions (in device memory)
     void translateRuntime(std::string mapkey, Vec3f t);
     void rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis);
     void scaleRuntime(std::string mapkey, Vec3f origin, float scl);
+
+    void setActiveStatus(std::string mapkey, bool status);
 
     std::string getObjRtMapLog();
 };
@@ -147,6 +152,7 @@ struct Face_ptr {
 
     // Data x1
     LLInt *m; // Material index
+    bool *a; // Active status
 
     ULLInt size = 0; // size = 3 * count
     ULLInt count = 0; // count = size / 3
@@ -241,7 +247,7 @@ __global__ void incULLIntKernel(ULLInt *f, ULLInt offset, ULLInt numFs);
 __global__ void incLLIntKernel(LLInt *f, ULLInt offset, ULLInt numFs);
 
 // Kernel for transformations
-// Note: rotation and scaling also affects normals
+// Note: rotation also affects normals
 
 __global__ void translateMeshKernel(
     float *wx, float *wy, float *wz, float tx, float ty, float tz, ULLInt numWs
@@ -257,6 +263,10 @@ __global__ void rotateMeshKernel(
 __global__ void scaleMeshKernel(
     float *wx, float *wy, float *wz, ULLInt numWs,
     float ox, float oy, float oz, float scl
+);
+
+__global__ void setActiveStatusKernel(
+    bool *fAs, ULLInt numFs, bool status
 );
 
 #endif

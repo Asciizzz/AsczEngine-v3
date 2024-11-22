@@ -53,8 +53,8 @@ __global__ void frustumCullingKernel(
     const float *wx, const float *wy, const float *wz,
     const float *tu, const float *tv,
     const float *nx, const float *ny, const float *nz,
-    const ULLInt *fWs, const LLInt *fTs, const LLInt *fNs, const LLInt *fMs,
-    ULLInt numFs,
+    const ULLInt *fWs, const LLInt *fTs, const LLInt *fNs,
+    const LLInt *fMs, const bool *fAs, ULLInt numFs,
 
     // Runtime faces
     float *rtSx, float *rtSy, float *rtSz, float *rtSw,

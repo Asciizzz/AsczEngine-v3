@@ -15,8 +15,8 @@ Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, sho
     VectF wx, wy, wz;
     VectF tu, tv;
     VectF nx, ny, nz;
-    VectULLI fw;
-    VectLLI ft, fn, fm;
+    VectULLI fw; VectLLI ft, fn; // x3
+    VectLLI fm; // x1
 
     std::map<std::string, int> mtlMap;
     int matIdx = -1;
@@ -155,14 +155,14 @@ Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, sho
                 objmap[curObj].w2 = wx.size();
                 objmap[curObj].t2 = tu.size();
                 objmap[curObj].n2 = nx.size();
-                objmap[curObj].f2 = fw.size();
+                objmap[curObj].f2 = fm.size(); // x1
 
                 curObj = name;
 
                 objmap[curObj].w1 = wx.size();
                 objmap[curObj].t1 = tu.size();
                 objmap[curObj].n1 = nx.size();
-                objmap[curObj].f1 = fw.size();
+                objmap[curObj].f1 = fm.size(); // x1
             }
         }
 
@@ -259,6 +259,7 @@ Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, sho
                 fw.push_back(vs[0]); fw.push_back(vs[i]); fw.push_back(vs[i + 1]);
                 ft.push_back(ts[0]); ft.push_back(ts[i]); ft.push_back(ts[i + 1]);
                 fn.push_back(ns[0]); fn.push_back(ns[i]); fn.push_back(ns[i + 1]);
+
                 fm.push_back(matIdx);
             }
         }
@@ -269,13 +270,13 @@ Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, sho
         objmap["def"].w1 = 0; objmap["def"].w2 = wx.size();
         objmap["def"].t1 = 0; objmap["def"].t2 = tu.size();
         objmap["def"].n1 = 0; objmap["def"].n2 = nx.size();
-        objmap["def"].f1 = 0; objmap["def"].f2 = fw.size();
+        objmap["def"].f1 = 0; objmap["def"].f2 = fm.size(); // x1
     } else {
         // Set the end of the last object
         objmap[curObj].w2 = wx.size();
         objmap[curObj].t2 = tu.size();
         objmap[curObj].n2 = nx.size();
-        objmap[curObj].f2 = fw.size();
+        objmap[curObj].f2 = fm.size(); // x1
     }
 
     #pragma omp parallel for
@@ -297,7 +298,8 @@ Mesh Utils::readObjFile(std::string name, std::string path, short fIdxBased, sho
         wx, wy, wz,
         tu, tv,
         nx, ny, nz,
-        fw, ft, fn, fm,
+        fw, ft, fn,
+        fm,
         kar, kag, kab,
         kdr, kdg, kdb,
         ksr, ksg, ksb,

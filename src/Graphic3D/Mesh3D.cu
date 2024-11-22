@@ -27,7 +27,8 @@ Mesh::Mesh(
     VectF tu, VectF tv,
     VectF nx, VectF ny, VectF nz,
     // Face data
-    VectULLI fw, VectLLI ft, VectLLI fn, VectLLI fm,
+    VectULLI fw, VectLLI ft, VectLLI fn, // x3
+    VectLLI fm, // x1
     // Material data
     VectF kar, VectF kag, VectF kab,
     VectF kdr, VectF kdg, VectF kdb,
@@ -42,7 +43,8 @@ Mesh::Mesh(
     tu(tu), tv(tv),
     nx(nx), ny(ny), nz(nz),
 
-    fw(fw), ft(ft), fn(fn), fm(fm),
+    fw(fw), ft(ft), fn(fn),
+    fm(fm),
 
     kar(kar), kag(kag), kab(kab),
     kdr(kdr), kdg(kdg), kdb(kdb),
@@ -135,7 +137,6 @@ void Mesh::translateRuntime(std::string mapkey, Vec3f t) {
         w.x + start, w.y + start, w.z + start,
         t.x, t.y, t.z, numWs
     );
-    cudaDeviceSynchronize();
 }
 void Mesh::rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis) {
     if (objmapRT.find(mapkey) == objmapRT.end()) return;
@@ -160,7 +161,6 @@ void Mesh::rotateRuntime(std::string mapkey, Vec3f origin, float r, short axis) 
         n.x + startN, n.y + startN, n.z + startN, numNs,
         origin.x, origin.y, origin.z, r, axis
     );
-    cudaDeviceSynchronize();
 }
 void Mesh::scaleRuntime(std::string mapkey, Vec3f origin, float scl) {
     if (objmapRT.find(mapkey) == objmapRT.end()) return;
@@ -178,13 +178,27 @@ void Mesh::scaleRuntime(std::string mapkey, Vec3f origin, float scl) {
         w.x + startW, w.y + startW, w.z + startW, numWs,
         origin.x, origin.y, origin.z, scl
     );
-    cudaDeviceSynchronize();
+}
+
+void Mesh::setActiveStatus(std::string mapkey, bool status) {
+    if (objmapRT.find(mapkey) == objmapRT.end()) return;
+    if (!allocated) return;
+
+    Face_ptr &f = Graphic3D::instance().mesh.f;
+
+    ULLInt start = objmapRT[mapkey].f1;
+    ULLInt end = objmapRT[mapkey].f2;
+
+    ULLInt numFs = end - start;
+    ULLInt gridSize = (numFs + 255) / 256;
+
+    setActiveStatusKernel<<<gridSize, 256>>>(f.a + start, status, numFs);
 }
 
 std::string Mesh::getObjRtMapLog() {
     std::string rt = "";
     for (std::string key : objmapKs) {
-        rt += "| -" + key + "- | " +
+        rt += "| " + key + " | " +
             std::to_string(objmapRT[key].w1) + " - " + std::to_string(objmapRT[key].w2) + " | " +
             std::to_string(objmapRT[key].t1) + " - " + std::to_string(objmapRT[key].t2) + " | " +
             std::to_string(objmapRT[key].n1) + " - " + std::to_string(objmapRT[key].n2) + "\n";
@@ -225,14 +239,18 @@ void Face_ptr::malloc(ULLInt fcount) {
     cudaMalloc(&n, size * sizeof(LLInt));
 
     cudaMalloc(&m, count * sizeof(LLInt));
+    cudaMalloc(&a, count * sizeof(bool));
 }
 void Face_ptr::free() {
     size = 0;
     count = 0;
+
     if (v) cudaFree(v);
     if (t) cudaFree(t);
     if (n) cudaFree(n);
+
     if (m) cudaFree(m);
+    if (a) cudaFree(a);
 }
 void Face_ptr::operator+=(Face_ptr &face) {
     // Data x3
@@ -255,16 +273,20 @@ void Face_ptr::operator+=(Face_ptr &face) {
     // Data x1
     ULLInt newcount = this->count + face.count;
     LLInt *newM;
+    bool *newA;
     cudaMalloc(&newM, newcount * sizeof(LLInt));
+    cudaMalloc(&newA, newcount * sizeof(bool));
+
     cudaMemcpy(newM, m, count * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newA, a, count * sizeof(bool), cudaMemcpyDeviceToDevice);
+
     cudaMemcpy(newM + count, face.m, face.count * sizeof(LLInt), cudaMemcpyDeviceToDevice);
+    cudaMemcpy(newA + count, face.a, face.count * sizeof(bool), cudaMemcpyDeviceToDevice);
 
     free();
 
-    v = newV;
-    t = newT;
-    n = newN;
-    m = newM;
+    v = newV; t = newT; n = newN;
+    m = newM; a = newA;
 
     size = newsize;
     count = newcount;
@@ -453,9 +475,6 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
     Face_ptr newF;
     ULLInt fSize = mesh.fw.size();
     ULLInt fCount = mesh.fm.size();
-
-    std::cout << "fSize: " << fSize << " fCount: " << fCount << std::endl;
-
     newF.malloc(fCount);
 
     cudaMemcpyAsync(newF.v, mesh.fw.data(), fSize * sizeof(ULLInt), cudaMemcpyHostToDevice, stream);
@@ -463,6 +482,11 @@ void Mesh3D::push(Mesh &mesh, bool correction) {
     cudaMemcpyAsync(newF.n, mesh.fn.data(), fSize * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
 
     cudaMemcpyAsync(newF.m, mesh.fm.data(), fCount * sizeof(LLInt), cudaMemcpyHostToDevice, stream);
+    // Set active to true by default
+    bool *active = new bool[fCount];
+    #pragma omp parallel for
+    for (ULLInt i = 0; i < fCount; i++) active[i] = true;
+    cudaMemcpyAsync(newF.a, active, fCount * sizeof(bool), cudaMemcpyHostToDevice, stream);
 
     // Increment face indices
     if (correction) {
@@ -591,4 +615,11 @@ __global__ void scaleMeshKernel(
         wy[idx] = (wy[idx] - oy) * scl + oy;
         wz[idx] = (wz[idx] - oz) * scl + oz;
     }
+}
+
+__global__ void setActiveStatusKernel(
+    bool *fAs, ULLInt numFs, bool status
+) {
+    ULLInt idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < numFs) fAs[idx] = status;
 }

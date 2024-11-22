@@ -140,7 +140,6 @@ int main() {
                     logmode = (logmode + 1) % 3;
                 }
 
-                
                 if (event.key.code == sf::Keyboard::Tab && logmode == 2) {
                     int &curlogpart = GRAPHIC.mesh.curlogpart;
                     int &maxlogpart = GRAPHIC.mesh.maxlogpart;
@@ -162,6 +161,39 @@ int main() {
 
                     std::ifstream color("assets/cfg/lightColor.txt");
                     color >> GRAPHIC.light.color.x >> GRAPHIC.light.color.y >> GRAPHIC.light.color.z;
+                }
+
+                // Press ~ to enter active status setting mode
+                if (event.key.code == sf::Keyboard::Tilde) {
+                    MeshMap &meshmap = GRAPHIC.mesh.meshmap;
+
+                    std::string mesh;
+                    std::string obj;
+                    bool active;
+
+                    std::cout << "\nGet mesh: ";
+                    std::cin >> mesh; 
+                    if (meshmap.find(mesh) == meshmap.end()) {
+                        std::cout << "Mesh not found" << std::endl;
+                        continue;
+                    }
+
+                    std::cout << GRAPHIC.mesh.meshmap[mesh].getObjRtMapLog();
+                    
+                    std::cout << "\nGet obj: ";
+                    std::cin >> obj;
+                    if (GRAPHIC.mesh.meshmap[mesh].objmapRT.find(obj) ==
+                        GRAPHIC.mesh.meshmap[mesh].objmapRT.end()) {
+                        std::cout << "Obj not found" << std::endl;
+                        continue;
+                    }
+
+                    std::cout << "\nSet active status (0/1): ";
+                    std::cin >> active;
+
+                    GRAPHIC.mesh.meshmap[mesh].setActiveStatus(obj, active);
+
+                    std::cout << "Active status set" << std::endl;
                 }
             }
 

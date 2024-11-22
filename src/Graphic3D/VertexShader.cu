@@ -33,8 +33,8 @@ void VertexShader::frustumCulling() {
         mesh.v.w.x, mesh.v.w.y, mesh.v.w.z,
         mesh.v.t.x, mesh.v.t.y,
         mesh.v.n.x, mesh.v.n.y, mesh.v.n.z,
-        mesh.f.v, mesh.f.t, mesh.f.n, mesh.f.m,
-        mesh.f.count,
+        mesh.f.v, mesh.f.t, mesh.f.n,
+        mesh.f.m, mesh.f.a, mesh.f.count,
 
         face.s.x, face.s.y, face.s.z, face.s.w,
         face.w.x, face.w.y, face.w.z,
@@ -160,8 +160,8 @@ __global__ void frustumCullingKernel(
     const float *wx, const float *wy, const float *wz,
     const float *tu, const float *tv,
     const float *nx, const float *ny, const float *nz,
-    const ULLInt *fWs, const LLInt *fTs, const LLInt *fNs, const LLInt *fMs,
-    ULLInt numFs,
+    const ULLInt *fWs, const LLInt *fTs, const LLInt *fNs,
+    const LLInt *fMs, const bool *fAs, ULLInt numFs,
 
     // Runtime faces
     float *rtSx, float *rtSy, float *rtSz, float *rtSw,
@@ -179,14 +179,17 @@ __global__ void frustumCullingKernel(
     rtActive[fIdx * 4 + 2] = false;
     rtActive[fIdx * 4 + 3] = false;
 
+    // x1
+    if (!fAs[fIdx]) return;
+    LLInt fm = fMs[fIdx];
+
+    // x3
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = idx0 + 1;
     ULLInt idx2 = idx0 + 2;
-
     ULLInt fw[3] = {fWs[idx0], fWs[idx1], fWs[idx2]};
     LLInt ft[3] = {fTs[idx0], fTs[idx1], fTs[idx2]};
     LLInt fn[3] = {fNs[idx0], fNs[idx1], fNs[idx2]};
-    LLInt fm = fMs[fIdx];
 
     // Early culling (for outside the frustum)
     Vec4f rtSs[3] = {

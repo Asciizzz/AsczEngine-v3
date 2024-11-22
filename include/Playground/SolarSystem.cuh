@@ -12,8 +12,8 @@ public:
         VectF wx, wy, wz;
         VectF tu, tv;
         VectF nx, ny, nz;
-        VectULLI fw;
-        VectLLI ft, fn, fm;
+        VectULLI fw; VectLLI ft, fn; // x3
+        VectLLI fm; // x1
 
         // Default material properties
         VectF kar = {1}, kag = {1}, kab = {1};
@@ -80,11 +80,13 @@ public:
 
             ULLInt wxperbatch = wx.size() / batch;
             ULLInt nxperbatch = nx.size() / batch;
+            ULLInt fperbatch = fm.size() / batch; // x1
 
             objmap[key] = ObjRange(
                 wxperbatch * b, wxperbatch * (b + 1),
                 0, 0, // No texture data
-                nxperbatch * b, nxperbatch * (b + 1)
+                nxperbatch * b, nxperbatch * (b + 1),
+                fperbatch * b, fperbatch * (b + 1)
             );
 
             objmapKs.push_back(key);
@@ -94,7 +96,8 @@ public:
             wx, wy, wz,
             tu, tv,
             nx, ny, nz,
-            fw, ft, fn, fm,
+            fw, ft, fn,
+            fm,
             kar, kag, kab,
             kdr, kdg, kdb,
             ksr, ksg, ksb,
