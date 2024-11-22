@@ -102,7 +102,7 @@ void VertexShader::createDepthMap() {
             face.active, face.s.x, face.s.y, face.s.z, face.s.w,
             rtCount[i], 0,
 
-            buff.active, buff.depth, buff.faceID,
+            buff.active, buff.depth, buff.fidx,
             buff.bary.x, buff.bary.y, buff.bary.z,
             buff.width, buff.height,
             tileNumX[i], tileNumY[i], tileSizeX[i], tileSizeY[i]
@@ -125,7 +125,7 @@ void VertexShader::rasterization() {
         face.t.x, face.t.y,
         face.n.x, face.n.y, face.n.z,
 
-        buff.active, buff.faceID, buff.matID,
+        buff.active, buff.fidx, buff.midx,
         buff.bary.x, buff.bary.y, buff.bary.z,
         buff.world.x, buff.world.y, buff.world.z,
         buff.texture.x, buff.texture.y,
@@ -544,16 +544,16 @@ __global__ void runtimeIndexingKernel(
 __global__ void createDepthMapKernel(
     const ULLInt *rtIndex,
     const bool *rtActive, const float *rtSx, const float *rtSy, const float *rtSz, const float *rtSw,
-    ULLInt faceCounter, ULLInt faceOffset,
-    bool *bActive, float *bDepth, ULLInt *bFaceId,
+    ULLInt fCount, ULLInt fOffset,
+    bool *bActive, float *bDepth, ULLInt *bFidx,
     float *bBrX, float *bBrY, float *bBrZ,
     int bWidth, int bHeight, int tNumX, int tNumY, int tSizeX, int tSizeY
 ) {
     ULLInt tIdx = blockIdx.x * blockDim.x + threadIdx.x;
     ULLInt fIdx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (tIdx >= tNumX * tNumY || fIdx >= faceCounter) return;
-    fIdx += faceOffset;
+    if (tIdx >= tNumX * tNumY || fIdx >= fCount) return;
+    fIdx += fOffset;
 
     ULLInt rtIdx = rtIndex[fIdx];
 
@@ -619,7 +619,7 @@ __global__ void createDepthMapKernel(
         if (atomicMinFloat(&bDepth[bIdx], depth)) {
             bDepth[bIdx] = depth;
             bActive[bIdx] = true;
-            bFaceId[bIdx] = rtIdx;
+            bFidx[bIdx] = rtIdx;
 
             bBrX[bIdx] = bary.x;
             bBrY[bIdx] = bary.y;
@@ -634,8 +634,8 @@ __global__ void rasterizationKernel(
     const float *rtTu, const float *rtTv,
     const float *rtNx, const float *rtNy, const float *rtNz,
 
-    const bool *bActive, const ULLInt *bFaceId,
-    LLInt *bMat,  // Material
+    const bool *bActive, const ULLInt *bFidx,
+    LLInt *bMidx,  // Material
     float *bBrx, float *bBry, float *bBrz, // Bary
     float *bWx, float *bWy, float *bWz, // World
     float *bTu, float *bTv, // Texture
@@ -645,14 +645,14 @@ __global__ void rasterizationKernel(
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= bWidth * bHeight || !bActive[i]) return;
 
-    ULLInt fIdx = bFaceId[i];
+    ULLInt fIdx = bFidx[i];
 
     ULLInt idx0 = fIdx * 3;
     ULLInt idx1 = fIdx * 3 + 1;
     ULLInt idx2 = fIdx * 3 + 2;
 
     // Set material
-    bMat[i] = rtMat[fIdx];
+    bMidx[i] = rtMat[fIdx];
 
     // Get barycentric coordinates
     float alp = bBrx[i];

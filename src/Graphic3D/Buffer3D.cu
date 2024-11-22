@@ -10,8 +10,8 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
 
     cudaMalloc(&active, size * sizeof(bool));
     cudaMalloc(&depth, size * sizeof(float));
-    cudaMalloc(&faceID, size * sizeof(ULLInt));
-    cudaMalloc(&matID, size * sizeof(LLInt));
+    cudaMalloc(&fidx, size * sizeof(ULLInt));
+    cudaMalloc(&midx, size * sizeof(LLInt));
     bary.malloc(size);
     world.malloc(size);
     texture.malloc(size);
@@ -22,8 +22,8 @@ void Buffer3D::resize(int width, int height, int pixelSize) {
 void Buffer3D::free() {
     if (active) cudaFree(active);
     if (depth) cudaFree(depth);
-    if (faceID) cudaFree(faceID);
-    if (matID) cudaFree(matID);
+    if (fidx) cudaFree(fidx);
+    if (midx) cudaFree(midx);
     bary.free();
     world.free();
     texture.free();
@@ -33,7 +33,8 @@ void Buffer3D::free() {
 
 void Buffer3D::clearBuffer() {
     clearBufferKernel<<<blockNum, blockSize>>>(
-        active, depth, faceID,
+        active, depth,
+        fidx, midx,
         bary.x, bary.y, bary.z,
         world.x, world.y, world.z,
         texture.x, texture.y,
@@ -45,7 +46,8 @@ void Buffer3D::clearBuffer() {
 }
 
 __global__ void clearBufferKernel(
-    bool *active, float *depth, ULLInt *faceID,
+    bool *active, float *depth,
+    ULLInt *fidx, LLInt *midx, // Face and Material
     float *brx, float *bry, float *brz, // Bary
     float *wx, float *wy, float *wz, // World
     float *tu, float *tv, // Texture
@@ -58,7 +60,7 @@ __global__ void clearBufferKernel(
 
     active[i] = false; // Inactive
     depth[i] = 1; // Furthest depth
-    faceID[i] = NULL; // No face
+    fidx[i] = NULL; // No face
     brx[i] = 0; bry[i] = 0; brz[i] = 0; // Limbo
 
     wx[i] = 0; wy[i] = 0; wz[i] = 0; // Limbo

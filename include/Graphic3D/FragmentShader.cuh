@@ -26,7 +26,7 @@ __global__ void applyMaterialKernel( // Beta
     float *txr, float *txg, float *txb,
     int *txw, int *txh, LLInt *txof,
     // Buffer
-    bool *bActive, LLInt *bMat,
+    bool *bActive, LLInt *bMidx,
     float *bCr, float *bCg, float *bCb, float *bCa,
     float *bTu, float *bTv,
     int bWidth, int bHeight
@@ -67,7 +67,8 @@ __global__ void applyShadowMapKernel(
 );
 
 __global__ void customShaderKernel(
-    bool *bActive, ULLInt *bFaceId, float *bDepth,
+    bool *bActive, float *bDepth,
+    ULLInt *bFidx, 
     float *bBrx, float *bBry, float *bBrz, // Bary
     float *bWx, float *bWy, float *bWz, // World
     float *bTu, float *bTv, // Texture

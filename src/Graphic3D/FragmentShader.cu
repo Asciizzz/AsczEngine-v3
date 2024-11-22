@@ -17,7 +17,7 @@ void FragmentShader::applyMaterial() { // Beta
         mesh.t.tx.x, mesh.t.tx.y, mesh.t.tx.z,
         mesh.t.wh.x, mesh.t.wh.y, mesh.t.of.x,
         // Buffer
-        buff.active, buff.matID,
+        buff.active, buff.midx,
         buff.color.x, buff.color.y, buff.color.z, buff.color.w,
         buff.texture.x, buff.texture.y,
         buff.width, buff.height
@@ -92,7 +92,8 @@ void FragmentShader::customShader() {
     Buffer3D &buff = grphic.buffer;
 
     customShaderKernel<<<buff.blockNum, buff.blockSize>>>(
-        buff.active, buff.faceID, buff.depth,
+        buff.active, buff.depth,
+        buff.fidx,
         buff.bary.x, buff.bary.y, buff.bary.z,
         buff.world.x, buff.world.y, buff.world.z,
         buff.texture.x, buff.texture.y,
@@ -115,7 +116,7 @@ __global__ void applyMaterialKernel( // Beta
     float *txr, float *txg, float *txb,
     int *txw, int *txh, LLInt *txof,
     // Buffer
-    bool *bActive, LLInt *bMat,
+    bool *bActive, LLInt *bMidx,
     float *bCr, float *bCg, float *bCb, float *bCa,
     float *bTu, float *bTv,
     int bWidth, int bHeight
@@ -123,7 +124,7 @@ __global__ void applyMaterialKernel( // Beta
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= bWidth * bHeight || !bActive[i]) return;
 
-    LLInt matIdx = bMat[i];
+    LLInt matIdx = bMidx[i];
     if (matIdx < 0) {
         // Set default
         bCr[i] = 200;
@@ -157,30 +158,30 @@ __global__ void applyMaterialKernel( // Beta
 }
 
 __global__ void phongShadingKernel(
-    bool *buffActive,
-    float *buffWx, float *buffWy, float *buffWz,
-    float *buffTu, float *buffTv,
-    float *buffNx, float *buffNy, float *buffNz,
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
-    int buffWidth, int buffHeight,
+    bool *bActive,
+    float *bWx, float *bWy, float *bWz,
+    float *bTu, float *bTv,
+    float *bNx, float *bNy, float *bNz,
+    float *bCr, float *bCg, float *bCb, float *bCa,
+    int bWidth, int bHeight,
 
     LightSrc light
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+    if (i >= bWidth * bHeight || !bActive[i]) return;
 
-    buffCr[i] *= light.color.x;
-    buffCg[i] *= light.color.y;
-    buffCb[i] *= light.color.z;
+    bCr[i] *= light.color.x;
+    bCg[i] *= light.color.y;
+    bCb[i] *= light.color.z;
 
-    if (buffNx[i] == 0 &&
-        buffNy[i] == 0 &&
-        buffNz[i] == 0) return;
+    if (bNx[i] == 0 &&
+        bNy[i] == 0 &&
+        bNz[i] == 0) return;
 
     // Find the light direction
     // Vec3f lightDir = light.dir * -1;
-    Vec3f lightDir = light.dir - Vec3f(buffWx[i], buffWy[i], buffWz[i]);
-    Vec3f n = Vec3f(buffNx[i], buffNy[i], buffNz[i]);
+    Vec3f lightDir = light.dir - Vec3f(bWx[i], bWy[i], bWz[i]);
+    Vec3f n = Vec3f(bNx[i], bNy[i], bNz[i]);
 
     // Calculate the cosine of the angle between the normal and the light direction
     float dot = n * lightDir;
@@ -191,14 +192,14 @@ __global__ void phongShadingKernel(
     float diff = light.ambient * (1 - cosA) + light.specular * cosA;
 
     // Apply the light
-    buffCr[i] *= diff;
-    buffCg[i] *= diff;
-    buffCb[i] *= diff;
+    bCr[i] *= diff;
+    bCg[i] *= diff;
+    bCb[i] *= diff;
 
     // Limit the color
-    buffCr[i] = fminf(fmaxf(buffCr[i], 0), 255);
-    buffCg[i] = fminf(fmaxf(buffCg[i], 0), 255);
-    buffCb[i] = fminf(fmaxf(buffCb[i], 0), 255);
+    bCr[i] = fminf(fmaxf(bCr[i], 0), 255);
+    bCg[i] = fminf(fmaxf(bCg[i], 0), 255);
+    bCb[i] = fminf(fmaxf(bCb[i], 0), 255);
 }
 
 __global__ void resetShadowMapKernel(
@@ -282,25 +283,25 @@ __global__ void createShadowMapKernel(
 }
 
 __global__ void applyShadowMapKernel(
-    bool *buffActive,
-    float *buffWx, float *buffWy, float *buffWz,
-    float *buffNx, float *buffNy, float *buffNz,
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa,
-    int buffWidth, int buffHeight,
+    bool *bActive,
+    float *bWx, float *bWy, float *bWz,
+    float *bNx, float *bNy, float *bNz,
+    float *bCr, float *bCg, float *bCb, float *bCa,
+    int bWidth, int bHeight,
 
     float *shadowDepth, int shdwWidth, int shdwHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+    if (i >= bWidth * bHeight || !bActive[i]) return;
 
-    float sfx = (buffWx[i] / 20 + 1) * shdwWidth / 2;
-    float sfy = (buffWy[i] / 20 + 1) * shdwHeight / 2;
-    float sfz = buffWz[i];
+    float sfx = (bWx[i] / 20 + 1) * shdwWidth / 2;
+    float sfy = (bWy[i] / 20 + 1) * shdwHeight / 2;
+    float sfz = bWz[i];
 
     // Create slight offset based on the normal direction with the light
-    sfx += buffNx[i] * 0.8;
-    sfy += buffNy[i] * 0.8;
-    sfz += buffNz[i] * 0.8;
+    sfx += bNx[i] * 0.8;
+    sfy += bNy[i] * 0.8;
+    sfz += bNz[i] * 0.8;
 
     int sx = int(sfx);
     int sy = int(sfy);
@@ -315,24 +316,25 @@ __global__ void applyShadowMapKernel(
     if (sfz <= shadowDepth[sIdx] + 0.0001) return;
 
     // Apply the shadow
-    buffCr[i] *= 0.15;
-    buffCg[i] *= 0.15;
-    buffCb[i] *= 0.15;
+    bCr[i] *= 0.15;
+    bCg[i] *= 0.15;
+    bCb[i] *= 0.15;
 }
 
 __global__ void customShaderKernel(
-    bool *buffActive, ULLInt *buffFaceId, float *buffDepth,
-    float *buffBrx, float *buffBry, float *buffBrz, // Bary
-    float *buffWx, float *buffWy, float *buffWz, // World
-    float *buffTu, float *buffTv, // Texture
-    float *buffNx, float *buffNy, float *buffNz, // Normal
-    float *buffCr, float *buffCg, float *buffCb, float *buffCa, // Color
-    int buffWidth, int buffHeight
+    bool *bActive, float *bDepth,
+    ULLInt *bFidx, 
+    float *bBrx, float *bBry, float *bBrz, // Bary
+    float *bWx, float *bWy, float *bWz, // World
+    float *bTu, float *bTv, // Texture
+    float *bNx, float *bNy, float *bNz, // Normal
+    float *bCr, float *bCg, float *bCb, float *bCa, // Color
+    int bWidth, int bHeight
 ) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i >= buffWidth * buffHeight || !buffActive[i]) return;
+    if (i >= bWidth * bHeight || !bActive[i]) return;
 
-    ULLInt fIdx = buffFaceId[i];
+    ULLInt fIdx = bFidx[i];
 
     // Find remainder of fIdx / 12
     /* The 12 color rotation:
@@ -367,8 +369,8 @@ __global__ void customShaderKernel(
     else if (colorIdx == 10) color = Vec4f(255, 255, 255, 255);
     else if (colorIdx == 11) color = Vec4f(160, 160, 160, 255);
 
-    buffCr[i] = color.x;
-    buffCg[i] = color.y;
-    buffCb[i] = color.z;
-    buffCa[i] = color.w;
+    bCr[i] = color.x;
+    bCg[i] = color.y;
+    bCb[i] = color.z;
+    bCa[i] = color.w;
 }

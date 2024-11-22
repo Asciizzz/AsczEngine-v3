@@ -74,8 +74,8 @@ __global__ void runtimeIndexingKernel(
 __global__ void createDepthMapKernel(
     const ULLInt *rtIndex,
     const bool *rtActive, const float *rtSx, const float *rtSy, const float *rtSz, const float *rtSw,
-    ULLInt faceCounter, ULLInt faceOffset,
-    bool *bActive, float *bDepth, ULLInt *bFaceId,
+    ULLInt fCount, ULLInt fOffset,
+    bool *bActive, float *bDepth, ULLInt *bFidx,
     float *bBrX, float *bBrY, float *bBrZ,
     int bWidth, int bHeight, int tNumX, int tNumY, int tSizeX, int tSizeY
 );
@@ -87,8 +87,8 @@ __global__ void rasterizationKernel(
     const float *rtTu, const float *rtTv,
     const float *rtNx, const float *rtNy, const float *rtNz,
 
-    const bool *bActive, const ULLInt *bFaceId,
-    LLInt *bMat,  // Material
+    const bool *bActive, const ULLInt *bFidx,
+    LLInt *bMidx,  // Material
     float *bBrx, float *bBry, float *bBrz, // Bary
     float *bWx, float *bWy, float *bWz, // World
     float *bTu, float *bTv, // Texture

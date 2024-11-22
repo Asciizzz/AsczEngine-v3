@@ -22,8 +22,8 @@ public:
 
     bool *active;
     float *depth;
-    ULLInt *faceID;
-    LLInt *matID;
+    ULLInt *fidx;
+    LLInt *midx;
     Vec3f_ptr bary;
     Vec3f_ptr world;
     Vec2f_ptr texture;
@@ -40,7 +40,8 @@ public:
 };
 
 __global__ void clearBufferKernel(
-    bool *active, float *depth, ULLInt *faceID,
+    bool *active, float *depth,
+    ULLInt *fidx, LLInt *midx,
     float *brx, float *bry, float *brz, // Bary
     float *wx, float *wy, float *wz, // World
     float *tu, float *tv, // Texture
