@@ -525,7 +525,7 @@ void Mesh3D::logMeshMap(int linePerPart) {
 
             if (!omRT[key].fa) meshmapLog.back() += " [OFF";
             else meshmapLog.back() += " [   ";
-            meshmapLog.back() += "] -" + key + "- | " +
+            meshmapLog.back() += "] " + key + " | " +
                 std::to_string(omRT[key].w1) + " - " + std::to_string(omRT[key].w2) + " | " +
                 std::to_string(omRT[key].t1) + " - " + std::to_string(omRT[key].t2) + " | " +
                 std::to_string(omRT[key].n1) + " - " + std::to_string(omRT[key].n2) + " | " +
