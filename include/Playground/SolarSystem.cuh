@@ -76,7 +76,7 @@ public:
         ObjRangeMap objmap;
         VectStr objmapKs;
         for (int b = 0; b < batch; b++) {
-            std::string key = "star" + std::to_string(b);
+            std::string key = "Batch" + std::to_string(b);
 
             ULLInt wxperbatch = wx.size() / batch;
             ULLInt nxperbatch = nx.size() / batch;
