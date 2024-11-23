@@ -14,8 +14,8 @@
 # Ceiling assets/Models/Shapes/Wall.obj 336 90 0 0 0 30 0 
 # Fnaf .heavy/Fnaf/Fnaf1.obj 1
 
-# Skybox assets/Models/Skybox/Dream/Skybox.obj 10 0 45 0 0 0 0
-The_LITERAL_FUCKING_SUN assets/Models/Skybox/Sun/Sun.obj .01 0 0 0 0 0 0
+# Skybox assets/Models/Skybox/Dream/Skybox.obj 10 0 85 0 0 0 0
+# The_LITERAL_FUCKING_SUN assets/Models/Skybox/Sun/Sun.obj .01 0 0 0 0 0 0
 
 # PeachsCastle assets/Models/Structure/PeachsCastle/PeachsCastle.obj 1
 # PeachsCastle1F assets/Models/Structure/PeachsCastle1F/PeachsCastle1F.obj 1
@@ -51,6 +51,7 @@ The_LITERAL_FUCKING_SUN assets/Models/Skybox/Sun/Sun.obj .01 0 0 0 0 0 0
 # Shiroko_Plush assets/Models/BlueArchive/Shiroko/Shiroko.obj 1 0 0 0 0 0 0
 
 # Navia assets/Models/Genshin/Navia/Navia.obj .2 0 0 0 0 -2.15 0
+Paimon assets/Models/Genshin/Paimon/Paimon.obj .2 0 0 0 0 -2.15 0
 
 ~
 
